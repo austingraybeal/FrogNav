@@ -94,6 +94,7 @@
         <textarea id="generatedPrompt" rows="14" readonly placeholder="Your generated FrogNav GPT prompt will appear here..."></textarea>
 
         <div class="actions">
+          <button id="generatePlanBtn" class="primary" type="button">Generate Plan</button>
           <button id="copyPromptBtn" class="primary" type="button">Copy Prompt</button>
           <button id="copyJsonBtn" class="secondary" type="button">Copy JSON</button>
           <a
@@ -108,6 +109,21 @@
         </div>
 
         <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" aria-labelledby="agent-output-title">
+        <div class="card-header">
+          <h2 id="agent-output-title">Agent Output</h2>
+          <p>Generated semester plan from the backend.</p>
+        </div>
+
+        <textarea
+          id="agentOutput"
+          rows="16"
+          readonly
+          placeholder="Click Generate Plan to request a full plan from /api/plan..."
+        ></textarea>
+        <p id="agentOutputStatus" class="status" role="status" aria-live="polite"></p>
       </section>
     </main>
 

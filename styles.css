@@ -187,6 +187,11 @@ button,
   color: var(--text);
 }
 
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .primary {
   background: var(--primary);
   color: #f8f2ff;
@@ -220,6 +225,10 @@ button,
   min-height: 1.4em;
   color: #c9a5ff;
   margin-top: 0.7rem;
+}
+
+.status.error {
+  color: #ffb4b4;
 }
 
 @media (max-width: 700px) {

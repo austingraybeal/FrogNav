@@ -1,30 +1,57 @@
-# FrogNav Agent Shell (Static)
+# FrogNav Agent Shell (Vercel Full-Stack)
 
-This repository is a pure static website for collecting student intake information and generating a high-quality prompt for FrogNav GPT.
+FrogNav is now a single-platform Vercel deployment:
+- Static frontend for intake + prompt generation
+- Serverless backend endpoint (`/api/plan`) that calls OpenAI and returns `{ planText }`
 
-## Files
+## Project files
 
 - `index.html` — UI structure
-- `styles.css` — modern styling
-- `app.js` — wizard logic, prompt generation, autosave, copy actions
+- `styles.css` — styling
+- `app.js` — wizard logic, prompt generation, and `/api/plan` integration
+- `api/plan.js` — Vercel serverless function that calls OpenAI Chat Completions
 
-## Run locally
+## Local run (no npm install required)
 
-No npm install or build is required.
+This repo has no build step and no runtime dependencies.
 
-- Option 1: Open `index.html` directly in your browser.
-- Option 2: Serve the folder with any static server (example):
+1. Start a local static server from the repo root:
+   ```bash
+   python -m http.server 8000
+   ```
+2. Open `http://localhost:8000`.
 
-```bash
-python -m http.server 8000
+> Note: `/api/plan` runs as a Vercel serverless function in deployment. For local API testing, use Vercel CLI (`vercel dev`) if desired.
+
+## Vercel deployment (click steps)
+
+1. Push this repository to GitHub.
+2. In Vercel, click **Add New... → Project**.
+3. Import the GitHub repo.
+4. In **Environment Variables**, add:
+   - `OPENAI_API_KEY` = your OpenAI API key
+5. Leave build settings at defaults (no build command required).
+6. Click **Deploy**.
+
+After deploy:
+- Frontend is served by Vercel
+- `/api/plan` is hosted by Vercel serverless and uses your `OPENAI_API_KEY`
+
+## API contract
+
+`POST /api/plan`
+
+Request JSON:
+```json
+{
+  "intake": { "majorProgram": "Movement Science" },
+  "promptText": "..."
+}
 ```
 
-Then open `http://localhost:8000`.
-
-## GitHub Pages setup
-
-Enable GitHub Pages with:
-
-- **Source:** Deploy from a branch
-- **Branch:** `main`
-- **Folder:** `/(root)`
+Response JSON:
+```json
+{
+  "planText": "PLAN SUMMARY\n..."
+}
+```

@@ -10,6 +10,13 @@ const statusMessage = document.getElementById("statusMessage");
 const promptBox = document.getElementById("generatedPrompt");
 const copyPromptBtn = document.getElementById("copyPromptBtn");
 const copyJsonBtn = document.getElementById("copyJsonBtn");
+const livePromptFields = [
+  "majorProgram",
+  "startTerm",
+  "targetGraduation",
+  "completedCourses",
+  "constraints",
+];
 
 let currentStep = 0;
 
@@ -116,6 +123,15 @@ function refreshGeneratedPrompt() {
   promptBox.value = buildPrompt(data);
 }
 
+function syncDraft({ announce = true } = {}) {
+  saveToLocalStorage();
+  refreshGeneratedPrompt();
+
+  if (announce) {
+    setStatus("Draft auto-saved locally.");
+  }
+}
+
 function copyText(value, successMessage) {
   navigator.clipboard
     .writeText(value)
@@ -142,10 +158,13 @@ backBtn.addEventListener("click", () => {
   renderStep();
 });
 
-form.addEventListener("input", () => {
-  saveToLocalStorage();
-  refreshGeneratedPrompt();
-  setStatus("Draft auto-saved locally.");
+livePromptFields.forEach((fieldName) => {
+  const field = form.elements.namedItem(fieldName);
+  if (!field) return;
+
+  ["input", "change"].forEach((eventName) => {
+    field.addEventListener(eventName, () => syncDraft());
+  });
 });
 
 copyPromptBtn.addEventListener("click", () => {
@@ -159,5 +178,5 @@ copyJsonBtn.addEventListener("click", () => {
 });
 
 hydrateFromLocalStorage();
-refreshGeneratedPrompt();
+syncDraft({ announce: false });
 renderStep();

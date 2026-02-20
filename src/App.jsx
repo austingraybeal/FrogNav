@@ -1,9 +1,9 @@
-export default function App() {
+﻿export default function App() {
   return (
     <div className="page">
       <header className="header">
         <div className="brand">
-          <div className="logo" aria-hidden="true">🐸</div>
+          <div className="logo" aria-hidden="true">F</div>
           <div>
             <div className="title">FrogNav</div>
             <div className="subtitle">TCU AI Degree Planning Advisor</div>
@@ -20,7 +20,7 @@ export default function App() {
       <main className="main">
         <section className="hero">
           <div className="hero-copy">
-            <h1>Plan your TCU degree path faster — with guardrails.</h1>
+            <h1>Plan your TCU degree path faster - with guardrails.</h1>
             <p>
               FrogNav helps you map semesters, prerequisites, and workload balance.
               Start simple now; expand into a full planning assistant over time.
@@ -93,7 +93,7 @@ export default function App() {
         </section>
 
         <footer className="footer">
-          <div>© {new Date().getFullYear()} FrogNav</div>
+          <div>Â© {new Date().getFullYear()} FrogNav</div>
           <div className="footer-links">
             <a href="https://github.com/austingraybeal/FrogNav" target="_blank" rel="noreferrer">
               GitHub
@@ -104,3 +104,4 @@ export default function App() {
     </div>
   )
 }
+

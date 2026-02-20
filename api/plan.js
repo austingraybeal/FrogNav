@@ -1,30 +1,49 @@
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const MODEL = "gpt-4o-mini";
 
-const REQUIRED_SYSTEM_MESSAGE = `You are FrogNav, a TCU kinesiology planning assistant.
-
-Return each assistant response as plain text using these exact section headings in this exact order:
-PLAN SUMMARY
-8-SEMESTER PLAN TABLE (with credit totals)
-REQUIREMENT CHECKLIST
-POLICY WARNINGS
-ADJUSTMENT OPTIONS (2–3 options)
-DISCLAIMER
-
-Strict output rules:
-- Do not hallucinate unknown degree requirements.
-- If required information is missing and blocks a reliable plan, use warnings/notes to request minimal clarification.
-- warnings must always include:
-  "Term availability not provided; verify in TCU Class Search."
-  "Prerequisite sequencing assumed based on standard progression."
-- disclaimer must end with exactly:
-  "This is planning assistance only and does not replace official advising or the TCU degree audit system."
-- Keep the tone concise, advising-focused, and transparent about assumptions.
-- Never include stack traces or internal implementation details.`;
+const RESPONSE_SCHEMA = {
+  name: "frognav_response",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["reply", "planJson"],
+    properties: {
+      reply: { type: "string" },
+      planJson: {
+        anyOf: [
+          { type: "null" },
+          {
+            type: "object",
+            additionalProperties: false,
+            required: ["major", "startTerm", "targetGraduation", "creditsPerTerm", "terms"],
+            properties: {
+              major: { type: "string" },
+              startTerm: { type: "string" },
+              targetGraduation: { type: "string" },
+              creditsPerTerm: { type: "string" },
+              terms: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["name", "courses", "credits"],
+                  properties: {
+                    name: { type: "string" },
+                    courses: { type: "array", items: { type: "string" } },
+                    credits: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+  },
+};
 
 function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
-
   if (typeof req.body === "string") {
     try {
       return JSON.parse(req.body);
@@ -32,21 +51,38 @@ function readBody(req) {
       return null;
     }
   }
-
   return null;
 }
 
 function isValidMessages(messages) {
   return (
     Array.isArray(messages) &&
-    messages.every(
-      (message) =>
-        message &&
-        (message.role === "user" || message.role === "assistant") &&
-        typeof message.content === "string" &&
-        message.content.trim().length > 0
+    messages.every((message) =>
+      message &&
+      (message.role === "user" || message.role === "assistant") &&
+      typeof message.content === "string" &&
+      message.content.trim().length > 0
     )
   );
+}
+
+function detectFriendlyError(status, payload) {
+  const code = payload?.error?.code || "";
+  const text = String(payload?.error?.message || "").toLowerCase();
+
+  if (status === 429 || code === "rate_limit_exceeded" || text.includes("rate limit")) {
+    return "FrogNav is receiving heavy traffic right now. Please wait a moment and retry.";
+  }
+
+  if (code === "insufficient_quota" || text.includes("quota") || text.includes("billing")) {
+    return "FrogNav's planning service is temporarily unavailable due to usage limits. Please try again later.";
+  }
+
+  if (status === 401 || code === "invalid_api_key") {
+    return "FrogNav is not configured correctly right now. Please contact support and try again later.";
+  }
+
+  return "FrogNav couldn't generate a response right now. Please try again.";
 }
 
 module.exports = async function handler(req, res) {
@@ -61,10 +97,28 @@ module.exports = async function handler(req, res) {
   }
 
   const body = readBody(req);
-  if (!body || typeof body.intake !== "object" || !isValidMessages(body.messages)) {
-    res.status(400).json({ error: "Invalid request. Expected JSON: { intake, messages }." });
+  if (!body || typeof body.profile !== "object" || !isValidMessages(body.messages)) {
+    res.status(400).json({ error: "Invalid request. Expected JSON: { profile, messages, lastPlan?, action? }." });
     return;
   }
+
+  const action = typeof body.action === "string" ? body.action : "chat";
+  const context = [
+    `Action: ${action}`,
+    `Student profile: ${JSON.stringify(body.profile, null, 2)}`,
+    `Last plan context: ${JSON.stringify(body.lastPlan || null, null, 2)}`,
+  ].join("\n\n");
+
+  const systemPrompt = `You are FrogNav, a TCU kinesiology AI planning advisor.
+
+Rules:
+- Keep responses concise and advising-focused.
+- If action is "build", provide a full multi-term plan and set planJson with structured terms.
+- If action is "minor", "honors", or "compare", treat it as a follow-up update using last plan context if present.
+- For compare, explain differences between Movement Science and Health and Fitness, and include a suggested revised term structure in planJson if possible.
+- Avoid ASCII art tables.
+- If reliable details are missing, note assumptions clearly.
+- Never reveal internal implementation details.`;
 
   try {
     const response = await fetch(OPENAI_URL, {
@@ -78,38 +132,34 @@ module.exports = async function handler(req, res) {
         temperature: 0.2,
         response_format: {
           type: "json_schema",
-          json_schema: PLAN_SCHEMA,
+          json_schema: RESPONSE_SCHEMA,
         },
         messages: [
-          { role: "system", content: REQUIRED_SYSTEM_MESSAGE },
-          {
-            role: "system",
-            content: `Student intake JSON:\n${JSON.stringify(body.intake, null, 2)}`,
-          },
-          ...body.messages,
+          { role: "system", content: systemPrompt },
+          { role: "system", content: context },
+          ...body.messages.map((item) => ({ role: item.role, content: item.content })),
         ],
       }),
     });
 
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const errorMessage = payload?.error?.message;
-      if (typeof errorMessage === "string" && errorMessage.toLowerCase().includes("api key")) {
-        res.status(502).json({ error: "FrogNav cannot reach the planning service right now. Please retry shortly." });
-        return;
-      }
 
-      res.status(502).json({ error: "FrogNav couldn't generate a response right now. Please try again." });
+    if (!response.ok) {
+      res.status(502).json({ error: detectFriendlyError(response.status, payload) });
       return;
     }
 
-    const reply = payload?.choices?.[0]?.message?.content?.trim();
-    if (!reply) {
+    const content = payload?.choices?.[0]?.message?.content;
+    if (typeof content !== "string" || !content.trim()) {
       res.status(502).json({ error: "FrogNav returned an empty response. Please try again." });
       return;
     }
 
-    res.status(200).json({ reply });
+    const parsed = JSON.parse(content);
+    res.status(200).json({
+      reply: parsed.reply,
+      planJson: parsed.planJson,
+    });
   } catch {
     res.status(500).json({ error: "FrogNav hit a temporary error. Please try again in a moment." });
   }

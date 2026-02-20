@@ -13,6 +13,9 @@ const statusMessage = document.getElementById("statusMessage");
 const promptBox = document.getElementById("generatedPrompt");
 const copyPromptBtn = document.getElementById("copyPromptBtn");
 const copyJsonBtn = document.getElementById("copyJsonBtn");
+const generatePlanBtn = document.getElementById("generatePlanBtn");
+const agentOutput = document.getElementById("agentOutput");
+const agentOutputStatus = document.getElementById("agentOutputStatus");
 const livePromptFields = [
   "majorProgram",
   "minorProgram",
@@ -40,8 +43,14 @@ function getFormData() {
   };
 }
 
-function setStatus(message) {
+function setStatus(message, isError = false) {
   statusMessage.textContent = message;
+  statusMessage.classList.toggle("error", isError);
+}
+
+function setAgentOutputStatus(message, isError = false) {
+  agentOutputStatus.textContent = message;
+  agentOutputStatus.classList.toggle("error", isError);
 }
 
 function saveToLocalStorage() {
@@ -143,8 +152,8 @@ function buildPrompt(data) {
     "- Transfer limits: up to four courses post-matriculation; science associated requirements must be taken at a 4-year institution.",
     "",
     "Missing-information lines:",
-    "- Include exactly this line whenever term offerings are not provided: \"Term availability not provided; verify in TCU Class Search.\"",
-    "- Include exactly this line whenever prerequisites are not explicitly provided: \"Prerequisite sequencing assumed based on standard progression.\"",
+    '- Include exactly this line whenever term offerings are not provided: "Term availability not provided; verify in TCU Class Search."',
+    '- Include exactly this line whenever prerequisites are not explicitly provided: "Prerequisite sequencing assumed based on standard progression."',
     "- For this student, include both lines because term offerings and explicit prerequisite data were not provided.",
     "",
     "This is planning assistance only and does not replace official advising or the TCU degree audit system.",
@@ -190,7 +199,38 @@ function copyText(value, successMessage) {
   navigator.clipboard
     .writeText(value)
     .then(() => setStatus(successMessage))
-    .catch(() => setStatus("Clipboard access failed. You can still select and copy manually."));
+    .catch(() => setStatus("Clipboard access failed. You can still select and copy manually.", true));
+}
+
+async function generatePlan() {
+  refreshGeneratedPrompt();
+  generatePlanBtn.disabled = true;
+  setAgentOutputStatus("Generating plan...");
+
+  try {
+    const response = await fetch("/api/plan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        intake: getFormData(),
+        promptText: promptBox.value,
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Plan generation failed.");
+    }
+
+    agentOutput.value = payload.planText || "";
+    setAgentOutputStatus("Plan generated successfully.");
+  } catch (error) {
+    setAgentOutputStatus(error.message || "Unable to generate a plan right now.", true);
+  } finally {
+    generatePlanBtn.disabled = false;
+  }
 }
 
 nextBtn.addEventListener("click", () => {
@@ -203,7 +243,7 @@ nextBtn.addEventListener("click", () => {
   }
 
   refreshGeneratedPrompt();
-  setStatus("Prompt generated. Copy it or open FrogNav GPT.");
+  setStatus("Prompt generated. Copy it, open FrogNav GPT, or generate a plan here.");
 });
 
 backBtn.addEventListener("click", () => {
@@ -239,6 +279,8 @@ copyJsonBtn.addEventListener("click", () => {
   const data = getFormData();
   copyText(JSON.stringify(data, null, 2), "Intake JSON copied to clipboard.");
 });
+
+generatePlanBtn.addEventListener("click", generatePlan);
 
 hydrateFromLocalStorage();
 syncDraft({ announce: false });

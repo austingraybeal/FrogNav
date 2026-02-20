@@ -27,26 +27,50 @@
         <form id="intake-form" novalidate>
           <div class="wizard-step" data-step="0">
             <label for="majorProgram">Major / Program</label>
-            <input id="majorProgram" name="majorProgram" type="text" placeholder="B.S. Computer Science" required />
+            <select id="majorProgram" name="majorProgram">
+              <option value="">Default: Movement Science</option>
+              <option value="Movement Science">Movement Science</option>
+              <option value="Health and Fitness">Health and Fitness</option>
+              <option value="Physical Education">Physical Education</option>
+              <option value="Physical Education with Strength and Conditioning">Physical Education with Strength and Conditioning</option>
+              <option value="Movement Science/MS Athletic Training (3+2)">Movement Science/MS Athletic Training (3+2)</option>
+            </select>
+
+            <label for="minorProgram">Minor</label>
+            <select id="minorProgram" name="minorProgram">
+              <option value="">None</option>
+              <option value="Coaching">Coaching</option>
+              <option value="Fitness">Fitness</option>
+              <option value="Health">Health</option>
+              <option value="Movement Science">Movement Science</option>
+              <option value="Physical Education">Physical Education</option>
+              <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
+            </select>
 
             <label for="startTerm">Start term</label>
-            <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2025" required />
+            <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2026" />
           </div>
 
           <div class="wizard-step" data-step="1" hidden>
             <label for="targetGraduation">Target graduation term</label>
-            <input id="targetGraduation" name="targetGraduation" type="text" placeholder="Spring 2029" required />
+            <input id="targetGraduation" name="targetGraduation" type="text" placeholder="Spring 2030" required />
 
-            <label for="creditsPerTerm">Desired credits per term</label>
-            <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="24" placeholder="15" required />
+            <label for="creditsPerTerm">Desired credits per Fall/Spring term</label>
+            <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="24" placeholder="15" />
+
+            <label for="honorsCollege">Roach Honors College</label>
+            <select id="honorsCollege" name="honorsCollege" required>
+              <option value="No" selected>No</option>
+              <option value="Yes">Yes</option>
+            </select>
           </div>
 
           <div class="wizard-step" data-step="2" hidden>
             <label for="completedCourses">Completed courses</label>
-            <textarea id="completedCourses" name="completedCourses" rows="5" placeholder="CS 101, MATH 201, ENG 110"></textarea>
+            <textarea id="completedCourses" name="completedCourses" rows="5" placeholder="KINE 10103, BIOL 10504"></textarea>
 
             <label for="constraints">Constraints / preferences</label>
-            <textarea id="constraints" name="constraints" rows="5" placeholder="No Friday classes, internship in Summer 2027, avoid >2 labs per term"></textarea>
+            <textarea id="constraints" name="constraints" rows="5" placeholder="No Friday classes, internship in Summer, avoid >2 labs per term"></textarea>
           </div>
 
           <div class="wizard-controls">

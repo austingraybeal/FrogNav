@@ -13,11 +13,11 @@ DISCLAIMER
 
 Strict output rules:
 - Do not hallucinate unknown degree requirements.
-- If required information is missing and blocks a reliable plan, ask only the minimum clarifying questions needed.
-- Always include both of these exact lines in POLICY WARNINGS:
+- If required information is missing and blocks a reliable plan, use warnings/notes to request minimal clarification.
+- warnings must always include:
   "Term availability not provided; verify in TCU Class Search."
   "Prerequisite sequencing assumed based on standard progression."
-- Always end DISCLAIMER with this exact sentence:
+- disclaimer must end with exactly:
   "This is planning assistance only and does not replace official advising or the TCU degree audit system."
 - Keep the tone concise, advising-focused, and transparent about assumptions.
 - Never include stack traces or internal implementation details.`;
@@ -76,6 +76,10 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.2,
+        response_format: {
+          type: "json_schema",
+          json_schema: PLAN_SCHEMA,
+        },
         messages: [
           { role: "system", content: REQUIRED_SYSTEM_MESSAGE },
           {

@@ -112,16 +112,6 @@ function buildPrompt(data) {
   const constraints = data.constraints || "No additional constraints provided.";
   const completed = parseCourses(data.completedCourses);
   const completedList = completed.length > 0 ? completed.map((course) => `- ${course}`).join("\n") : "- None (assume no AP/transfer credits)";
-  const honorsRequirements =
-    honors === "Yes"
-      ? [
-          "- Honors requirements enabled (Roach Honors College):",
-          "  - 2 Cultural Visions courses (6 hrs)",
-          "  - 3 Honors electives (9 hrs)",
-          "  - 3 Honors colloquia (9 hrs)",
-          "  - No P/NC for Honors; C- minimum",
-        ].join("\n")
-      : "- Honors requirements: Not enabled";
 
   return [
     "You are FrogNav GPT, a TCU kinesiology planning assistant.",
@@ -142,35 +132,14 @@ function buildPrompt(data) {
     completedList,
     "- Constraints / preferences:",
     constraints,
-    honorsRequirements,
     "",
-    "Program support constraints:",
-    "- Supported majors: Movement Science; Health and Fitness; Physical Education; Physical Education with Strength and Conditioning; Movement Science/MS Athletic Training (3+2).",
-    "- Supported minors: Coaching; Fitness; Health; Movement Science; Physical Education; Sport and Exercise Psychology.",
-    "",
-    "Required output headings in this exact order (verbatim):",
-    "PLAN SUMMARY",
-    "8-SEMESTER PLAN TABLE (with credit totals)",
-    "REQUIREMENT CHECKLIST",
-    "POLICY WARNINGS",
-    "ADJUSTMENT OPTIONS (2–3 options)",
-    "DISCLAIMER",
-    "",
-    "POLICY WARNINGS must include and enforce these statements:",
-    "- No P/NC allowed for KINE core, foundation, emphasis, or associated requirement courses.",
-    "- Minimum grade C- required in those courses.",
-    "- Movement Science and Health & Fitness require minimum 2.5 GPA in kinesiology core+foundation+emphasis to graduate.",
-    "- Physical Education and PE with Strength & Conditioning require 2.75 overall GPA to remain in the major.",
-    "- After 54 hours, students must have 2.5 cumulative GPA to enroll in 30000+ KINE/HLTH courses.",
-    "- All KINE/HLTH major coursework must be taken at TCU.",
-    "- Transfer limits: up to four courses post-matriculation; science associated requirements must be taken at a 4-year institution.",
-    "",
-    "Missing-information lines:",
-    '- Include exactly this line whenever term offerings are not provided: "Term availability not provided; verify in TCU Class Search."',
-    '- Include exactly this line whenever prerequisites are not explicitly provided: "Prerequisite sequencing assumed based on standard progression."',
-    "- For this student, include both lines because term offerings and explicit prerequisite data were not provided.",
-    "",
-    "This is planning assistance only and does not replace official advising or the TCU degree audit system.",
+    "Required output structure should support:",
+    "- PLAN SUMMARY",
+    "- 8-SEMESTER PLAN TABLE (with credit totals)",
+    "- REQUIREMENT CHECKLIST",
+    "- POLICY WARNINGS",
+    "- ADJUSTMENT OPTIONS (2–3 options)",
+    "- DISCLAIMER",
   ].join("\n");
 }
 

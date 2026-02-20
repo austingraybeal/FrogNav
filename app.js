@@ -14,8 +14,12 @@ const promptBox = document.getElementById("generatedPrompt");
 const copyPromptBtn = document.getElementById("copyPromptBtn");
 const copyJsonBtn = document.getElementById("copyJsonBtn");
 const generatePlanBtn = document.getElementById("generatePlanBtn");
-const agentOutput = document.getElementById("agentOutput");
 const agentOutputStatus = document.getElementById("agentOutputStatus");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
+const clearConversationBtn = document.getElementById("clearConversationBtn");
 const livePromptFields = [
   "majorProgram",
   "minorProgram",
@@ -28,6 +32,8 @@ const livePromptFields = [
 ];
 
 let currentStep = 0;
+let conversation = [];
+let loading = false;
 
 function getFormData() {
   const data = new FormData(form);
@@ -98,16 +104,6 @@ function buildPrompt(data) {
   const constraints = data.constraints || "No additional constraints provided.";
   const completed = parseCourses(data.completedCourses);
   const completedList = completed.length > 0 ? completed.map((course) => `- ${course}`).join("\n") : "- None (assume no AP/transfer credits)";
-  const honorsRequirements =
-    honors === "Yes"
-      ? [
-          "- Honors requirements enabled (Roach Honors College):",
-          "  - 2 Cultural Visions courses (6 hrs)",
-          "  - 3 Honors electives (9 hrs)",
-          "  - 3 Honors colloquia (9 hrs)",
-          "  - No P/NC for Honors; C- minimum",
-        ].join("\n")
-      : "- Honors requirements: Not enabled";
 
   return [
     "You are FrogNav GPT, a TCU kinesiology planning assistant.",
@@ -128,35 +124,14 @@ function buildPrompt(data) {
     completedList,
     "- Constraints / preferences:",
     constraints,
-    honorsRequirements,
     "",
-    "Program support constraints:",
-    "- Supported majors: Movement Science; Health and Fitness; Physical Education; Physical Education with Strength and Conditioning; Movement Science/MS Athletic Training (3+2).",
-    "- Supported minors: Coaching; Fitness; Health; Movement Science; Physical Education; Sport and Exercise Psychology.",
-    "",
-    "Required output headings in this exact order (verbatim):",
-    "PLAN SUMMARY",
-    "8-SEMESTER PLAN TABLE (with credit totals)",
-    "REQUIREMENT CHECKLIST",
-    "POLICY WARNINGS",
-    "ADJUSTMENT OPTIONS (2–3 options)",
-    "DISCLAIMER",
-    "",
-    "POLICY WARNINGS must include and enforce these statements:",
-    "- No P/NC allowed for KINE core, foundation, emphasis, or associated requirement courses.",
-    "- Minimum grade C- required in those courses.",
-    "- Movement Science and Health & Fitness require minimum 2.5 GPA in kinesiology core+foundation+emphasis to graduate.",
-    "- Physical Education and PE with Strength & Conditioning require 2.75 overall GPA to remain in the major.",
-    "- After 54 hours, students must have 2.5 cumulative GPA to enroll in 30000+ KINE/HLTH courses.",
-    "- All KINE/HLTH major coursework must be taken at TCU.",
-    "- Transfer limits: up to four courses post-matriculation; science associated requirements must be taken at a 4-year institution.",
-    "",
-    "Missing-information lines:",
-    '- Include exactly this line whenever term offerings are not provided: "Term availability not provided; verify in TCU Class Search."',
-    '- Include exactly this line whenever prerequisites are not explicitly provided: "Prerequisite sequencing assumed based on standard progression."',
-    "- For this student, include both lines because term offerings and explicit prerequisite data were not provided.",
-    "",
-    "This is planning assistance only and does not replace official advising or the TCU degree audit system.",
+    "Required output structure should support:",
+    "- PLAN SUMMARY",
+    "- 8-SEMESTER PLAN TABLE (with credit totals)",
+    "- REQUIREMENT CHECKLIST",
+    "- POLICY WARNINGS",
+    "- ADJUSTMENT OPTIONS (2–3 options)",
+    "- DISCLAIMER",
   ].join("\n");
 }
 
@@ -202,35 +177,333 @@ function copyText(value, successMessage) {
     .catch(() => setStatus("Clipboard access failed. You can still select and copy manually.", true));
 }
 
+function formatPlanAsText(plan) {
+  const termsText = (plan.terms || [])
+    .map((term) => {
+      const courseLines = (term.courses || []).map((course) => `  - ${course}`).join("\n");
+      return `${term.term} (${term.credits} credits)\n${courseLines}`;
+    })
+    .join("\n\n");
+
+  const checklistText = (plan.requirementChecklist || [])
+    .map((item) => `- ${item.item}: ${item.status}${item.notes ? ` (${item.notes})` : ""}`)
+    .join("\n");
+
+  const warningsText = (plan.warnings || []).map((w) => `- ${w}`).join("\n");
+  const optionsText = (plan.adjustmentOptions || []).map((o) => `- ${o}`).join("\n");
+
+  return [
+    "PLAN SUMMARY",
+    plan.planSummary || "",
+    "",
+    "8-SEMESTER PLAN TABLE (with credit totals)",
+    termsText,
+    "",
+    "REQUIREMENT CHECKLIST",
+    checklistText,
+    "",
+    "POLICY WARNINGS",
+    warningsText,
+    "",
+    "ADJUSTMENT OPTIONS (2–3 options)",
+    optionsText,
+    "",
+    "DISCLAIMER",
+    plan.disclaimer || "",
+  ].join("\n");
+}
+
+function createCopyButton(plan) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-response-btn secondary";
+  button.textContent = "Copy response";
+  button.addEventListener("click", () => {
+    navigator.clipboard
+      .writeText(formatPlanAsText(plan))
+      .then(() => setAgentOutputStatus("Response copied."))
+      .catch(() => setAgentOutputStatus("Clipboard unavailable. Select and copy manually.", true));
+  });
+  return button;
+}
+
+function renderList(items, className) {
+  const list = document.createElement("ul");
+  list.className = className;
+
+  (items || []).forEach((itemText) => {
+    const item = document.createElement("li");
+    item.textContent = itemText;
+    list.appendChild(item);
+  });
+
+  return list;
+}
+
+function renderTermsTable(terms) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "plan-table-wrap";
+
+  const table = document.createElement("table");
+  table.className = "plan-table";
+
+  const thead = document.createElement("thead");
+  thead.innerHTML = "<tr><th>Term</th><th>Courses</th><th>Credits</th></tr>";
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  let totalCredits = 0;
+
+  (terms || []).forEach((term) => {
+    const row = document.createElement("tr");
+
+    const termCell = document.createElement("td");
+    termCell.textContent = term.term || "Unspecified term";
+
+    const coursesCell = document.createElement("td");
+    const courseList = renderList(term.courses || [], "table-course-list");
+    coursesCell.appendChild(courseList);
+
+    const creditsCell = document.createElement("td");
+    const credits = Number(term.credits) || 0;
+    totalCredits += credits;
+    creditsCell.textContent = String(credits);
+
+    row.appendChild(termCell);
+    row.appendChild(coursesCell);
+    row.appendChild(creditsCell);
+    tbody.appendChild(row);
+  });
+
+  const totalRow = document.createElement("tr");
+  totalRow.className = "total-row";
+  totalRow.innerHTML = `<td colspan="2">Total Credits</td><td>${totalCredits}</td>`;
+  tbody.appendChild(totalRow);
+
+  table.appendChild(tbody);
+  wrapper.appendChild(table);
+  return wrapper;
+}
+
+function renderAssistantMessage(item, plan) {
+  const cards = document.createElement("div");
+  cards.className = "assistant-cards";
+
+  const summaryCard = document.createElement("section");
+  summaryCard.className = "assistant-section";
+  summaryCard.innerHTML = `<h4>PLAN SUMMARY</h4><p class="assistant-copy">${plan.planSummary || "No summary provided."}</p>`;
+
+  const tableCard = document.createElement("section");
+  tableCard.className = "assistant-section";
+  const tableHeading = document.createElement("h4");
+  tableHeading.textContent = "8-SEMESTER PLAN TABLE (with credit totals)";
+  tableCard.appendChild(tableHeading);
+  tableCard.appendChild(renderTermsTable(plan.terms || []));
+
+  const checklistCard = document.createElement("section");
+  checklistCard.className = "assistant-section";
+  checklistCard.innerHTML = "<h4>REQUIREMENT CHECKLIST</h4>";
+  const checklistTable = document.createElement("table");
+  checklistTable.className = "checklist-table";
+  checklistTable.innerHTML = "<thead><tr><th>Requirement</th><th>Status</th><th>Notes</th></tr></thead>";
+  const checklistBody = document.createElement("tbody");
+  (plan.requirementChecklist || []).forEach((entry) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${entry.item || ""}</td><td>${entry.status || ""}</td><td>${entry.notes || ""}</td>`;
+    checklistBody.appendChild(row);
+  });
+  checklistTable.appendChild(checklistBody);
+  checklistCard.appendChild(checklistTable);
+
+  const warningsCard = document.createElement("section");
+  warningsCard.className = "assistant-section";
+  warningsCard.innerHTML = "<h4>POLICY WARNINGS</h4>";
+  warningsCard.appendChild(renderList(plan.warnings || [], "assistant-list"));
+
+  const optionsCard = document.createElement("section");
+  optionsCard.className = "assistant-section";
+  optionsCard.innerHTML = "<h4>ADJUSTMENT OPTIONS (2–3 options)</h4>";
+  optionsCard.appendChild(renderList(plan.adjustmentOptions || [], "assistant-list"));
+
+  const disclaimerCard = document.createElement("section");
+  disclaimerCard.className = "assistant-section";
+  disclaimerCard.innerHTML = `<h4>DISCLAIMER</h4><p class="assistant-copy">${plan.disclaimer || ""}</p>`;
+
+  cards.append(summaryCard, tableCard, checklistCard, warningsCard, optionsCard, disclaimerCard);
+  item.appendChild(cards);
+}
+
+function renderConversation() {
+  chatMessages.innerHTML = "";
+
+  if (!conversation.length) {
+    const empty = document.createElement("p");
+    empty.className = "chat-empty";
+    empty.textContent = 'No messages yet. Click "Generate Plan" to start.';
+    chatMessages.appendChild(empty);
+    return;
+  }
+
+  conversation.forEach((message) => {
+    const item = document.createElement("article");
+    item.className = `chat-message ${message.role}`;
+
+    const header = document.createElement("div");
+    header.className = "chat-message-header";
+
+    const label = document.createElement("strong");
+    label.textContent = message.role === "assistant" ? "FrogNav" : "You";
+    header.appendChild(label);
+
+    if (message.role === "assistant") {
+      header.appendChild(createCopyButton(message.plan));
+    }
+
+    item.appendChild(header);
+
+    if (message.role === "assistant") {
+      renderAssistantMessage(item, message.plan);
+    } else {
+      const body = document.createElement("p");
+      body.className = "user-message-body";
+      body.textContent = message.content;
+      item.appendChild(body);
+    }
+
+    chatMessages.appendChild(item);
+  });
+
+  if (loading) {
+    const loadingItem = document.createElement("article");
+    loadingItem.className = "chat-message assistant loading";
+    loadingItem.textContent = "FrogNav is thinking...";
+    chatMessages.appendChild(loadingItem);
+  }
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function setLoadingState(isLoading) {
+  loading = isLoading;
+  generatePlanBtn.disabled = isLoading;
+  sendChatBtn.disabled = isLoading;
+  chatInput.disabled = isLoading;
+  renderConversation();
+}
+
+function normalizePlan(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  if (!Array.isArray(payload.terms) || !Array.isArray(payload.warnings) || !Array.isArray(payload.adjustmentOptions)) return null;
+
+  return {
+    planSummary: String(payload.planSummary || ""),
+    terms: payload.terms,
+    requirementChecklist: Array.isArray(payload.requirementChecklist) ? payload.requirementChecklist : [],
+    warnings: payload.warnings,
+    adjustmentOptions: payload.adjustmentOptions,
+    disclaimer: String(payload.disclaimer || ""),
+  };
+}
+
+async function requestAssistantReply(messages) {
+  const response = await fetch("/api/plan", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      intake: getFormData(),
+      messages,
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || "FrogNav couldn't generate a response right now.");
+  }
+
+  const plan = normalizePlan(payload);
+  if (!plan) {
+    throw new Error("FrogNav returned an invalid structured response.");
+  }
+
+  return plan;
+}
+
 async function generatePlan() {
   refreshGeneratedPrompt();
-  generatePlanBtn.disabled = true;
+  const seedMessage = {
+    role: "user",
+    content: `Please generate my full semester plan using this intake and instructions.\n\n${promptBox.value}`,
+  };
+
+  const outboundMessages = [seedMessage];
+  conversation = [seedMessage];
+  setLoadingState(true);
   setAgentOutputStatus("Generating plan...");
 
   try {
-    const response = await fetch("/api/plan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        intake: getFormData(),
-        promptText: promptBox.value,
-      }),
-    });
-
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload.error || "Plan generation failed.");
-    }
-
-    agentOutput.value = payload.planText || "";
-    setAgentOutputStatus("Plan generated successfully.");
+    const plan = await requestAssistantReply(outboundMessages);
+    conversation.push({ role: "assistant", plan });
+    setAgentOutputStatus("Plan generated. You can now send follow-up questions.");
   } catch (error) {
     setAgentOutputStatus(error.message || "Unable to generate a plan right now.", true);
   } finally {
-    generatePlanBtn.disabled = false;
+    setLoadingState(false);
   }
+}
+
+function getConversationForApi(extraUserMessage = null) {
+  const messages = [];
+  conversation.forEach((message) => {
+    if (message.role === "user") {
+      messages.push({ role: "user", content: message.content });
+      return;
+    }
+
+    if (message.role === "assistant" && message.plan) {
+      messages.push({ role: "assistant", content: formatPlanAsText(message.plan) });
+    }
+  });
+
+  if (extraUserMessage) {
+    messages.push({ role: "user", content: extraUserMessage });
+  }
+
+  return messages;
+}
+
+async function sendChatMessage(event) {
+  event.preventDefault();
+
+  const content = chatInput.value.trim();
+  if (!content) return;
+
+  if (!conversation.length) {
+    setAgentOutputStatus('Start with "Generate Plan" first so FrogNav has your baseline plan.', true);
+    return;
+  }
+
+  conversation.push({ role: "user", content });
+  chatInput.value = "";
+  setLoadingState(true);
+  setAgentOutputStatus("Sending message...");
+
+  try {
+    const plan = await requestAssistantReply(getConversationForApi(content));
+    conversation.push({ role: "assistant", plan });
+    setAgentOutputStatus("FrogNav replied.");
+  } catch (error) {
+    setAgentOutputStatus(error.message || "Unable to send message right now.", true);
+  } finally {
+    setLoadingState(false);
+  }
+}
+
+function clearConversation() {
+  conversation = [];
+  renderConversation();
+  setAgentOutputStatus("Conversation cleared.");
 }
 
 nextBtn.addEventListener("click", () => {
@@ -281,7 +554,10 @@ copyJsonBtn.addEventListener("click", () => {
 });
 
 generatePlanBtn.addEventListener("click", generatePlan);
+chatForm.addEventListener("submit", sendChatMessage);
+clearConversationBtn.addEventListener("click", clearConversation);
 
 hydrateFromLocalStorage();
 syncDraft({ announce: false });
 renderStep();
+renderConversation();

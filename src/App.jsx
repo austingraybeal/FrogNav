@@ -11,10 +11,10 @@
         </div>
 
         <nav className="nav">
-          <a href="#features">Features</a>
-          <a href="#how">How it works</a>
-          <a href="#cta" className="btn btn-ghost">Get started</a>
-        </nav>
+  <a href="#features">Features</a>
+  <a href="#how">How it works</a>
+  <a href="#cta" className="btn btn-ghost">Get started</a>
+</nav>
       </header>
 
       <main className="main">

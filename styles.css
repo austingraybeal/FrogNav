@@ -221,6 +221,100 @@ button:disabled {
   color: #dfc8ff;
 }
 
+.chat-messages {
+  max-height: 34rem;
+  overflow-y: auto;
+  border: 1px solid rgba(180, 163, 214, 0.28);
+  border-radius: 12px;
+  background: rgba(14, 14, 18, 0.75);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.chat-empty {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+  padding: 1rem;
+}
+
+.chat-message {
+  border-radius: 12px;
+  padding: 0.75rem;
+  border: 1px solid rgba(180, 163, 214, 0.2);
+}
+
+.chat-message.user {
+  background: rgba(42, 33, 63, 0.8);
+}
+
+.chat-message.assistant {
+  background: rgba(23, 24, 31, 0.9);
+}
+
+.chat-message.loading {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chat-message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.user-message-body {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.copy-response-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.assistant-section {
+  border: 1px solid rgba(111, 45, 189, 0.4);
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: rgba(111, 45, 189, 0.08);
+  margin-bottom: 0.55rem;
+}
+
+.assistant-section:last-child {
+  margin-bottom: 0;
+}
+
+.assistant-section h4 {
+  margin: 0 0 0.45rem;
+  font-size: 0.9rem;
+  color: #dec4ff;
+}
+
+.assistant-section-body,
+.assistant-raw {
+  margin: 0;
+  white-space: pre-wrap;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.assistant-raw {
+  background: rgba(8, 8, 10, 0.45);
+  border-radius: 10px;
+  padding: 0.65rem;
+}
+
+.chat-input-row {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.6rem;
+}
+
 .status {
   min-height: 1.4em;
   color: #c9a5ff;
@@ -234,5 +328,9 @@ button:disabled {
 @media (max-width: 700px) {
   .card {
     padding: 1rem;
+  }
+
+  .chat-input-row {
+    grid-template-columns: 1fr;
   }
 }

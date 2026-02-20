@@ -113,16 +113,18 @@
 
       <section class="card" aria-labelledby="agent-output-title">
         <div class="card-header">
-          <h2 id="agent-output-title">Agent Output</h2>
-          <p>Generated semester plan from the backend.</p>
+          <h2 id="agent-output-title">Agent Conversation</h2>
+          <p>Generate a plan first, then continue chatting with FrogNav here.</p>
         </div>
 
-        <textarea
-          id="agentOutput"
-          rows="16"
-          readonly
-          placeholder="Click Generate Plan to request a full plan from /api/plan..."
-        ></textarea>
+        <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+
+        <form id="chatForm" class="chat-input-row">
+          <input id="chatInput" type="text" placeholder="Ask a follow-up question about your plan..." autocomplete="off" />
+          <button id="sendChatBtn" class="primary" type="submit">Send</button>
+          <button id="clearConversationBtn" class="secondary" type="button">Clear Conversation</button>
+        </form>
+
         <p id="agentOutputStatus" class="status" role="status" aria-live="polite"></p>
       </section>
     </main>

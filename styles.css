@@ -244,3 +244,28 @@ body {
   .quick-actions { grid-template-columns: 1fr; }
   .chat-thread { max-height: 48vh; }
 }
+
+.plan-section {
+  margin-top: 0.7rem;
+  border: 1px solid rgba(184, 157, 255, 0.2);
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: rgba(126, 77, 255, 0.06);
+}
+
+.plan-section h4,
+.plan-card h3 {
+  margin: 0 0 0.45rem;
+}
+
+.plan-section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.plan-section p,
+.plan-card p {
+  margin: 0;
+}

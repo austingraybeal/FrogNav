@@ -17,7 +17,7 @@ const DEFAULTS = {
 
 const QUICK_ACTION_PROMPTS = {
   build: "Build my Movement Science plan",
-  minor: "Add a minor to my plan",
+  add_minor: "Add a minor to my plan",
   honors: "Show me the Honors version",
   compare: "Compare Movement Science and Health & Fitness",
 };
@@ -105,45 +105,98 @@ function persistConversation() {
 function persistLastPlan() {
   if (lastPlan) {
     localStorage.setItem(LAST_PLAN_KEY, JSON.stringify(lastPlan));
-    return;
+  } else {
+    localStorage.removeItem(LAST_PLAN_KEY);
   }
-  localStorage.removeItem(LAST_PLAN_KEY);
+}
+
+function listSection(title, items) {
+  const section = document.createElement("section");
+  section.className = "plan-section";
+  section.innerHTML = `<h4>${title}</h4>`;
+  const list = document.createElement("ul");
+  const safeItems = Array.isArray(items) && items.length ? items : ["None provided."];
+  safeItems.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    list.appendChild(li);
+  });
+  section.appendChild(list);
+  return section;
 }
 
 function renderAssistantPlan(container, planJson) {
-  const summary = document.createElement("div");
-  summary.className = "plan-grid";
-
-  const cards = [
-    ["Major", planJson.major || "Not set"],
-    ["Start", planJson.startTerm || "Not set"],
-    ["Target Graduation", planJson.targetGraduation || "Not set"],
-    ["Credits / Term", planJson.creditsPerTerm || "Not set"],
-  ];
-
-  cards.forEach(([label, value]) => {
-    const card = document.createElement("article");
-    card.className = "plan-card";
-    card.innerHTML = `<strong>${label}</strong><p>${value}</p>`;
-    summary.appendChild(card);
-  });
+  const summary = document.createElement("article");
+  summary.className = "plan-card";
+  const profile = planJson.profileEcho || {};
+  summary.innerHTML = `
+    <h3>Plan Summary</h3>
+    <p>${planJson.planSummary || "No summary provided."}</p>
+    <div class="plan-grid">
+      <div><strong>Major</strong><p>${profile.major || "Not set"}</p></div>
+      <div><strong>Minor</strong><p>${profile.minor || "None"}</p></div>
+      <div><strong>Honors</strong><p>${profile.honors ? "Yes" : "No"}</p></div>
+      <div><strong>Start Term</strong><p>${profile.startTerm || "Not set"}</p></div>
+      <div><strong>Target Graduation</strong><p>${profile.targetGraduation || "Not set"}</p></div>
+      <div><strong>Credits / Term</strong><p>${profile.creditsPerTerm ?? "Not set"}</p></div>
+    </div>
+  `;
   container.appendChild(summary);
 
   if (Array.isArray(planJson.terms) && planJson.terms.length) {
+    const termsSection = document.createElement("section");
+    termsSection.className = "plan-section";
+    termsSection.innerHTML = "<h4>Terms</h4>";
+
     const table = document.createElement("table");
     table.className = "plan-table";
-    table.innerHTML = "<thead><tr><th>Term</th><th>Courses</th><th>Credits</th></tr></thead>";
-    const body = document.createElement("tbody");
+    table.innerHTML =
+      "<thead><tr><th>Term</th><th>Total Credits</th><th>Courses</th></tr></thead>";
 
+    const body = document.createElement("tbody");
     planJson.terms.forEach((term) => {
       const row = document.createElement("tr");
-      row.innerHTML = `<td>${term.name || "Term"}</td><td>${(term.courses || []).join("<br>") || "TBD"}</td><td>${term.credits || ""}</td>`;
+      const courses = Array.isArray(term.courses) && term.courses.length
+        ? term.courses
+            .map(
+              (course) =>
+                `${course.code || "TBD"} - ${course.title || "Untitled"} (${course.credits ?? 0})${
+                  course.notes ? ` — ${course.notes}` : ""
+                }`
+            )
+            .join("<br>")
+        : "TBD";
+      row.innerHTML = `<td>${term.term || "Term"}</td><td>${term.totalCredits ?? 0}</td><td>${courses}</td>`;
       body.appendChild(row);
     });
 
     table.appendChild(body);
-    container.appendChild(table);
+    termsSection.appendChild(table);
+    container.appendChild(termsSection);
   }
+
+  const checklistSection = document.createElement("section");
+  checklistSection.className = "plan-section";
+  checklistSection.innerHTML = "<h4>Requirement Checklist</h4>";
+  const checklistList = document.createElement("ul");
+  const checklist = Array.isArray(planJson.requirementChecklist) ? planJson.requirementChecklist : [];
+  (checklist.length ? checklist : [{ item: "No checklist items.", status: "Needs Review", notes: "" }]).forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = `${item.item} — ${item.status}${item.notes ? ` (${item.notes})` : ""}`;
+    checklistList.appendChild(li);
+  });
+  checklistSection.appendChild(checklistList);
+  container.appendChild(checklistSection);
+
+  container.appendChild(listSection("Policy Warnings", planJson.policyWarnings));
+  container.appendChild(listSection("Adjustment Options", planJson.adjustmentOptions));
+  container.appendChild(listSection("Assumptions", planJson.assumptions));
+  container.appendChild(listSection("Questions", planJson.questions));
+
+  const disclaimerSection = document.createElement("section");
+  disclaimerSection.className = "plan-section";
+  disclaimerSection.innerHTML = `<h4>Disclaimer</h4><p>${planJson.disclaimer || "No disclaimer provided."}</p>`;
+  container.appendChild(disclaimerSection);
 }
 
 function renderThread() {
@@ -162,9 +215,6 @@ function renderThread() {
     node.className = `msg ${message.role}`;
 
     if (message.role === "assistant" && message.planJson) {
-      const text = document.createElement("p");
-      text.textContent = message.content;
-      node.appendChild(text);
       renderAssistantPlan(node, message.planJson);
     } else {
       const text = document.createElement("p");
@@ -192,34 +242,32 @@ async function callAssistant(userContent, action = "chat") {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         profile: readProfile(),
-        messages,
-        lastPlan,
         action,
+        lastPlan,
+        message: userContent,
       }),
     });
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(payload.error || "Unable to complete request right now.");
+      const backendMessage = payload.error || "Unknown backend error.";
+      throw new Error(`Request failed (${response.status}): ${backendMessage}`);
     }
 
-    const assistantMessage = {
+    lastPlan = payload;
+    persistLastPlan();
+
+    messages.push({
       role: "assistant",
-      content: payload.reply || "I could not generate a response.",
-    };
+      content: payload.planSummary || "Plan generated.",
+      planJson: payload,
+    });
 
-    if (payload.planJson && typeof payload.planJson === "object") {
-      assistantMessage.planJson = payload.planJson;
-      lastPlan = payload.planJson;
-      persistLastPlan();
-    }
-
-    messages.push(assistantMessage);
     setStatus("Ready.");
   } catch (error) {
     messages.push({
       role: "assistant",
-      content: "Sorry—I'm having trouble right now. Please try again in a moment.",
+      content: error.message || "Request failed.",
     });
     setStatus(error.message || "Request failed.", true);
   } finally {
@@ -244,6 +292,12 @@ quickActionButtons.forEach((button) => {
 
     if (action === "build") {
       ensureBuildDefaults();
+    }
+
+    if (action === "add_minor" && !readProfile().minorProgram) {
+      setStatus("Select a minor in Student Profile before using Add a minor to my plan.", true);
+      openModal();
+      return;
     }
 
     callAssistant(QUICK_ACTION_PROMPTS[action], action);

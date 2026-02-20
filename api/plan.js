@@ -3,30 +3,15 @@ const MODEL = "gpt-4o-mini";
 
 const REQUIRED_SYSTEM_MESSAGE = `You are FrogNav, a TCU kinesiology planning assistant.
 
-You must return valid JSON only (no markdown) with this exact shape:
-{
-  "planSummary": "string",
-  "terms": [
-    {
-      "term": "string",
-      "courses": ["string"],
-      "credits": 0
-    }
-  ],
-  "requirementChecklist": [
-    {
-      "item": "string",
-      "status": "Met|In Progress|Planned|Needs Review",
-      "notes": "string"
-    }
-  ],
-  "warnings": ["string"],
-  "adjustmentOptions": ["string"],
-  "disclaimer": "string"
-}
+Return each assistant response as plain text using these exact section headings in this exact order:
+PLAN SUMMARY
+8-SEMESTER PLAN TABLE (with credit totals)
+REQUIREMENT CHECKLIST
+POLICY WARNINGS
+ADJUSTMENT OPTIONS (2–3 options)
+DISCLAIMER
 
-Strict rules:
-- Keep output concise, advising-focused, and transparent about assumptions.
+Strict output rules:
 - Do not hallucinate unknown degree requirements.
 - If required information is missing and blocks a reliable plan, use warnings/notes to request minimal clarification.
 - warnings must always include:
@@ -34,49 +19,8 @@ Strict rules:
   "Prerequisite sequencing assumed based on standard progression."
 - disclaimer must end with exactly:
   "This is planning assistance only and does not replace official advising or the TCU degree audit system."
+- Keep the tone concise, advising-focused, and transparent about assumptions.
 - Never include stack traces or internal implementation details.`;
-
-const PLAN_SCHEMA = {
-  name: "frognav_plan",
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    properties: {
-      planSummary: { type: "string" },
-      terms: {
-        type: "array",
-        items: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            term: { type: "string" },
-            courses: { type: "array", items: { type: "string" } },
-            credits: { type: "number" },
-          },
-          required: ["term", "courses", "credits"],
-        },
-      },
-      requirementChecklist: {
-        type: "array",
-        items: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            item: { type: "string" },
-            status: { type: "string" },
-            notes: { type: "string" },
-          },
-          required: ["item", "status", "notes"],
-        },
-      },
-      warnings: { type: "array", items: { type: "string" } },
-      adjustmentOptions: { type: "array", items: { type: "string" } },
-      disclaimer: { type: "string" },
-    },
-    required: ["planSummary", "terms", "requirementChecklist", "warnings", "adjustmentOptions", "disclaimer"],
-  },
-  strict: true,
-};
 
 function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
@@ -149,25 +93,23 @@ module.exports = async function handler(req, res) {
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      const errorMessage = payload?.error?.message;
+      if (typeof errorMessage === "string" && errorMessage.toLowerCase().includes("api key")) {
+        res.status(502).json({ error: "FrogNav cannot reach the planning service right now. Please retry shortly." });
+        return;
+      }
+
       res.status(502).json({ error: "FrogNav couldn't generate a response right now. Please try again." });
       return;
     }
 
-    const rawReply = payload?.choices?.[0]?.message?.content?.trim();
-    if (!rawReply) {
+    const reply = payload?.choices?.[0]?.message?.content?.trim();
+    if (!reply) {
       res.status(502).json({ error: "FrogNav returned an empty response. Please try again." });
       return;
     }
 
-    let plan;
-    try {
-      plan = JSON.parse(rawReply);
-    } catch {
-      res.status(502).json({ error: "FrogNav returned an unreadable plan. Please retry." });
-      return;
-    }
-
-    res.status(200).json(plan);
+    res.status(200).json({ reply });
   } catch {
     res.status(500).json({ error: "FrogNav hit a temporary error. Please try again in a moment." });
   }

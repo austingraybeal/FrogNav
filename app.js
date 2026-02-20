@@ -3,6 +3,14 @@ const TOTAL_STEPS = 3;
 const DEFAULT_MAJOR = "Movement Science";
 const DEFAULT_START_TERM = "Fall 2026";
 const DEFAULT_CREDITS_PER_TERM = "15";
+const REQUIRED_HEADINGS = [
+  "PLAN SUMMARY",
+  "8-SEMESTER PLAN TABLE (with credit totals)",
+  "REQUIREMENT CHECKLIST",
+  "POLICY WARNINGS",
+  "ADJUSTMENT OPTIONS (2–3 options)",
+  "DISCLAIMER",
+];
 
 const form = document.getElementById("intake-form");
 const steps = [...document.querySelectorAll(".wizard-step")];
@@ -177,160 +185,73 @@ function copyText(value, successMessage) {
     .catch(() => setStatus("Clipboard access failed. You can still select and copy manually.", true));
 }
 
-function formatPlanAsText(plan) {
-  const termsText = (plan.terms || [])
-    .map((term) => {
-      const courseLines = (term.courses || []).map((course) => `  - ${course}`).join("\n");
-      return `${term.term} (${term.credits} credits)\n${courseLines}`;
-    })
-    .join("\n\n");
-
-  const checklistText = (plan.requirementChecklist || [])
-    .map((item) => `- ${item.item}: ${item.status}${item.notes ? ` (${item.notes})` : ""}`)
-    .join("\n");
-
-  const warningsText = (plan.warnings || []).map((w) => `- ${w}`).join("\n");
-  const optionsText = (plan.adjustmentOptions || []).map((o) => `- ${o}`).join("\n");
-
-  return [
-    "PLAN SUMMARY",
-    plan.planSummary || "",
-    "",
-    "8-SEMESTER PLAN TABLE (with credit totals)",
-    termsText,
-    "",
-    "REQUIREMENT CHECKLIST",
-    checklistText,
-    "",
-    "POLICY WARNINGS",
-    warningsText,
-    "",
-    "ADJUSTMENT OPTIONS (2–3 options)",
-    optionsText,
-    "",
-    "DISCLAIMER",
-    plan.disclaimer || "",
-  ].join("\n");
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function createCopyButton(plan) {
+function parseAssistantSections(content) {
+  const headingPattern = REQUIRED_HEADINGS.map(escapeRegex).join("|");
+  const splitRegex = new RegExp(`(^|\\n)(${headingPattern})(?=\\n|$)`, "g");
+  const matches = [...content.matchAll(splitRegex)];
+
+  if (matches.length !== REQUIRED_HEADINGS.length) return null;
+
+  const foundOrder = matches.map((match) => match[2]);
+  const isCorrectOrder = REQUIRED_HEADINGS.every((heading, idx) => foundOrder[idx] === heading);
+  if (!isCorrectOrder) return null;
+
+  const sections = [];
+  for (let i = 0; i < matches.length; i += 1) {
+    const heading = matches[i][2];
+    const start = matches[i].index + matches[i][0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : content.length;
+    const body = content.slice(start, end).trim();
+    sections.push({ heading, body });
+  }
+
+  return sections;
+}
+
+function createCopyButton(textToCopy) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "copy-response-btn secondary";
   button.textContent = "Copy response";
   button.addEventListener("click", () => {
     navigator.clipboard
-      .writeText(formatPlanAsText(plan))
+      .writeText(textToCopy)
       .then(() => setAgentOutputStatus("Response copied."))
       .catch(() => setAgentOutputStatus("Clipboard unavailable. Select and copy manually.", true));
   });
   return button;
 }
 
-function renderList(items, className) {
-  const list = document.createElement("ul");
-  list.className = className;
+function renderAssistantBody(messageEl, content) {
+  const sections = parseAssistantSections(content);
 
-  (items || []).forEach((itemText) => {
-    const item = document.createElement("li");
-    item.textContent = itemText;
-    list.appendChild(item);
+  if (!sections) {
+    const rawBlock = document.createElement("pre");
+    rawBlock.className = "assistant-raw";
+    rawBlock.textContent = content;
+    messageEl.appendChild(rawBlock);
+    return;
+  }
+
+  sections.forEach((section) => {
+    const card = document.createElement("section");
+    card.className = "assistant-section";
+
+    const heading = document.createElement("h4");
+    heading.textContent = section.heading;
+
+    const body = document.createElement("pre");
+    body.className = "assistant-section-body";
+    body.textContent = section.body || "(No content provided)";
+
+    card.appendChild(heading);
+    card.appendChild(body);
+    messageEl.appendChild(card);
   });
-
-  return list;
-}
-
-function renderTermsTable(terms) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "plan-table-wrap";
-
-  const table = document.createElement("table");
-  table.className = "plan-table";
-
-  const thead = document.createElement("thead");
-  thead.innerHTML = "<tr><th>Term</th><th>Courses</th><th>Credits</th></tr>";
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
-  let totalCredits = 0;
-
-  (terms || []).forEach((term) => {
-    const row = document.createElement("tr");
-
-    const termCell = document.createElement("td");
-    termCell.textContent = term.term || "Unspecified term";
-
-    const coursesCell = document.createElement("td");
-    const courseList = renderList(term.courses || [], "table-course-list");
-    coursesCell.appendChild(courseList);
-
-    const creditsCell = document.createElement("td");
-    const credits = Number(term.credits) || 0;
-    totalCredits += credits;
-    creditsCell.textContent = String(credits);
-
-    row.appendChild(termCell);
-    row.appendChild(coursesCell);
-    row.appendChild(creditsCell);
-    tbody.appendChild(row);
-  });
-
-  const totalRow = document.createElement("tr");
-  totalRow.className = "total-row";
-  totalRow.innerHTML = `<td colspan="2">Total Credits</td><td>${totalCredits}</td>`;
-  tbody.appendChild(totalRow);
-
-  table.appendChild(tbody);
-  wrapper.appendChild(table);
-  return wrapper;
-}
-
-function renderAssistantMessage(item, plan) {
-  const cards = document.createElement("div");
-  cards.className = "assistant-cards";
-
-  const summaryCard = document.createElement("section");
-  summaryCard.className = "assistant-section";
-  summaryCard.innerHTML = `<h4>PLAN SUMMARY</h4><p class="assistant-copy">${plan.planSummary || "No summary provided."}</p>`;
-
-  const tableCard = document.createElement("section");
-  tableCard.className = "assistant-section";
-  const tableHeading = document.createElement("h4");
-  tableHeading.textContent = "8-SEMESTER PLAN TABLE (with credit totals)";
-  tableCard.appendChild(tableHeading);
-  tableCard.appendChild(renderTermsTable(plan.terms || []));
-
-  const checklistCard = document.createElement("section");
-  checklistCard.className = "assistant-section";
-  checklistCard.innerHTML = "<h4>REQUIREMENT CHECKLIST</h4>";
-  const checklistTable = document.createElement("table");
-  checklistTable.className = "checklist-table";
-  checklistTable.innerHTML = "<thead><tr><th>Requirement</th><th>Status</th><th>Notes</th></tr></thead>";
-  const checklistBody = document.createElement("tbody");
-  (plan.requirementChecklist || []).forEach((entry) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td>${entry.item || ""}</td><td>${entry.status || ""}</td><td>${entry.notes || ""}</td>`;
-    checklistBody.appendChild(row);
-  });
-  checklistTable.appendChild(checklistBody);
-  checklistCard.appendChild(checklistTable);
-
-  const warningsCard = document.createElement("section");
-  warningsCard.className = "assistant-section";
-  warningsCard.innerHTML = "<h4>POLICY WARNINGS</h4>";
-  warningsCard.appendChild(renderList(plan.warnings || [], "assistant-list"));
-
-  const optionsCard = document.createElement("section");
-  optionsCard.className = "assistant-section";
-  optionsCard.innerHTML = "<h4>ADJUSTMENT OPTIONS (2–3 options)</h4>";
-  optionsCard.appendChild(renderList(plan.adjustmentOptions || [], "assistant-list"));
-
-  const disclaimerCard = document.createElement("section");
-  disclaimerCard.className = "assistant-section";
-  disclaimerCard.innerHTML = `<h4>DISCLAIMER</h4><p class="assistant-copy">${plan.disclaimer || ""}</p>`;
-
-  cards.append(summaryCard, tableCard, checklistCard, warningsCard, optionsCard, disclaimerCard);
-  item.appendChild(cards);
 }
 
 function renderConversation() {
@@ -356,13 +277,13 @@ function renderConversation() {
     header.appendChild(label);
 
     if (message.role === "assistant") {
-      header.appendChild(createCopyButton(message.plan));
+      header.appendChild(createCopyButton(message.content));
     }
 
     item.appendChild(header);
 
     if (message.role === "assistant") {
-      renderAssistantMessage(item, message.plan);
+      renderAssistantBody(item, message.content);
     } else {
       const body = document.createElement("p");
       body.className = "user-message-body";
@@ -391,20 +312,6 @@ function setLoadingState(isLoading) {
   renderConversation();
 }
 
-function normalizePlan(payload) {
-  if (!payload || typeof payload !== "object") return null;
-  if (!Array.isArray(payload.terms) || !Array.isArray(payload.warnings) || !Array.isArray(payload.adjustmentOptions)) return null;
-
-  return {
-    planSummary: String(payload.planSummary || ""),
-    terms: payload.terms,
-    requirementChecklist: Array.isArray(payload.requirementChecklist) ? payload.requirementChecklist : [],
-    warnings: payload.warnings,
-    adjustmentOptions: payload.adjustmentOptions,
-    disclaimer: String(payload.disclaimer || ""),
-  };
-}
-
 async function requestAssistantReply(messages) {
   const response = await fetch("/api/plan", {
     method: "POST",
@@ -422,12 +329,11 @@ async function requestAssistantReply(messages) {
     throw new Error(payload.error || "FrogNav couldn't generate a response right now.");
   }
 
-  const plan = normalizePlan(payload);
-  if (!plan) {
-    throw new Error("FrogNav returned an invalid structured response.");
+  if (!payload.reply || typeof payload.reply !== "string") {
+    throw new Error("FrogNav returned an empty response.");
   }
 
-  return plan;
+  return payload.reply;
 }
 
 async function generatePlan() {
@@ -437,40 +343,23 @@ async function generatePlan() {
     content: `Please generate my full semester plan using this intake and instructions.\n\n${promptBox.value}`,
   };
 
-  const outboundMessages = [seedMessage];
   conversation = [seedMessage];
   setLoadingState(true);
   setAgentOutputStatus("Generating plan...");
 
   try {
-    const plan = await requestAssistantReply(outboundMessages);
-    conversation.push({ role: "assistant", plan });
+    const reply = await requestAssistantReply(conversation);
+    conversation.push({ role: "assistant", content: reply });
     setAgentOutputStatus("Plan generated. You can now send follow-up questions.");
   } catch (error) {
+    conversation.push({
+      role: "assistant",
+      content: "Sorry—I'm having trouble generating your plan right now. Please try again in a moment.",
+    });
     setAgentOutputStatus(error.message || "Unable to generate a plan right now.", true);
   } finally {
     setLoadingState(false);
   }
-}
-
-function getConversationForApi(extraUserMessage = null) {
-  const messages = [];
-  conversation.forEach((message) => {
-    if (message.role === "user") {
-      messages.push({ role: "user", content: message.content });
-      return;
-    }
-
-    if (message.role === "assistant" && message.plan) {
-      messages.push({ role: "assistant", content: formatPlanAsText(message.plan) });
-    }
-  });
-
-  if (extraUserMessage) {
-    messages.push({ role: "user", content: extraUserMessage });
-  }
-
-  return messages;
 }
 
 async function sendChatMessage(event) {
@@ -490,10 +379,14 @@ async function sendChatMessage(event) {
   setAgentOutputStatus("Sending message...");
 
   try {
-    const plan = await requestAssistantReply(getConversationForApi(content));
-    conversation.push({ role: "assistant", plan });
+    const reply = await requestAssistantReply(conversation);
+    conversation.push({ role: "assistant", content: reply });
     setAgentOutputStatus("FrogNav replied.");
   } catch (error) {
+    conversation.push({
+      role: "assistant",
+      content: "Sorry—I'm having trouble responding right now. Please retry your message.",
+    });
     setAgentOutputStatus(error.message || "Unable to send message right now.", true);
   } finally {
     setLoadingState(false);

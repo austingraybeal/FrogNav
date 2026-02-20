@@ -276,16 +276,16 @@ button:disabled {
   font-size: 0.8rem;
 }
 
-.assistant-cards {
-  display: grid;
-  gap: 0.55rem;
-}
-
 .assistant-section {
   border: 1px solid rgba(111, 45, 189, 0.4);
   border-radius: 10px;
   padding: 0.6rem;
   background: rgba(111, 45, 189, 0.08);
+  margin-bottom: 0.55rem;
+}
+
+.assistant-section:last-child {
+  margin-bottom: 0;
 }
 
 .assistant-section h4 {
@@ -294,47 +294,18 @@ button:disabled {
   color: #dec4ff;
 }
 
-.assistant-copy {
+.assistant-section-body,
+.assistant-raw {
   margin: 0;
   white-space: pre-wrap;
+  font: inherit;
   line-height: 1.45;
 }
 
-.plan-table-wrap,
-.checklist-table {
-  width: 100%;
-}
-
-.plan-table,
-.checklist-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: rgba(12, 12, 16, 0.4);
-}
-
-.plan-table th,
-.plan-table td,
-.checklist-table th,
-.checklist-table td {
-  border: 1px solid rgba(180, 163, 214, 0.25);
-  padding: 0.45rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-.total-row td {
-  font-weight: 700;
-}
-
-.table-course-list,
-.assistant-list {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-
-.table-course-list li,
-.assistant-list li {
-  margin-bottom: 0.2rem;
+.assistant-raw {
+  background: rgba(8, 8, 10, 0.45);
+  border-radius: 10px;
+  padding: 0.65rem;
 }
 
 .chat-input-row {

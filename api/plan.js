@@ -1,42 +1,87 @@
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const MODEL = "gpt-4o-mini";
 
-const RESPONSE_SCHEMA = {
-  name: "frognav_response",
+const VALID_ACTIONS = new Set(["build", "add_minor", "honors", "compare", "chat"]);
+const REQUIRED_DISCLAIMER =
+  "This is planning assistance only and does not replace official advising or the TCU degree audit system.";
+
+const PLAN_SCHEMA = {
+  name: "frognav_plan",
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["reply", "planJson"],
+    required: [
+      "planSummary",
+      "terms",
+      "requirementChecklist",
+      "policyWarnings",
+      "adjustmentOptions",
+      "disclaimer",
+      "assumptions",
+      "questions",
+      "profileEcho",
+    ],
     properties: {
-      reply: { type: "string" },
-      planJson: {
-        anyOf: [
-          { type: "null" },
-          {
-            type: "object",
-            additionalProperties: false,
-            required: ["major", "startTerm", "targetGraduation", "creditsPerTerm", "terms"],
-            properties: {
-              major: { type: "string" },
-              startTerm: { type: "string" },
-              targetGraduation: { type: "string" },
-              creditsPerTerm: { type: "string" },
-              terms: {
-                type: "array",
-                items: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["name", "courses", "credits"],
-                  properties: {
-                    name: { type: "string" },
-                    courses: { type: "array", items: { type: "string" } },
-                    credits: { type: "string" },
-                  },
+      planSummary: { type: "string" },
+      terms: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["term", "courses", "totalCredits"],
+          properties: {
+            term: { type: "string" },
+            courses: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["code", "title", "credits", "notes"],
+                properties: {
+                  code: { type: "string" },
+                  title: { type: "string" },
+                  credits: { type: "number" },
+                  notes: { type: "string" },
                 },
               },
             },
+            totalCredits: { type: "number" },
           },
-        ],
+        },
+      },
+      requirementChecklist: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["item", "status", "notes"],
+          properties: {
+            item: { type: "string" },
+            status: {
+              type: "string",
+              enum: ["Met", "In Progress", "Planned", "Needs Review"],
+            },
+            notes: { type: "string" },
+          },
+        },
+      },
+      policyWarnings: { type: "array", items: { type: "string" } },
+      adjustmentOptions: { type: "array", items: { type: "string" } },
+      disclaimer: { type: "string" },
+      assumptions: { type: "array", items: { type: "string" } },
+      questions: { type: "array", items: { type: "string" } },
+      profileEcho: {
+        type: "object",
+        additionalProperties: false,
+        required: ["major", "minor", "honors", "startTerm", "targetGraduation", "creditsPerTerm"],
+        properties: {
+          major: { type: "string" },
+          minor: { type: "string" },
+          honors: { type: "boolean" },
+          startTerm: { type: "string" },
+          targetGraduation: { type: "string" },
+          creditsPerTerm: { type: "number" },
+        },
       },
     },
   },
@@ -54,71 +99,170 @@ function readBody(req) {
   return null;
 }
 
-function isValidMessages(messages) {
-  return (
-    Array.isArray(messages) &&
-    messages.every((message) =>
-      message &&
-      (message.role === "user" || message.role === "assistant") &&
-      typeof message.content === "string" &&
-      message.content.trim().length > 0
-    )
-  );
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function detectFriendlyError(status, payload) {
-  const code = payload?.error?.code || "";
-  const text = String(payload?.error?.message || "").toLowerCase();
+function parseStartTerm(startTermRaw) {
+  const match = String(startTermRaw || "Fall 2026").trim().match(/^(Fall|Spring|Summer)\s+(\d{4})$/i);
+  if (!match) return { season: "Fall", year: 2026 };
+  return {
+    season: match[1][0].toUpperCase() + match[1].slice(1).toLowerCase(),
+    year: Number(match[2]),
+  };
+}
 
-  if (status === 429 || code === "rate_limit_exceeded" || text.includes("rate limit")) {
-    return "FrogNav is receiving heavy traffic right now. Please wait a moment and retry.";
+function buildDefaultEightTerms(startTermRaw) {
+  const parsed = parseStartTerm(startTermRaw);
+  const terms = [];
+  let year = parsed.year;
+  let season = parsed.season === "Spring" ? "Spring" : "Fall";
+
+  while (terms.length < 8) {
+    if (season === "Fall" || season === "Spring") {
+      terms.push(`${season} ${year}`);
+      season = season === "Fall" ? "Spring" : "Fall";
+      if (season === "Fall") year += 1;
+    } else {
+      season = "Fall";
+    }
   }
 
-  if (code === "insufficient_quota" || text.includes("quota") || text.includes("billing")) {
-    return "FrogNav's planning service is temporarily unavailable due to usage limits. Please try again later.";
-  }
+  return terms;
+}
 
-  if (status === 401 || code === "invalid_api_key") {
-    return "FrogNav is not configured correctly right now. Please contact support and try again later.";
-  }
+function normalizeCourse(course) {
+  return {
+    code: String(course?.code || "").trim(),
+    title: String(course?.title || "").trim(),
+    credits: toNumber(course?.credits, 0),
+    notes: String(course?.notes || "").trim(),
+  };
+}
 
-  return "FrogNav couldn't generate a response right now. Please try again.";
+function normalizePlanShape(plan, profile) {
+  const safeProfile = profile || {};
+  const defaultTerms = buildDefaultEightTerms(safeProfile.startTerm);
+  const generatedTerms = Array.isArray(plan?.terms) ? plan.terms : [];
+
+  const termMap = new Map();
+  generatedTerms.forEach((term) => {
+    const key = String(term?.term || "").trim();
+    if (!key) return;
+    const normalizedCourses = Array.isArray(term.courses) ? term.courses.map(normalizeCourse) : [];
+    const calcCredits = normalizedCourses.reduce((sum, course) => sum + toNumber(course.credits, 0), 0);
+    termMap.set(key, {
+      term: key,
+      courses: normalizedCourses,
+      totalCredits: toNumber(term?.totalCredits, calcCredits),
+    });
+  });
+
+  const orderedTerms = defaultTerms.map((termLabel) =>
+    termMap.get(termLabel) || {
+      term: termLabel,
+      courses: [],
+      totalCredits: 0,
+    }
+  );
+
+  generatedTerms.forEach((term) => {
+    const key = String(term?.term || "").trim();
+    if (!key || defaultTerms.includes(key)) return;
+    orderedTerms.push(termMap.get(key));
+  });
+
+  const disclaimer = String(plan?.disclaimer || "").trim();
+  const finalDisclaimer = disclaimer.endsWith(REQUIRED_DISCLAIMER)
+    ? disclaimer
+    : `${disclaimer ? `${disclaimer} ` : ""}${REQUIRED_DISCLAIMER}`.trim();
+
+  const assumptions = Array.isArray(plan?.assumptions) ? [...plan.assumptions] : [];
+  const requiredAssumptions = [
+    "Term availability not provided; verify in TCU Class Search.",
+    "Prerequisite sequencing assumed based on standard progression.",
+  ];
+  requiredAssumptions.forEach((requiredLine) => {
+    if (!assumptions.includes(requiredLine)) assumptions.push(requiredLine);
+  });
+
+  const profileEcho = {
+    major: String(plan?.profileEcho?.major || safeProfile.majorProgram || "").trim(),
+    minor: String(plan?.profileEcho?.minor || safeProfile.minorProgram || "").trim(),
+    honors: Boolean(
+      typeof plan?.profileEcho?.honors === "boolean" ? plan.profileEcho.honors : safeProfile.honorsCollege
+    ),
+    startTerm: String(plan?.profileEcho?.startTerm || safeProfile.startTerm || "Fall 2026").trim(),
+    targetGraduation: String(plan?.profileEcho?.targetGraduation || safeProfile.targetGraduation || "").trim(),
+    creditsPerTerm: toNumber(plan?.profileEcho?.creditsPerTerm, toNumber(safeProfile.creditsPerTerm, 15)),
+  };
+
+  return {
+    planSummary: String(plan?.planSummary || "").trim(),
+    terms: orderedTerms,
+    requirementChecklist: Array.isArray(plan?.requirementChecklist)
+      ? plan.requirementChecklist.map((item) => ({
+          item: String(item?.item || "").trim(),
+          status: ["Met", "In Progress", "Planned", "Needs Review"].includes(item?.status)
+            ? item.status
+            : "Needs Review",
+          notes: String(item?.notes || "").trim(),
+        }))
+      : [],
+    policyWarnings: Array.isArray(plan?.policyWarnings) ? plan.policyWarnings.map((item) => String(item || "")) : [],
+    adjustmentOptions: Array.isArray(plan?.adjustmentOptions)
+      ? plan.adjustmentOptions.map((item) => String(item || ""))
+      : [],
+    disclaimer: finalDisclaimer,
+    assumptions,
+    questions: Array.isArray(plan?.questions) ? plan.questions.map((item) => String(item || "")) : [],
+    profileEcho,
+  };
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed." });
-    return;
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." });
 
   if (!process.env.OPENAI_API_KEY) {
-    res.status(500).json({ error: "FrogNav is temporarily unavailable. Please try again soon." });
-    return;
+    return res.status(500).json({ error: "FrogNav is temporarily unavailable. Please try again soon." });
   }
 
   const body = readBody(req);
-  if (!body || typeof body.profile !== "object" || !isValidMessages(body.messages)) {
-    res.status(400).json({ error: "Invalid request. Expected JSON: { profile, messages, lastPlan?, action? }." });
-    return;
+  if (!body || typeof body.profile !== "object") {
+    return res.status(400).json({ error: "Invalid request. Expected JSON: { action, profile, lastPlan?, message? }." });
   }
 
-  const action = typeof body.action === "string" ? body.action : "chat";
-  const context = [
-    `Action: ${action}`,
-    `Student profile: ${JSON.stringify(body.profile, null, 2)}`,
-    `Last plan context: ${JSON.stringify(body.lastPlan || null, null, 2)}`,
-  ].join("\n\n");
+  const action = VALID_ACTIONS.has(body.action) ? body.action : "chat";
+  const message = typeof body.message === "string" ? body.message : "";
+  const profile = body.profile || {};
+  const lastPlan = body.lastPlan && typeof body.lastPlan === "object" ? body.lastPlan : null;
 
-  const systemPrompt = `You are FrogNav, a TCU kinesiology AI planning advisor.
+  const systemPrompt = `You are FrogNav GPT, a TCU kinesiology planning advisor.
+Return ONLY valid JSON matching the requested schema. No markdown, no commentary, no extra keys.
 
-Rules:
-- Keep responses concise and advising-focused.
-- If action is "build", provide a full multi-term plan and set planJson with structured terms.
-- If action is "minor", "honors", or "compare", treat it as a follow-up update using last plan context if present.
-- For compare, explain differences between Movement Science and Health and Fitness, and include a suggested revised term structure in planJson if possible.
-- Avoid ASCII art tables.
-- If reliable details are missing, note assumptions clearly.
-- Never reveal internal implementation details.`;
+Policy rules (must be reflected in plans/warnings/checklist where applicable):
+- No P/NC for KINE core/foundation/emphasis/associated reqs; C- minimum
+- GPA rules: 2.5 for Movement Science & Health/Fitness core+foundation+emphasis; 2.75 overall for PE and PE+S&C to remain
+- After 54 hours need 2.5 cumulative GPA for 30000+ KINE/HLTH
+- All KINE/HLTH major coursework at TCU
+- Transfer limits (4 courses post-matriculation; science at 4-year)
+
+Required assumptions lines (include exactly):
+- Term availability not provided; verify in TCU Class Search.
+- Prerequisite sequencing assumed based on standard progression.
+
+Disclaimer must end exactly with:
+${REQUIRED_DISCLAIMER}
+
+Planning behavior:
+- Use action to decide behavior: build, add_minor, honors, compare, or chat.
+- For follow-up actions, modify or compare against lastPlan when provided.
+- Always include an 8-term Fall/Spring plan in terms by default. If summer is used, keep the 8 Fall/Spring terms and append summer terms if needed.
+- Keep checklist and warnings specific to the selected program/profile.
+- profileEcho must mirror the current profile inputs and inferred values.`;
+
+  const userContext = JSON.stringify({ action, profile, lastPlan, message });
 
   try {
     const response = await fetch(OPENAI_URL, {
@@ -130,14 +274,10 @@ Rules:
       body: JSON.stringify({
         model: MODEL,
         temperature: 0.2,
-        response_format: {
-          type: "json_schema",
-          json_schema: RESPONSE_SCHEMA,
-        },
+        response_format: { type: "json_schema", json_schema: PLAN_SCHEMA },
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "system", content: context },
-          ...body.messages.map((item) => ({ role: item.role, content: item.content })),
+          { role: "user", content: userContext },
         ],
       }),
     });
@@ -145,22 +285,18 @@ Rules:
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      res.status(502).json({ error: detectFriendlyError(response.status, payload) });
-      return;
+      const backendMessage = payload?.error?.message || payload?.error?.code || "Upstream model request failed.";
+      return res.status(response.status).json({ error: String(backendMessage) });
     }
 
     const content = payload?.choices?.[0]?.message?.content;
-    if (typeof content !== "string" || !content.trim()) {
-      res.status(502).json({ error: "FrogNav returned an empty response. Please try again." });
-      return;
+    if (!content || typeof content !== "string") {
+      return res.status(502).json({ error: "Upstream model returned empty content." });
     }
 
-    const parsed = JSON.parse(content);
-    res.status(200).json({
-      reply: parsed.reply,
-      planJson: parsed.planJson,
-    });
-  } catch {
-    res.status(500).json({ error: "FrogNav hit a temporary error. Please try again in a moment." });
+    const plan = normalizePlanShape(JSON.parse(content), profile);
+    return res.status(200).json(plan);
+  } catch (error) {
+    return res.status(500).json({ error: error?.message || "Unexpected planning service error." });
   }
 };

@@ -1,16 +1,76 @@
-# React + Vite
+# FrogNav (Next.js App Router)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Academic planning prototype built with:
+- Next.js (App Router, TypeScript)
+- Tailwind CSS
+- shadcn/ui-style components
+- React Hook Form + Zod
 
-Currently, two official plugins are available:
+## Features
+- `/` landing page with CTA to intake
+- `/intake` multi-step wizard that collects `StudentProfile`
+- `/plan` renders an 8-term grid, checklist, warnings, and adjustment options
+- `/export` print-friendly plan view
+- Local storage persistence for `StudentProfile` and `PlanResult`
+- API route: `POST /api/plan` returns generated `PlanResult`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Planner engine behavior
+- Uses generic placeholder course slots (no hardcoded TCU requirements)
+- Always includes warning:
+  - `Term availability not provided; verify in TCU Class Search.`
+- Always includes policy warnings from `lib/constants.ts`
 
-## React Compiler
+## Validation and resiliency updates
+- Shared Zod schemas for intake payloads, API validation, and persisted data parsing.
+- `/api/plan` returns HTTP 400 with validation details for malformed payloads.
+- Intake and plan pages display user-facing errors when plan generation fails.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## File structure
 
-## Expanding the ESLint configuration
+```text
+.
+├── app
+│   ├── api/plan/route.ts
+│   ├── export/page.tsx
+│   ├── intake/page.tsx
+│   ├── plan/page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components
+│   ├── plan-view.tsx
+│   └── ui
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── checkbox.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       └── textarea.tsx
+├── lib
+│   ├── constants.ts
+│   ├── schemas.ts
+│   ├── storage.ts
+│   ├── types.ts
+│   └── utils.ts
+├── next.config.ts
+├── package.json
+├── postcss.config.mjs
+├── tailwind.config.ts
+└── tsconfig.json
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000.
+
+## Build & lint
+
+```bash
+npm run lint
+npm run build
+```

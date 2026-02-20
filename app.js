@@ -3,6 +3,14 @@ const TOTAL_STEPS = 3;
 const DEFAULT_MAJOR = "Movement Science";
 const DEFAULT_START_TERM = "Fall 2026";
 const DEFAULT_CREDITS_PER_TERM = "15";
+const REQUIRED_HEADINGS = [
+  "PLAN SUMMARY",
+  "8-SEMESTER PLAN TABLE (with credit totals)",
+  "REQUIREMENT CHECKLIST",
+  "POLICY WARNINGS",
+  "ADJUSTMENT OPTIONS (2–3 options)",
+  "DISCLAIMER",
+];
 
 const form = document.getElementById("intake-form");
 const steps = [...document.querySelectorAll(".wizard-step")];
@@ -14,8 +22,12 @@ const promptBox = document.getElementById("generatedPrompt");
 const copyPromptBtn = document.getElementById("copyPromptBtn");
 const copyJsonBtn = document.getElementById("copyJsonBtn");
 const generatePlanBtn = document.getElementById("generatePlanBtn");
-const agentOutput = document.getElementById("agentOutput");
 const agentOutputStatus = document.getElementById("agentOutputStatus");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
+const clearConversationBtn = document.getElementById("clearConversationBtn");
 const livePromptFields = [
   "majorProgram",
   "minorProgram",
@@ -28,6 +40,8 @@ const livePromptFields = [
 ];
 
 let currentStep = 0;
+let conversation = [];
+let loading = false;
 
 function getFormData() {
   const data = new FormData(form);
@@ -202,35 +216,218 @@ function copyText(value, successMessage) {
     .catch(() => setStatus("Clipboard access failed. You can still select and copy manually.", true));
 }
 
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function parseAssistantSections(content) {
+  const headingPattern = REQUIRED_HEADINGS.map(escapeRegex).join("|");
+  const splitRegex = new RegExp(`(^|\\n)(${headingPattern})(?=\\n|$)`, "g");
+  const matches = [...content.matchAll(splitRegex)];
+
+  if (matches.length !== REQUIRED_HEADINGS.length) return null;
+
+  const foundOrder = matches.map((match) => match[2]);
+  const isCorrectOrder = REQUIRED_HEADINGS.every((heading, idx) => foundOrder[idx] === heading);
+  if (!isCorrectOrder) return null;
+
+  const sections = [];
+  for (let i = 0; i < matches.length; i += 1) {
+    const heading = matches[i][2];
+    const start = matches[i].index + matches[i][0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : content.length;
+    const body = content.slice(start, end).trim();
+    sections.push({ heading, body });
+  }
+
+  return sections;
+}
+
+function createCopyButton(textToCopy) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-response-btn secondary";
+  button.textContent = "Copy response";
+  button.addEventListener("click", () => {
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => setAgentOutputStatus("Response copied."))
+      .catch(() => setAgentOutputStatus("Clipboard unavailable. Select and copy manually.", true));
+  });
+  return button;
+}
+
+function renderAssistantBody(messageEl, content) {
+  const sections = parseAssistantSections(content);
+
+  if (!sections) {
+    const rawBlock = document.createElement("pre");
+    rawBlock.className = "assistant-raw";
+    rawBlock.textContent = content;
+    messageEl.appendChild(rawBlock);
+    return;
+  }
+
+  sections.forEach((section) => {
+    const card = document.createElement("section");
+    card.className = "assistant-section";
+
+    const heading = document.createElement("h4");
+    heading.textContent = section.heading;
+
+    const body = document.createElement("pre");
+    body.className = "assistant-section-body";
+    body.textContent = section.body || "(No content provided)";
+
+    card.appendChild(heading);
+    card.appendChild(body);
+    messageEl.appendChild(card);
+  });
+}
+
+function renderConversation() {
+  chatMessages.innerHTML = "";
+
+  if (!conversation.length) {
+    const empty = document.createElement("p");
+    empty.className = "chat-empty";
+    empty.textContent = 'No messages yet. Click "Generate Plan" to start.';
+    chatMessages.appendChild(empty);
+    return;
+  }
+
+  conversation.forEach((message) => {
+    const item = document.createElement("article");
+    item.className = `chat-message ${message.role}`;
+
+    const header = document.createElement("div");
+    header.className = "chat-message-header";
+
+    const label = document.createElement("strong");
+    label.textContent = message.role === "assistant" ? "FrogNav" : "You";
+    header.appendChild(label);
+
+    if (message.role === "assistant") {
+      header.appendChild(createCopyButton(message.content));
+    }
+
+    item.appendChild(header);
+
+    if (message.role === "assistant") {
+      renderAssistantBody(item, message.content);
+    } else {
+      const body = document.createElement("p");
+      body.className = "user-message-body";
+      body.textContent = message.content;
+      item.appendChild(body);
+    }
+
+    chatMessages.appendChild(item);
+  });
+
+  if (loading) {
+    const loadingItem = document.createElement("article");
+    loadingItem.className = "chat-message assistant loading";
+    loadingItem.textContent = "FrogNav is thinking...";
+    chatMessages.appendChild(loadingItem);
+  }
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function setLoadingState(isLoading) {
+  loading = isLoading;
+  generatePlanBtn.disabled = isLoading;
+  sendChatBtn.disabled = isLoading;
+  chatInput.disabled = isLoading;
+  renderConversation();
+}
+
+async function requestAssistantReply(messages) {
+  const response = await fetch("/api/plan", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      intake: getFormData(),
+      messages,
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || "FrogNav couldn't generate a response right now.");
+  }
+
+  if (!payload.reply || typeof payload.reply !== "string") {
+    throw new Error("FrogNav returned an empty response.");
+  }
+
+  return payload.reply;
+}
+
 async function generatePlan() {
   refreshGeneratedPrompt();
-  generatePlanBtn.disabled = true;
+  const seedMessage = {
+    role: "user",
+    content: `Please generate my full semester plan using this intake and instructions.\n\n${promptBox.value}`,
+  };
+
+  conversation = [seedMessage];
+  setLoadingState(true);
   setAgentOutputStatus("Generating plan...");
 
   try {
-    const response = await fetch("/api/plan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        intake: getFormData(),
-        promptText: promptBox.value,
-      }),
-    });
-
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload.error || "Plan generation failed.");
-    }
-
-    agentOutput.value = payload.planText || "";
-    setAgentOutputStatus("Plan generated successfully.");
+    const reply = await requestAssistantReply(conversation);
+    conversation.push({ role: "assistant", content: reply });
+    setAgentOutputStatus("Plan generated. You can now send follow-up questions.");
   } catch (error) {
+    conversation.push({
+      role: "assistant",
+      content: "Sorry—I'm having trouble generating your plan right now. Please try again in a moment.",
+    });
     setAgentOutputStatus(error.message || "Unable to generate a plan right now.", true);
   } finally {
-    generatePlanBtn.disabled = false;
+    setLoadingState(false);
   }
+}
+
+async function sendChatMessage(event) {
+  event.preventDefault();
+
+  const content = chatInput.value.trim();
+  if (!content) return;
+
+  if (!conversation.length) {
+    setAgentOutputStatus('Start with "Generate Plan" first so FrogNav has your baseline plan.', true);
+    return;
+  }
+
+  conversation.push({ role: "user", content });
+  chatInput.value = "";
+  setLoadingState(true);
+  setAgentOutputStatus("Sending message...");
+
+  try {
+    const reply = await requestAssistantReply(conversation);
+    conversation.push({ role: "assistant", content: reply });
+    setAgentOutputStatus("FrogNav replied.");
+  } catch (error) {
+    conversation.push({
+      role: "assistant",
+      content: "Sorry—I'm having trouble responding right now. Please retry your message.",
+    });
+    setAgentOutputStatus(error.message || "Unable to send message right now.", true);
+  } finally {
+    setLoadingState(false);
+  }
+}
+
+function clearConversation() {
+  conversation = [];
+  renderConversation();
+  setAgentOutputStatus("Conversation cleared.");
 }
 
 nextBtn.addEventListener("click", () => {
@@ -281,7 +478,10 @@ copyJsonBtn.addEventListener("click", () => {
 });
 
 generatePlanBtn.addEventListener("click", generatePlan);
+chatForm.addEventListener("submit", sendChatMessage);
+clearConversationBtn.addEventListener("click", clearConversation);
 
 hydrateFromLocalStorage();
 syncDraft({ announce: false });
 renderStep();
+renderConversation();

@@ -57,9 +57,15 @@ function hydrateFromLocalStorage() {
     const parsed = JSON.parse(raw);
     Object.entries(parsed).forEach(([key, value]) => {
       const field = form.elements.namedItem(key);
-      if (field && typeof value === "string") {
-        field.value = value;
+      if (!field || typeof value !== "string") return;
+
+      if (typeof field.length === "number" && !field.tagName) {
+        const match = [...field].find((option) => option.value === value);
+        if (match) match.checked = true;
+        return;
       }
+
+      field.value = value;
     });
   } catch {
     localStorage.removeItem(STORAGE_KEY);
@@ -210,9 +216,18 @@ livePromptFields.forEach((fieldName) => {
   const field = form.elements.namedItem(fieldName);
   if (!field) return;
 
-  ["input", "change"].forEach((eventName) => {
-    field.addEventListener(eventName, () => syncDraft());
-  });
+  const register = (element) => {
+    ["input", "change"].forEach((eventName) => {
+      element.addEventListener(eventName, () => syncDraft());
+    });
+  };
+
+  if (typeof field.length === "number" && !field.tagName) {
+    [...field].forEach(register);
+    return;
+  }
+
+  register(field);
 });
 
 copyPromptBtn.addEventListener("click", () => {

@@ -1,133 +1,96 @@
-<!-- force refresh --><!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FrogNav Agent Shell</title>
+    <title>FrogNav</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="background-glow"></div>
-    <main class="app-shell">
-      <header class="hero">
-        <p class="badge">FrogNav Agent Shell</p>
-        <h1>Plan Smarter Semesters with FrogNav, Your TCU AI Advising Agent</h1>
-        <p>
-          Fill in your academic profile, then generate a polished prompt for FrogNav GPT.
-          Your data auto-saves locally so you can return anytime.
-        </p>
+    <div class="app-bg"></div>
+    <main class="hub" aria-label="FrogNav home">
+      <header class="hub-header">
+        <h1>FrogNav</h1>
+        <p>TCU Kinesiology AI degree-planning advisor.</p>
+        <button id="openProfileBtn" class="text-link" type="button">Student Profile</button>
       </header>
 
-      <section class="card" aria-labelledby="wizard-title">
-        <div class="card-header">
-          <h2 id="wizard-title">Tell Us About You</h2>
-          <p id="step-indicator" class="step-indicator"></p>
-        </div>
-
-        <form id="intake-form" novalidate>
-          <div class="wizard-step" data-step="0">
-            <label for="majorProgram">Major / Program</label>
-            <select id="majorProgram" name="majorProgram">
-              <option value="">Default: Movement Science</option>
-              <option value="Movement Science">Movement Science</option>
-              <option value="Health and Fitness">Health and Fitness</option>
-              <option value="Physical Education">Physical Education</option>
-              <option value="Physical Education with Strength and Conditioning">Physical Education with Strength and Conditioning</option>
-              <option value="Movement Science/MS Athletic Training (3+2)">Movement Science/MS Athletic Training (3+2)</option>
-            </select>
-
-            <label for="minorProgram">Minor</label>
-            <select id="minorProgram" name="minorProgram">
-              <option value="">None</option>
-              <option value="Coaching">Coaching</option>
-              <option value="Fitness">Fitness</option>
-              <option value="Health">Health</option>
-              <option value="Movement Science">Movement Science</option>
-              <option value="Physical Education">Physical Education</option>
-              <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
-            </select>
-
-            <fieldset class="toggle-fieldset">
-              <legend>Roach Honors College</legend>
-              <div class="toggle-group" role="radiogroup" aria-label="Roach Honors College">
-                <input type="radio" id="honorsNo" name="honorsCollege" value="No" checked />
-                <label for="honorsNo">No</label>
-
-                <input type="radio" id="honorsYes" name="honorsCollege" value="Yes" />
-                <label for="honorsYes">Yes</label>
-              </div>
-            </fieldset>
-
-            <label for="startTerm">Start term</label>
-            <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2026" />
-          </div>
-
-          <div class="wizard-step" data-step="1" hidden>
-            <label for="targetGraduation">Target graduation term</label>
-            <input id="targetGraduation" name="targetGraduation" type="text" placeholder="Spring 2030" required />
-
-            <label for="creditsPerTerm">Desired credits per Fall/Spring term</label>
-            <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="24" placeholder="15" />
-          </div>
-
-          <div class="wizard-step" data-step="2" hidden>
-            <label for="completedCourses">Completed courses</label>
-            <textarea id="completedCourses" name="completedCourses" rows="5" placeholder="KINE 10103, BIOL 10504"></textarea>
-
-            <label for="constraints">Constraints / preferences</label>
-            <textarea id="constraints" name="constraints" rows="5" placeholder="No Friday classes, internship in Summer, avoid >2 labs per term"></textarea>
-          </div>
-
-          <div class="wizard-controls">
-            <button type="button" id="backBtn" class="secondary">Back</button>
-            <button type="button" id="nextBtn" class="primary">Next</button>
-          </div>
-        </form>
+      <section class="quick-actions" aria-label="Quick actions">
+        <button class="quick-action" data-action="build" type="button">Build my Movement Science plan</button>
+        <button class="quick-action" data-action="minor" type="button">Add a minor to my plan</button>
+        <button class="quick-action" data-action="honors" type="button">Show me the Honors version</button>
+        <button class="quick-action" data-action="compare" type="button">Compare Movement Science and Health &amp; Fitness</button>
       </section>
 
-      <section class="card" aria-labelledby="output-title">
-        <div class="card-header">
-          <h2 id="output-title">Generated Prompt</h2>
-          <p>Review and copy the prompt or raw intake JSON.</p>
-        </div>
+      <section id="chatThread" class="chat-thread" aria-live="polite"></section>
 
-        <textarea id="generatedPrompt" rows="14" readonly placeholder="Your generated FrogNav GPT prompt will appear here..."></textarea>
-
-        <div class="actions">
-          <button id="generatePlanBtn" class="primary" type="button">Generate Plan</button>
-          <button id="copyPromptBtn" class="primary" type="button">Copy Prompt</button>
-          <button id="copyJsonBtn" class="secondary" type="button">Copy JSON</button>
-          <a
-            id="openFrogNavBtn"
-            class="ghost"
-            href="https://chatgpt.com/g/g-6997e4c3a02c819181d028daa6390158-frognav"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open FrogNav GPT
-          </a>
-        </div>
-
-        <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
-      </section>
-
-      <section class="card" aria-labelledby="agent-output-title">
-        <div class="card-header">
-          <h2 id="agent-output-title">Agent Conversation</h2>
-          <p>Generate a plan first, then continue chatting with FrogNav here.</p>
-        </div>
-
-        <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
-
-        <form id="chatForm" class="chat-input-row">
-          <input id="chatInput" type="text" placeholder="Ask a follow-up question about your plan..." autocomplete="off" />
-          <button id="sendChatBtn" class="primary" type="submit">Send</button>
-          <button id="clearConversationBtn" class="secondary" type="button">Clear Conversation</button>
-        </form>
-
-        <p id="agentOutputStatus" class="status" role="status" aria-live="polite"></p>
-      </section>
+      <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
     </main>
+
+    <div id="profileModal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+        <div class="modal-header">
+          <h2 id="profileTitle">Student Profile</h2>
+          <button id="closeProfileBtn" type="button" class="icon-btn" aria-label="Close">✕</button>
+        </div>
+
+        <form id="profileForm" class="profile-form" novalidate>
+          <label for="majorProgram">Major / Program</label>
+          <select id="majorProgram" name="majorProgram">
+            <option value="">Select a major</option>
+            <option value="Movement Science">Movement Science</option>
+            <option value="Health and Fitness">Health and Fitness</option>
+            <option value="Physical Education">Physical Education</option>
+            <option value="Physical Education with Strength and Conditioning">Physical Education with Strength and Conditioning</option>
+            <option value="Movement Science/MS Athletic Training (3+2)">Movement Science/MS Athletic Training (3+2)</option>
+          </select>
+
+          <label for="minorProgram">Minor</label>
+          <select id="minorProgram" name="minorProgram">
+            <option value="">None</option>
+            <option value="Coaching">Coaching</option>
+            <option value="Fitness">Fitness</option>
+            <option value="Health">Health</option>
+            <option value="Movement Science">Movement Science</option>
+            <option value="Physical Education">Physical Education</option>
+            <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
+          </select>
+
+          <fieldset class="toggle-fieldset">
+            <legend>Honors College</legend>
+            <label><input type="checkbox" id="honorsCollege" name="honorsCollege" /> Include Honors track</label>
+          </fieldset>
+
+          <label for="startTerm">Start term</label>
+          <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2026" />
+
+          <label for="targetGraduation">Target graduation</label>
+          <input id="targetGraduation" name="targetGraduation" type="text" placeholder="Spring 2030" />
+
+          <label for="creditsPerTerm">Credits per term</label>
+          <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="24" placeholder="15" />
+
+          <label><input type="checkbox" id="summerOptional" name="summerOptional" checked /> Summer optional</label>
+
+          <label for="apTransfer">AP / transfer credit</label>
+          <textarea id="apTransfer" name="apTransfer" rows="3" placeholder="None"></textarea>
+
+          <label for="completedCourses">Completed courses</label>
+          <textarea id="completedCourses" name="completedCourses" rows="4" placeholder="KINE 10103, BIOL 10504"></textarea>
+
+          <label for="constraints">Constraints</label>
+          <textarea id="constraints" name="constraints" rows="4" placeholder="No Friday classes"></textarea>
+        </form>
+      </section>
+    </div>
+
+    <footer class="composer-wrap">
+      <form id="chatComposer" class="composer" autocomplete="off">
+        <input id="chatInput" type="text" placeholder="Message FrogNav..." />
+        <button id="sendBtn" type="submit">Send</button>
+      </form>
+    </footer>
 
     <script src="app.js"></script>
   </body>

@@ -11,7 +11,7 @@
     <main class="app-shell">
       <header class="hero">
         <p class="badge">FrogNav Agent Shell</p>
-        <h1>Plan smarter semesters with an intake-driven AI workflow</h1>
+        <h1>Plan Smarter Semesters with FrogNav, Your TCU AI Advising Agent</h1>
         <p>
           Fill in your academic profile, then generate a polished prompt for FrogNav GPT.
           Your data auto-saves locally so you can return anytime.
@@ -20,7 +20,7 @@
 
       <section class="card" aria-labelledby="wizard-title">
         <div class="card-header">
-          <h2 id="wizard-title">Intake Wizard</h2>
+          <h2 id="wizard-title">Tell Us About You</h2>
           <p id="step-indicator" class="step-indicator"></p>
         </div>
 
@@ -47,6 +47,17 @@
               <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
             </select>
 
+            <fieldset class="toggle-fieldset">
+              <legend>Roach Honors College</legend>
+              <div class="toggle-group" role="radiogroup" aria-label="Roach Honors College">
+                <input type="radio" id="honorsNo" name="honorsCollege" value="No" checked />
+                <label for="honorsNo">No</label>
+
+                <input type="radio" id="honorsYes" name="honorsCollege" value="Yes" />
+                <label for="honorsYes">Yes</label>
+              </div>
+            </fieldset>
+
             <label for="startTerm">Start term</label>
             <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2026" />
           </div>
@@ -57,12 +68,6 @@
 
             <label for="creditsPerTerm">Desired credits per Fall/Spring term</label>
             <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="24" placeholder="15" />
-
-            <label for="honorsCollege">Roach Honors College</label>
-            <select id="honorsCollege" name="honorsCollege" required>
-              <option value="No" selected>No</option>
-              <option value="Yes">Yes</option>
-            </select>
           </div>
 
           <div class="wizard-step" data-step="2" hidden>

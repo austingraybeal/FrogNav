@@ -3,6 +3,7 @@ const THREAD_KEY = "frognav-thread";
 const LAST_PLAN_KEY = "frognav-last-plan";
 
 const DEFAULTS = {
+  level: "undergrad",
   majorProgram: "Movement Science",
   minorProgram: "",
   honorsCollege: false,
@@ -16,10 +17,18 @@ const DEFAULTS = {
 };
 
 const QUICK_ACTION_PROMPTS = {
-  build: "Build my Movement Science plan",
-  add_minor: "Add a minor to my plan",
-  honors: "Show me the Honors version",
-  compare: "Compare Movement Science and Health & Fitness",
+  undergrad: {
+    build: "Build my Movement Science plan",
+    add_minor: "Add a minor to my plan",
+    honors: "Show me the Honors version",
+    compare: "Compare Movement Science and Health & Fitness",
+  },
+  grad: {
+    build: "Build my Kinesiology MS plan",
+    add_minor: "Add a minor to my plan",
+    honors: "Show me the Honors version",
+    compare: "Compare Movement Science and Health & Fitness",
+  },
 };
 
 const profileForm = document.getElementById("profileForm");
@@ -50,6 +59,7 @@ function setStatus(message, isError = false) {
 function readProfile() {
   const data = new FormData(profileForm);
   return {
+    level: String(data.get("level") || "undergrad").trim().toLowerCase() === "grad" ? "grad" : "undergrad",
     majorProgram: String(data.get("majorProgram") || "").trim(),
     minorProgram: String(data.get("minorProgram") || "").trim(),
     honorsCollege: Boolean(data.get("honorsCollege")),
@@ -77,6 +87,7 @@ function applyProfile(profile) {
 
 function profileIsEmpty(profile) {
   return !Object.keys(DEFAULTS).some((key) => {
+    if (key === "level") return profile[key] !== DEFAULTS[key];
     if (typeof DEFAULTS[key] === "boolean") return profile[key] !== DEFAULTS[key];
     return String(profile[key] || "").trim() !== "";
   });
@@ -138,6 +149,7 @@ function renderAssistantPlan(container, planJson) {
     <h3>Plan Summary</h3>
     <p>${planJson.planSummary || "No summary provided."}</p>
     <div class="plan-grid">
+      <div><strong>Academic Level</strong><p>${profile.level || "undergrad"}</p></div>
       <div><strong>Major</strong><p>${profile.major || "Not set"}</p></div>
       <div><strong>Minor</strong><p>${profile.minor || "None"}</p></div>
       <div><strong>Honors</strong><p>${profile.honors ? "Yes" : "No"}</p></div>
@@ -287,7 +299,8 @@ async function callAssistant(userContent, action = "chat") {
 
 async function searchCatalogOptions(query) {
   if (!query || query.trim().length < 2) return;
-  const response = await fetch(`/api/catalog/search?q=${encodeURIComponent(query)}&limit=8`);
+  const level = readProfile().level || "undergrad";
+  const response = await fetch(`/api/catalog/search?q=${encodeURIComponent(query)}&limit=8&level=${encodeURIComponent(level)}`);
   const payload = await response.json().catch(() => ({ results: [] }));
   const results = Array.isArray(payload.results) ? payload.results : [];
   catalogOptions.innerHTML = '';
@@ -335,6 +348,27 @@ async function replaceCourseFlow() {
   replaceWarnings.classList.toggle('error', warnings.length > 0);
 }
 
+
+function updateQuickActionLabels() {
+  const level = readProfile().level || "undergrad";
+  const buildButton = quickActionButtons.find((button) => button.dataset.action === "build");
+  if (buildButton) {
+    buildButton.textContent = level === "grad" ? "Build my Kinesiology MS plan" : "Build my Movement Science plan";
+  }
+}
+
+function quickActionPrompt(action, profile) {
+  const level = profile.level || "undergrad";
+  const base = QUICK_ACTION_PROMPTS[level]?.[action] || QUICK_ACTION_PROMPTS.undergrad[action] || "";
+  if (level === "grad" && action === "honors") {
+    return `${base}. Note: Honors College tracks are undergraduate-only; explain graduate equivalent options instead.`;
+  }
+  if (level === "grad" && action === "compare") {
+    return `${base}. Note: Graduate plans do not use undergraduate Gen Ed requirements.`;
+  }
+  return base;
+}
+
 function openModal() {
   profileModal.hidden = false;
 }
@@ -352,13 +386,22 @@ quickActionButtons.forEach((button) => {
       ensureBuildDefaults();
     }
 
-    if (action === "add_minor" && !readProfile().minorProgram) {
+    const profile = readProfile();
+
+    if (action === "add_minor" && !profile.minorProgram && profile.level !== "grad") {
       setStatus("Select a minor in Student Profile before using Add a minor to my plan.", true);
       openModal();
       return;
     }
 
-    callAssistant(QUICK_ACTION_PROMPTS[action], action);
+    if (profile.level === "grad" && action === "honors") {
+      setStatus("Honors College planning is undergraduate-only; graduate plan guidance will skip honors rules.");
+    }
+    if (profile.level === "grad" && action === "compare") {
+      setStatus("Graduate planning does not include undergraduate Gen Ed buckets; comparison will focus on graduate scope.");
+    }
+
+    callAssistant(quickActionPrompt(action, profile), action);
   });
 });
 
@@ -370,8 +413,8 @@ chatComposer.addEventListener("submit", (event) => {
   callAssistant(content, "chat");
 });
 
-profileForm.addEventListener("input", saveProfile);
-profileForm.addEventListener("change", saveProfile);
+profileForm.addEventListener("input", () => { saveProfile(); updateQuickActionLabels(); });
+profileForm.addEventListener("change", () => { saveProfile(); updateQuickActionLabels(); });
 openProfileBtn.addEventListener("click", openModal);
 closeProfileBtn.addEventListener("click", closeModal);
 profileModal.addEventListener("click", (event) => {
@@ -419,5 +462,6 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
     }
   }
 
+  updateQuickActionLabels();
   renderThread();
 })();

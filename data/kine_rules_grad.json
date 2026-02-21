@@ -1,0 +1,53 @@
+{
+  "source": "data/tcu_grad_catalog.pdf",
+  "extractionStatus": "Curated extraction for Kinesiology, MS degree policies and requirements.",
+  "policies": [
+    "Kinesiology, MS students must maintain a minimum 3.0 GPA in graduate coursework.",
+    "Program includes required research core plus specialization/resource/thesis buckets as cataloged."
+  ],
+  "majors": {
+    "Kinesiology, MS": {
+      "default": true,
+      "allowedSubjects": [
+        "KINE",
+        "EDSP",
+        "NUTR",
+        "STAT",
+        "PSYC"
+      ],
+      "buckets": [
+        {
+          "id": "KINEMS-REQUIRED",
+          "name": "Kinesiology MS Required Courses",
+          "requiredCourses": [
+            "KINE 60103",
+            "KINE 60113",
+            "KINE 60213",
+            "KINE 60423",
+            "KINE 60613"
+          ]
+        },
+        {
+          "id": "KINEMS-SPECIALIZATION",
+          "name": "Specialization Coursework",
+          "minCredits": 9
+        },
+        {
+          "id": "KINEMS-RESOURCE",
+          "name": "Resource Coursework",
+          "minCredits": 6
+        },
+        {
+          "id": "KINEMS-THESIS",
+          "name": "Thesis / Non-thesis Option",
+          "minCredits": 6
+        }
+      ]
+    }
+  },
+  "minors": {},
+  "gradPolicy": {
+    "minimumGPA": 3,
+    "note": "Graduate students earning below a 3.0 GPA are subject to probation/dismissal per graduate catalog policy."
+  }
+}

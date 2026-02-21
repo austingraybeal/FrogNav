@@ -255,8 +255,10 @@ async function callAssistant(userContent, action = "chat") {
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const backendMessage = payload.error || "Unknown backend error.";
-      throw new Error(`Request failed (${response.status}): ${backendMessage}`);
+      const errorCode = payload.code || "FROGNAV_UNKNOWN";
+      const detail = payload.detail || payload.error || "No backend detail provided.";
+      const backendMessage = payload.error || "Request failed.";
+      throw new Error(`Request failed (${response.status}) [${errorCode}]: ${backendMessage} — ${detail}`);
     }
 
     lastPlan = payload;

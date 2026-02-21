@@ -55,3 +55,15 @@ Response JSON:
   "planText": "PLAN SUMMARY\n..."
 }
 ```
+
+## Catalog index generation
+
+Runtime APIs load `data/catalog_index.json` only; they do not parse CSV/PDF on request.
+
+Regenerate the index during development with:
+
+```bash
+node scripts/generate_catalog_index.js
+```
+
+The script reads `data/tcu_courses.csv` when present, otherwise the latest `data/courses-report*.csv`, and writes `data/catalog_index.json`.

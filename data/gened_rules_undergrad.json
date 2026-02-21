@@ -1,0 +1,76 @@
+{
+  "source": "data/tcu_undergrad_catalog.pdf",
+  "extractionStatus": "Curated extraction of TCU Core requirement buckets.",
+  "buckets": [
+    {
+      "id": "GENED-ENGLISH",
+      "name": "English Composition",
+      "type": "course_count",
+      "minCourses": 2,
+      "placeholder": "TCU Core: English Composition — choose approved course"
+    },
+    {
+      "id": "GENED-MATH",
+      "name": "Mathematics",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Mathematics — choose approved course"
+    },
+    {
+      "id": "GENED-SCI-NAT",
+      "name": "Natural Science",
+      "type": "course_count",
+      "minCourses": 2,
+      "placeholder": "TCU Core: Natural Science — choose approved course"
+    },
+    {
+      "id": "GENED-HIST",
+      "name": "History",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: History — choose approved course"
+    },
+    {
+      "id": "GENED-GOV",
+      "name": "Government",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Government — choose approved course"
+    },
+    {
+      "id": "GENED-SOCIAL",
+      "name": "Social Sciences",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Social Sciences — choose approved course"
+    },
+    {
+      "id": "GENED-HUM",
+      "name": "Humanities",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Humanities — choose approved course"
+    },
+    {
+      "id": "GENED-RELIGION",
+      "name": "Religion",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Religion — choose approved course"
+    },
+    {
+      "id": "GENED-CULTURE",
+      "name": "Cultural Awareness",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Cultural Awareness — choose approved course"
+    },
+    {
+      "id": "GENED-COMM",
+      "name": "Oral Communication",
+      "type": "course_count",
+      "minCourses": 1,
+      "placeholder": "TCU Core: Oral Communication — choose approved course"
+    }
+  ]
+}

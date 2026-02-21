@@ -1,0 +1,151 @@
+{
+  "source": "data/tcu_undergrad_catalog.pdf",
+  "extractionStatus": "Curated extraction for Kinesiology undergraduate pathways.",
+  "policies": [
+    "No P/NC for KINE core/foundation/emphasis/associated requirements; C- minimum.",
+    "GPA rules: 2.5 for Movement Science and Health and Fitness core+foundation+emphasis.",
+    "GPA rules: 2.75 overall for Physical Education and Physical Education with Strength and Conditioning to remain in program."
+  ],
+  "majors": {
+    "Movement Science": {
+      "default": true,
+      "allowedSubjects": [
+        "KINE",
+        "HLTH"
+      ],
+      "buckets": [
+        {
+          "id": "MS-CORE",
+          "name": "Kinesiology Major Requirements"
+        }
+      ]
+    },
+    "Health and Fitness": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH"
+      ],
+      "buckets": [
+        {
+          "id": "HF-CORE",
+          "name": "Kinesiology Major Requirements"
+        }
+      ]
+    },
+    "Physical Education": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH",
+        "EDUC"
+      ],
+      "buckets": [
+        {
+          "id": "PE-CORE",
+          "name": "Kinesiology Major Requirements"
+        }
+      ]
+    },
+    "Physical Education with Strength and Conditioning": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH",
+        "EDUC"
+      ],
+      "buckets": [
+        {
+          "id": "PESC-CORE",
+          "name": "Kinesiology Major Requirements"
+        }
+      ]
+    },
+    "Movement Science/MS Athletic Training (3+2)": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH",
+        "ATTR"
+      ],
+      "buckets": [
+        {
+          "id": "MSAT-CORE",
+          "name": "Kinesiology Major Requirements"
+        }
+      ]
+    }
+  },
+  "minors": {
+    "Coaching": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH"
+      ],
+      "buckets": [
+        {
+          "id": "MIN-COACHING",
+          "name": "Minor Requirements"
+        }
+      ]
+    },
+    "Fitness": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH"
+      ],
+      "buckets": [
+        {
+          "id": "MIN-FITNESS",
+          "name": "Minor Requirements"
+        }
+      ]
+    },
+    "Health": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH"
+      ],
+      "buckets": [
+        {
+          "id": "MIN-HEALTH",
+          "name": "Minor Requirements"
+        }
+      ]
+    },
+    "Movement Science": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH"
+      ],
+      "buckets": [
+        {
+          "id": "MIN-MS",
+          "name": "Minor Requirements"
+        }
+      ]
+    },
+    "Physical Education": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH",
+        "EDUC"
+      ],
+      "buckets": [
+        {
+          "id": "MIN-PE",
+          "name": "Minor Requirements"
+        }
+      ]
+    },
+    "Sport and Exercise Psychology": {
+      "allowedSubjects": [
+        "KINE",
+        "HLTH",
+        "PSYC"
+      ],
+      "buckets": [
+        {
+          "id": "MIN-SEP",
+          "name": "Minor Requirements"
+        }
+      ]
+    }
+  }
+}

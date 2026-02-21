@@ -1,10 +1,10 @@
 const {
   normalizeCode,
+  normalizeLevel,
+  getLevelContext,
   isKnownCourseOrPlaceholder,
+  isExplicitUndergradPlaceholder,
   resolveBucket,
-  catalogWarning,
-  kineRules,
-  genedRules,
 } = require('./lib/catalogRules');
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
@@ -82,8 +82,9 @@ const PLAN_SCHEMA = {
       profileEcho: {
         type: 'object',
         additionalProperties: false,
-        required: ['major', 'minor', 'honors', 'startTerm', 'targetGraduation', 'creditsPerTerm'],
+        required: ['level', 'major', 'minor', 'honors', 'startTerm', 'targetGraduation', 'creditsPerTerm'],
         properties: {
+          level: { type: 'string', enum: ['undergrad', 'grad'] },
           major: { type: 'string' },
           minor: { type: 'string' },
           honors: { type: 'boolean' },
@@ -108,27 +109,11 @@ function readBody(req) {
   return null;
 }
 
-function logApiError(code, detail, error, context = {}) {
-  console.error('[FrogNav API Error]', {
-    code,
-    detail,
-    context,
-    message: error?.message,
-    stack: error?.stack,
-  });
-}
-
-function sendJsonError(res, status, message, detail, code, context = {}, error = null) {
+function sendJsonError(res, status, detail, code, context = {}, error = null) {
   if (error) {
-    logApiError(code, detail, error, context);
-  } else {
-    console.error('[FrogNav API Error]', { code, detail, context });
+    console.error('[FrogNav API Error]', { code, detail, context, message: error?.message, stack: error?.stack });
   }
-  return res.status(status).json({
-    error: message,
-    detail,
-    code,
-  });
+  return res.status(status).json({ code, detail });
 }
 
 const toNumber = (value, fallback = 0) => {
@@ -174,6 +159,7 @@ function normalizeCourse(course) {
 
 function normalizePlanShape(plan, profile) {
   const safeProfile = profile || {};
+  const level = normalizeLevel(safeProfile.level);
   const defaultTerms = buildDefaultEightTerms(safeProfile.startTerm);
   const generatedTerms = Array.isArray(plan?.terms) ? plan.terms : [];
 
@@ -219,6 +205,7 @@ function normalizePlanShape(plan, profile) {
   });
 
   const profileEcho = {
+    level,
     major: String(plan?.profileEcho?.major || safeProfile.majorProgram || '').trim(),
     minor: String(plan?.profileEcho?.minor || safeProfile.minorProgram || '').trim(),
     honors: Boolean(typeof plan?.profileEcho?.honors === 'boolean' ? plan.profileEcho.honors : safeProfile.honorsCollege),
@@ -246,13 +233,9 @@ function normalizePlanShape(plan, profile) {
   };
 }
 
-function enforcePlanConstraints(plan, profile) {
+function enforcePlanConstraints(plan, profile, levelContext) {
   const warnings = [];
-  const catalogAvailable = !catalogWarning;
-
-  if (!catalogAvailable) {
-    warnings.push(catalogWarning);
-  }
+  if (levelContext.catalogWarning) warnings.push(levelContext.catalogWarning);
 
   const filteredTerms = (plan.terms || []).map((term) => {
     const allowedCourses = [];
@@ -262,16 +245,24 @@ function enforcePlanConstraints(plan, profile) {
         warnings.push('Removed unknown/non-catalog course: (blank).');
         return;
       }
-      if (catalogAvailable && !isKnownCourseOrPlaceholder(code)) {
+      if (!isKnownCourseOrPlaceholder(code, levelContext)) {
         warnings.push(`Removed unknown/non-catalog course: ${course.code || '(blank)'}.`);
         return;
       }
-      const bucket = resolveBucket(code, profile);
-      if (!bucket) {
+      if (levelContext.level === 'grad' && isExplicitUndergradPlaceholder(code, levelContext)) {
+        warnings.push(`Removed placeholder not valid for graduate plans: ${code}.`);
+        return;
+      }
+
+      const bucket = resolveBucket(code, profile, levelContext);
+      if (!bucket && !(levelContext.level === 'undergrad' && isExplicitUndergradPlaceholder(code, levelContext))) {
         warnings.push(`Removed course not mapped to major/minor/gen-ed bucket: ${code}.`);
         return;
       }
-      allowedCourses.push({ ...course, code, bucket: bucket.id, notes: [course.notes, bucket.label].filter(Boolean).join(' | ') });
+
+      const bucketId = bucket?.id || 'GENED-PLACEHOLDER';
+      const bucketLabel = bucket?.label || 'GenEd Placeholder';
+      allowedCourses.push({ ...course, code, bucket: bucketId, notes: [course.notes, bucketLabel].filter(Boolean).join(' | ') });
     });
     const totalCredits = allowedCourses.reduce((sum, item) => sum + toNumber(item.credits, 0), 0);
     return { ...term, courses: allowedCourses, totalCredits };
@@ -285,53 +276,37 @@ function enforcePlanConstraints(plan, profile) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return sendJsonError(
-      res,
-      405,
-      'Method not allowed.',
-      'Use POST /api/plan with JSON body.',
-      'FROGNAV_METHOD_NOT_ALLOWED',
-      { method: req.method }
-    );
-  }
+  try {
+    if (req.method !== 'POST') {
+      return sendJsonError(res, 405, 'Use POST /api/plan with JSON body.', 'FROGNAV_METHOD_NOT_ALLOWED', { method: req.method });
+    }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return sendJsonError(
-      res,
-      500,
-      'FrogNav is temporarily unavailable. Please try again soon.',
-      'OPENAI_API_KEY is not configured in runtime environment.',
-      'FROGNAV_CONFIG_ERROR'
-    );
-  }
+    if (!process.env.OPENAI_API_KEY) {
+      return sendJsonError(res, 500, 'OPENAI_API_KEY is not configured in runtime environment.', 'FROGNAV_CONFIG_ERROR');
+    }
 
-  const body = readBody(req);
-  if (!body || typeof body.profile !== 'object') {
-    return sendJsonError(
-      res,
-      400,
-      'Invalid request.',
-      'Expected JSON: { action, profile, lastPlan?, message? }.',
-      'FROGNAV_BAD_REQUEST'
-    );
-  }
+    const body = readBody(req);
+    if (!body || typeof body.profile !== 'object') {
+      return sendJsonError(res, 400, 'Expected JSON: { action, profile, lastPlan?, message? }.', 'FROGNAV_BAD_REQUEST');
+    }
 
-  const action = VALID_ACTIONS.has(body.action) ? body.action : 'chat';
-  const message = typeof body.message === 'string' ? body.message : '';
-  const profile = body.profile || {};
-  const lastPlan = body.lastPlan && typeof body.lastPlan === 'object' ? body.lastPlan : null;
+    const action = VALID_ACTIONS.has(body.action) ? body.action : 'chat';
+    const message = typeof body.message === 'string' ? body.message : '';
+    const profile = body.profile || {};
+    profile.level = normalizeLevel(profile.level);
+    const levelContext = getLevelContext(profile.level);
+    const lastPlan = body.lastPlan && typeof body.lastPlan === 'object' ? body.lastPlan : null;
 
-  const systemPrompt = `You are FrogNav GPT, a TCU kinesiology planning advisor.
+    const systemPrompt = `You are FrogNav GPT, a TCU kinesiology planning advisor for ${profile.level} students.
 Return ONLY valid JSON matching the requested schema. No markdown, no commentary, no extra keys.
 
-Allowed major keys: ${Object.keys(kineRules.majors || {}).join(', ')}
-Allowed minor keys: ${Object.keys(kineRules.minors || {}).join(', ')}
-Gen-ed placeholders are allowed when exact approved classes are unknown: ${(genedRules.buckets || []).map((bucket) => bucket.placeholder).join(' || ')}
+Academic level: ${profile.level}
+Allowed major keys: ${Object.keys(levelContext.kineRules.majors || {}).join(', ')}
+Allowed minor keys: ${Object.keys(levelContext.kineRules.minors || {}).join(', ') || '(none)'}
+Gen-ed placeholders (undergrad only): ${(levelContext.genedRules.buckets || []).map((bucket) => bucket.placeholder).join(' || ') || 'none'}
 
 Policy rules (must be reflected in plans/warnings/checklist where applicable):
-${(kineRules.policies || []).map((line) => `- ${line}`).join('\n')}
-
+${(levelContext.kineRules.policies || []).map((line) => `- ${line}`).join('\n')}
 Required assumptions lines (include exactly):
 - Term availability not provided; verify in TCU Class Search.
 - Prerequisite sequencing assumed based on standard progression.
@@ -339,7 +314,6 @@ Required assumptions lines (include exactly):
 Disclaimer must end exactly with:
 ${REQUIRED_DISCLAIMER}`;
 
-  try {
     const response = await fetch(OPENAI_URL, {
       method: 'POST',
       headers: {
@@ -360,54 +334,27 @@ ${REQUIRED_DISCLAIMER}`;
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const backendMessage = payload?.error?.message || payload?.error?.code || 'Upstream model request failed.';
-      return sendJsonError(
-        res,
-        response.status,
-        'Planning provider request failed.',
-        String(backendMessage).slice(0, 240),
-        'FROGNAV_OPENAI_ERROR',
-        { upstreamStatus: response.status }
-      );
+      return sendJsonError(res, response.status, String(backendMessage).slice(0, 240), 'FROGNAV_OPENAI_ERROR', {
+        upstreamStatus: response.status,
+      });
     }
 
     const content = payload?.choices?.[0]?.message?.content;
     if (!content || typeof content !== 'string') {
-      return sendJsonError(
-        res,
-        502,
-        'Planning provider returned invalid content.',
-        'Response did not include message content text.',
-        'FROGNAV_OPENAI_BAD_PAYLOAD'
-      );
+      return sendJsonError(res, 502, 'Response did not include message content text.', 'FROGNAV_OPENAI_BAD_PAYLOAD');
     }
 
     let parsedPlan = null;
     try {
       parsedPlan = JSON.parse(content);
     } catch (error) {
-      return sendJsonError(
-        res,
-        502,
-        'Planning provider returned malformed JSON.',
-        'Unable to parse JSON schema response from provider.',
-        'FROGNAV_OPENAI_PARSE_ERROR',
-        {},
-        error
-      );
+      return sendJsonError(res, 502, 'Unable to parse JSON schema response from provider.', 'FROGNAV_OPENAI_PARSE_ERROR', {}, error);
     }
 
     const plan = normalizePlanShape(parsedPlan, profile);
-    const constrained = enforcePlanConstraints(plan, profile);
+    const constrained = enforcePlanConstraints(plan, profile, levelContext);
     return res.status(200).json(constrained);
   } catch (error) {
-    return sendJsonError(
-      res,
-      500,
-      'Unexpected planning service error.',
-      String(error?.message || 'Unknown error').slice(0, 240),
-      'FROGNAV_UNEXPECTED_ERROR',
-      {},
-      error
-    );
+    return sendJsonError(res, 500, String(error?.message || 'Unknown error').slice(0, 240), 'FROGNAV_UNEXPECTED_ERROR', {}, error);
   }
 };

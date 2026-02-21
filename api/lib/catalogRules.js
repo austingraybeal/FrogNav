@@ -3,12 +3,24 @@ const path = require('path');
 
 const root = path.join(__dirname, '..', '..');
 
-function loadJson(relativePath) {
+function loadJson(relativePath, options = {}) {
+  const { optional = false, fallback = null } = options;
   const fullPath = path.join(root, relativePath);
-  return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+  try {
+    return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+  } catch (error) {
+    if (optional && error.code === 'ENOENT') {
+      return fallback;
+    }
+    throw error;
+  }
 }
 
-const catalogIndex = loadJson('data/catalog_index.json');
+const catalogPath = path.join(root, 'data', 'catalog_index.json');
+const catalogIndex = loadJson('data/catalog_index.json', { optional: true, fallback: {} });
+const catalogWarning = fs.existsSync(catalogPath)
+  ? null
+  : 'Catalog index unavailable at runtime; using placeholders and limited validation.';
 const kineRules = loadJson('data/kine_rules.json');
 const genedRules = loadJson('data/gened_rules.json');
 
@@ -92,6 +104,7 @@ function searchCatalog(query, limit = 12) {
 
 module.exports = {
   catalogIndex,
+  catalogWarning,
   kineRules,
   genedRules,
   normalizeCode,

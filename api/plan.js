@@ -2,6 +2,7 @@ const {
   normalizeCode,
   isKnownCourseOrPlaceholder,
   resolveBucket,
+  catalogWarning,
   kineRules,
   genedRules,
 } = require('./lib/catalogRules');
@@ -105,6 +106,29 @@ function readBody(req) {
     }
   }
   return null;
+}
+
+function logApiError(code, detail, error, context = {}) {
+  console.error('[FrogNav API Error]', {
+    code,
+    detail,
+    context,
+    message: error?.message,
+    stack: error?.stack,
+  });
+}
+
+function sendJsonError(res, status, message, detail, code, context = {}, error = null) {
+  if (error) {
+    logApiError(code, detail, error, context);
+  } else {
+    console.error('[FrogNav API Error]', { code, detail, context });
+  }
+  return res.status(status).json({
+    error: message,
+    detail,
+    code,
+  });
 }
 
 const toNumber = (value, fallback = 0) => {
@@ -224,11 +248,21 @@ function normalizePlanShape(plan, profile) {
 
 function enforcePlanConstraints(plan, profile) {
   const warnings = [];
+  const catalogAvailable = !catalogWarning;
+
+  if (!catalogAvailable) {
+    warnings.push(catalogWarning);
+  }
+
   const filteredTerms = (plan.terms || []).map((term) => {
     const allowedCourses = [];
     (term.courses || []).forEach((course) => {
       const code = normalizeCode(course.code);
-      if (!code || !isKnownCourseOrPlaceholder(code)) {
+      if (!code) {
+        warnings.push('Removed unknown/non-catalog course: (blank).');
+        return;
+      }
+      if (catalogAvailable && !isKnownCourseOrPlaceholder(code)) {
         warnings.push(`Removed unknown/non-catalog course: ${course.code || '(blank)'}.`);
         return;
       }
@@ -251,15 +285,36 @@ function enforcePlanConstraints(plan, profile) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed.' });
+  if (req.method !== 'POST') {
+    return sendJsonError(
+      res,
+      405,
+      'Method not allowed.',
+      'Use POST /api/plan with JSON body.',
+      'FROGNAV_METHOD_NOT_ALLOWED',
+      { method: req.method }
+    );
+  }
 
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'FrogNav is temporarily unavailable. Please try again soon.' });
+    return sendJsonError(
+      res,
+      500,
+      'FrogNav is temporarily unavailable. Please try again soon.',
+      'OPENAI_API_KEY is not configured in runtime environment.',
+      'FROGNAV_CONFIG_ERROR'
+    );
   }
 
   const body = readBody(req);
   if (!body || typeof body.profile !== 'object') {
-    return res.status(400).json({ error: 'Invalid request. Expected JSON: { action, profile, lastPlan?, message? }.' });
+    return sendJsonError(
+      res,
+      400,
+      'Invalid request.',
+      'Expected JSON: { action, profile, lastPlan?, message? }.',
+      'FROGNAV_BAD_REQUEST'
+    );
   }
 
   const action = VALID_ACTIONS.has(body.action) ? body.action : 'chat';
@@ -305,18 +360,54 @@ ${REQUIRED_DISCLAIMER}`;
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const backendMessage = payload?.error?.message || payload?.error?.code || 'Upstream model request failed.';
-      return res.status(response.status).json({ error: String(backendMessage) });
+      return sendJsonError(
+        res,
+        response.status,
+        'Planning provider request failed.',
+        String(backendMessage).slice(0, 240),
+        'FROGNAV_OPENAI_ERROR',
+        { upstreamStatus: response.status }
+      );
     }
 
     const content = payload?.choices?.[0]?.message?.content;
     if (!content || typeof content !== 'string') {
-      return res.status(502).json({ error: 'Upstream model returned empty content.' });
+      return sendJsonError(
+        res,
+        502,
+        'Planning provider returned invalid content.',
+        'Response did not include message content text.',
+        'FROGNAV_OPENAI_BAD_PAYLOAD'
+      );
     }
 
-    const plan = normalizePlanShape(JSON.parse(content), profile);
+    let parsedPlan = null;
+    try {
+      parsedPlan = JSON.parse(content);
+    } catch (error) {
+      return sendJsonError(
+        res,
+        502,
+        'Planning provider returned malformed JSON.',
+        'Unable to parse JSON schema response from provider.',
+        'FROGNAV_OPENAI_PARSE_ERROR',
+        {},
+        error
+      );
+    }
+
+    const plan = normalizePlanShape(parsedPlan, profile);
     const constrained = enforcePlanConstraints(plan, profile);
     return res.status(200).json(constrained);
   } catch (error) {
-    return res.status(500).json({ error: error?.message || 'Unexpected planning service error.' });
+    return sendJsonError(
+      res,
+      500,
+      'Unexpected planning service error.',
+      String(error?.message || 'Unknown error').slice(0, 240),
+      'FROGNAV_UNEXPECTED_ERROR',
+      {},
+      error
+    );
   }
 };

@@ -1,0 +1,17 @@
+{
+  "source": "data/tcu_catalog.pdf",
+  "extractionStatus": "Framework extracted; approved-course enumerations need registrar verification",
+  "framework": "TCU Core Curriculum / General Education",
+  "buckets": [
+    { "id": "GENED-ENGLISH", "name": "English Composition", "type": "course_count", "minCourses": 2, "approvedCourses": [], "placeholder": "TCU Core: English Composition — choose approved course", "needsReview": true },
+    { "id": "GENED-MATH", "name": "Mathematics", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Mathematics — choose approved course", "needsReview": true },
+    { "id": "GENED-SCI-NAT", "name": "Natural Science", "type": "course_count", "minCourses": 2, "approvedCourses": [], "placeholder": "TCU Core: Natural Science — choose approved course", "needsReview": true },
+    { "id": "GENED-HIST", "name": "History", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: History — choose approved course", "needsReview": true },
+    { "id": "GENED-GOV", "name": "Government", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Government — choose approved course", "needsReview": true },
+    { "id": "GENED-SOCIAL", "name": "Social Sciences", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Social Sciences — choose approved course", "needsReview": true },
+    { "id": "GENED-HUM", "name": "Humanities", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Humanities — choose approved course", "needsReview": true },
+    { "id": "GENED-RELIGION", "name": "Religion", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Religion — choose approved course", "needsReview": true },
+    { "id": "GENED-CULTURE", "name": "Cultural Awareness", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Cultural Awareness — choose approved course", "needsReview": true },
+    { "id": "GENED-COMM", "name": "Oral Communication", "type": "course_count", "minCourses": 1, "approvedCourses": [], "placeholder": "TCU Core: Oral Communication — choose approved course", "needsReview": true }
+  ]
+}

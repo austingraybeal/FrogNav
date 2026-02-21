@@ -32,6 +32,11 @@ const chatComposer = document.getElementById("chatComposer");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const quickActionButtons = [...document.querySelectorAll(".quick-action")];
+const replaceFromInput = document.getElementById("replaceFrom");
+const replaceToInput = document.getElementById("replaceTo");
+const replaceBtn = document.getElementById("replaceBtn");
+const catalogOptions = document.getElementById("catalogOptions");
+const replaceWarnings = document.getElementById("replaceWarnings");
 
 let messages = [];
 let lastPlan = null;
@@ -277,6 +282,57 @@ async function callAssistant(userContent, action = "chat") {
   }
 }
 
+
+async function searchCatalogOptions(query) {
+  if (!query || query.trim().length < 2) return;
+  const response = await fetch(`/api/catalog/search?q=${encodeURIComponent(query)}&limit=8`);
+  const payload = await response.json().catch(() => ({ results: [] }));
+  const results = Array.isArray(payload.results) ? payload.results : [];
+  catalogOptions.innerHTML = '';
+  results.forEach((item) => {
+    const option = document.createElement('option');
+    option.value = item.code;
+    option.label = `${item.code} — ${item.description || ''}`;
+    catalogOptions.appendChild(option);
+  });
+}
+
+async function replaceCourseFlow() {
+  const fromCode = replaceFromInput.value.trim().toUpperCase();
+  const toCode = replaceToInput.value.trim().toUpperCase();
+  if (!lastPlan) {
+    replaceWarnings.textContent = 'Build a plan before replacing a course.';
+    replaceWarnings.classList.add('error');
+    return;
+  }
+  if (!fromCode || !toCode) {
+    replaceWarnings.textContent = 'Enter both from/to course codes.';
+    replaceWarnings.classList.add('error');
+    return;
+  }
+  const response = await fetch('/api/plan/replace', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ planJson: lastPlan, fromCode, toCode, profile: readProfile() }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    replaceWarnings.textContent = payload.error || 'Replace failed.';
+    replaceWarnings.classList.add('error');
+    return;
+  }
+
+  lastPlan = payload.planJson;
+  persistLastPlan();
+  messages.push({ role: 'assistant', content: `Replaced ${fromCode} with ${toCode}.`, planJson: lastPlan });
+  persistConversation();
+  renderThread();
+
+  const warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
+  replaceWarnings.textContent = warnings.length ? warnings.join(' ') : 'Course replacement applied.';
+  replaceWarnings.classList.toggle('error', warnings.length > 0);
+}
+
 function openModal() {
   profileModal.hidden = false;
 }
@@ -319,6 +375,17 @@ closeProfileBtn.addEventListener("click", closeModal);
 profileModal.addEventListener("click", (event) => {
   if (event.target.matches("[data-close-modal]")) closeModal();
 });
+
+if (replaceFromInput && replaceToInput && replaceBtn) {
+  replaceFromInput.addEventListener('input', () => searchCatalogOptions(replaceFromInput.value));
+  replaceToInput.addEventListener('input', () => searchCatalogOptions(replaceToInput.value));
+  replaceBtn.addEventListener('click', () => {
+    replaceCourseFlow().catch((error) => {
+      replaceWarnings.textContent = error.message || 'Replace failed.';
+      replaceWarnings.classList.add('error');
+    });
+  });
+}
 
 (function bootstrap() {
   const savedProfile = localStorage.getItem(PROFILE_KEY);

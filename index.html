@@ -24,6 +24,24 @@
 
       <section id="chatThread" class="chat-thread" aria-live="polite"></section>
 
+      
+      <section class="replace-panel" aria-label="Replace a course">
+        <h3>Replace a course</h3>
+        <div class="replace-grid">
+          <div>
+            <label for="replaceFrom">From</label>
+            <input id="replaceFrom" list="catalogOptions" placeholder="e.g. KINE 20203" />
+          </div>
+          <div>
+            <label for="replaceTo">To</label>
+            <input id="replaceTo" list="catalogOptions" placeholder="e.g. KINE 3XXXX" />
+          </div>
+          <button id="replaceBtn" type="button">Replace</button>
+        </div>
+        <p id="replaceWarnings" class="status"></p>
+        <datalist id="catalogOptions"></datalist>
+      </section>
+
       <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
     </main>
 

@@ -18,24 +18,44 @@ function normalizeLevel(level) {
   return String(level || 'undergrad').trim().toLowerCase() === 'grad' ? 'grad' : 'undergrad';
 }
 
-const LEVEL_DATA = {
+const LEVEL_PATHS = {
   undergrad: {
     catalogPath: path.join(root, 'data', 'catalog_index_undergrad.json'),
-    catalogIndex: loadJson('data/catalog_index_undergrad.json', { optional: true, fallback: {} }),
-    kineRules: loadJson('data/kine_rules_undergrad.json'),
-    genedRules: loadJson('data/gened_rules_undergrad.json', { optional: true, fallback: { buckets: [] } }),
+    catalogIndexPath: 'data/catalog_index_undergrad.json',
+    kineRulesPath: 'data/kine_rules_undergrad.json',
+    genedRulesPath: 'data/gened_rules_undergrad.json',
   },
   grad: {
     catalogPath: path.join(root, 'data', 'catalog_index_grad.json'),
-    catalogIndex: loadJson('data/catalog_index_grad.json', { optional: true, fallback: {} }),
-    kineRules: loadJson('data/kine_rules_grad.json'),
-    genedRules: { buckets: [] },
+    catalogIndexPath: 'data/catalog_index_grad.json',
+    kineRulesPath: 'data/kine_rules_grad.json',
+    genedRulesPath: null,
   },
 };
 
+const levelDataCache = new Map();
+
+function getCachedLevelData(level) {
+  const normalizedLevel = normalizeLevel(level);
+  if (levelDataCache.has(normalizedLevel)) return levelDataCache.get(normalizedLevel);
+
+  const paths = LEVEL_PATHS[normalizedLevel];
+  const loaded = {
+    catalogPath: paths.catalogPath,
+    catalogIndex: loadJson(paths.catalogIndexPath, { optional: true, fallback: {} }),
+    kineRules: loadJson(paths.kineRulesPath),
+    genedRules: paths.genedRulesPath
+      ? loadJson(paths.genedRulesPath, { optional: true, fallback: { buckets: [] } })
+      : { buckets: [] },
+  };
+
+  levelDataCache.set(normalizedLevel, loaded);
+  return loaded;
+}
+
 function getLevelContext(level) {
   const normalizedLevel = normalizeLevel(level);
-  const data = LEVEL_DATA[normalizedLevel];
+  const data = getCachedLevelData(normalizedLevel);
   const catalogWarning = fs.existsSync(data.catalogPath)
     ? null
     : `Catalog index unavailable for ${normalizedLevel} at runtime; using limited validation.`;

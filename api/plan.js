@@ -1,11 +1,5 @@
-const {
-  normalizeCode,
-  normalizeLevel,
-  getLevelContext,
-  isKnownCourseOrPlaceholder,
-  isExplicitUndergradPlaceholder,
-  resolveBucket,
-} = require('./lib/catalogRules');
+const fs = require('fs');
+const path = require('path');
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = 'gpt-4o-mini';
@@ -97,6 +91,10 @@ const PLAN_SCHEMA = {
   },
 };
 
+function requireCatalogRules() {
+  return require('./lib/catalogRules');
+}
+
 function readBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
   if (typeof req.body === 'string') {
@@ -109,11 +107,18 @@ function readBody(req) {
   return null;
 }
 
-function sendJsonError(res, status, detail, code, context = {}, error = null) {
-  if (error) {
-    console.error('[FrogNav API Error]', { code, detail, context, message: error?.message, stack: error?.stack });
-  }
+function sendJsonError(res, status, detail, code) {
   return res.status(status).json({ code, detail });
+}
+
+function sendInternalError(res, error, where) {
+  const stackTop = typeof error?.stack === 'string' ? error.stack.split('\n')[0] : undefined;
+  return res.status(500).json({
+    code: 'FROGNAV_INTERNAL',
+    detail: error?.message || 'Unknown backend error',
+    where,
+    stackTop,
+  });
 }
 
 const toNumber = (value, fallback = 0) => {
@@ -145,7 +150,25 @@ function buildDefaultEightTerms(startTermRaw) {
   return terms;
 }
 
+function requiredDataFiles() {
+  return {
+    undergradCsv: path.join(process.cwd(), 'data', 'tcu_courses_undergrad.csv'),
+    gradCsv: path.join(process.cwd(), 'data', 'tcu_courses_grad.csv'),
+    undergradPdf: path.join(process.cwd(), 'data', 'tcu_undergrad_catalog.pdf'),
+    gradPdf: path.join(process.cwd(), 'data', 'tcu_grad_catalog.pdf'),
+    kineRules: path.join(process.cwd(), 'data', 'kine_rules_undergrad.json'),
+    genedRules: path.join(process.cwd(), 'data', 'gened_rules_undergrad.json'),
+  };
+}
+
+function findMissingFiles() {
+  return Object.entries(requiredDataFiles())
+    .filter(([, filePath]) => !fs.existsSync(filePath))
+    .map(([key]) => key);
+}
+
 function normalizeCourse(course) {
+  const { normalizeCode } = requireCatalogRules();
   const normalizedCode = normalizeCode(course?.code || '');
   const bucket = course?.bucket || null;
   return {
@@ -158,6 +181,7 @@ function normalizeCourse(course) {
 }
 
 function normalizePlanShape(plan, profile) {
+  const { normalizeLevel } = requireCatalogRules();
   const safeProfile = profile || {};
   const level = normalizeLevel(safeProfile.level);
   const defaultTerms = buildDefaultEightTerms(safeProfile.startTerm);
@@ -234,6 +258,7 @@ function normalizePlanShape(plan, profile) {
 }
 
 function enforcePlanConstraints(plan, profile, levelContext) {
+  const { normalizeCode, isKnownCourseOrPlaceholder, isExplicitUndergradPlaceholder, resolveBucket } = requireCatalogRules();
   const warnings = [];
   if (levelContext.catalogWarning) warnings.push(levelContext.catalogWarning);
 
@@ -275,14 +300,48 @@ function enforcePlanConstraints(plan, profile, levelContext) {
   };
 }
 
+function fallbackPlan(profile, warning) {
+  const safeLevel = profile?.level === 'grad' ? 'grad' : 'undergrad';
+  return {
+    planSummary: 'Fallback mode plan generated. Core catalog validation is temporarily unavailable.',
+    terms: buildDefaultEightTerms(profile?.startTerm).map((term) => ({ term, courses: [], totalCredits: 0 })),
+    requirementChecklist: [
+      { item: 'Advising review required', status: 'Needs Review', notes: 'Fallback mode returned a lightweight plan.' },
+    ],
+    policyWarnings: [warning, 'Fallback mode is active. Validate all requirements with official advising.'],
+    adjustmentOptions: ['Retry after backend catalog data is healthy.', 'Run /api/health to verify runtime files and configuration.'],
+    disclaimer: REQUIRED_DISCLAIMER,
+    assumptions: [
+      'Term availability not provided; verify in TCU Class Search.',
+      'Prerequisite sequencing assumed based on standard progression.',
+    ],
+    questions: ['Do you want a targeted term-by-term draft once catalog validation recovers?'],
+    profileEcho: {
+      level: safeLevel,
+      major: String(profile?.majorProgram || '').trim(),
+      minor: String(profile?.minorProgram || '').trim(),
+      honors: Boolean(profile?.honorsCollege),
+      startTerm: String(profile?.startTerm || 'Fall 2026').trim(),
+      targetGraduation: String(profile?.targetGraduation || '').trim(),
+      creditsPerTerm: toNumber(profile?.creditsPerTerm, 15),
+    },
+    warnings: ['fallback mode is active'],
+  };
+}
+
 module.exports = async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
-      return sendJsonError(res, 405, 'Use POST /api/plan with JSON body.', 'FROGNAV_METHOD_NOT_ALLOWED', { method: req.method });
+      return sendJsonError(res, 405, 'Use POST /api/plan with JSON body.', 'FROGNAV_METHOD_NOT_ALLOWED');
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return sendJsonError(res, 500, 'OPENAI_API_KEY is not configured in runtime environment.', 'FROGNAV_CONFIG_ERROR');
+      return res.status(503).json({ code: 'FROGNAV_CONFIG', detail: 'OPENAI_API_KEY missing' });
+    }
+
+    const missing = findMissingFiles();
+    if (missing.length) {
+      return res.status(503).json({ code: 'FROGNAV_DATA_MISSING', missing });
     }
 
     const body = readBody(req);
@@ -293,9 +352,17 @@ module.exports = async function handler(req, res) {
     const action = VALID_ACTIONS.has(body.action) ? body.action : 'chat';
     const message = typeof body.message === 'string' ? body.message : '';
     const profile = body.profile || {};
+    const { normalizeLevel, getLevelContext } = requireCatalogRules();
+
     profile.level = normalizeLevel(profile.level);
-    const levelContext = getLevelContext(profile.level);
     const lastPlan = body.lastPlan && typeof body.lastPlan === 'object' ? body.lastPlan : null;
+
+    let levelContext;
+    try {
+      levelContext = getLevelContext(profile.level);
+    } catch (catalogError) {
+      return res.status(200).json(fallbackPlan(profile, `Catalog loading failed: ${catalogError.message || 'unknown error'}`));
+    }
 
     const systemPrompt = `You are FrogNav GPT, a TCU kinesiology planning advisor for ${profile.level} students.
 Return ONLY valid JSON matching the requested schema. No markdown, no commentary, no extra keys.
@@ -334,9 +401,7 @@ ${REQUIRED_DISCLAIMER}`;
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const backendMessage = payload?.error?.message || payload?.error?.code || 'Upstream model request failed.';
-      return sendJsonError(res, response.status, String(backendMessage).slice(0, 240), 'FROGNAV_OPENAI_ERROR', {
-        upstreamStatus: response.status,
-      });
+      return sendJsonError(res, response.status, String(backendMessage).slice(0, 240), 'FROGNAV_OPENAI_ERROR');
     }
 
     const content = payload?.choices?.[0]?.message?.content;
@@ -344,17 +409,17 @@ ${REQUIRED_DISCLAIMER}`;
       return sendJsonError(res, 502, 'Response did not include message content text.', 'FROGNAV_OPENAI_BAD_PAYLOAD');
     }
 
-    let parsedPlan = null;
+    let parsedPlan;
     try {
       parsedPlan = JSON.parse(content);
     } catch (error) {
-      return sendJsonError(res, 502, 'Unable to parse JSON schema response from provider.', 'FROGNAV_OPENAI_PARSE_ERROR', {}, error);
+      return sendInternalError(res, error, 'parse-openai-json');
     }
 
     const plan = normalizePlanShape(parsedPlan, profile);
     const constrained = enforcePlanConstraints(plan, profile, levelContext);
     return res.status(200).json(constrained);
   } catch (error) {
-    return sendJsonError(res, 500, String(error?.message || 'Unknown error').slice(0, 240), 'FROGNAV_UNEXPECTED_ERROR', {}, error);
+    return sendInternalError(res, error, 'handler');
   }
 };

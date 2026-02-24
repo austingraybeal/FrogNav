@@ -265,12 +265,28 @@ async function callAssistant(userContent, action = "chat") {
       }),
     });
 
-    const payload = await response.json().catch(() => ({}));
+    const raw = await response.text();
+    let payload = null;
+    try {
+      payload = raw ? JSON.parse(raw) : null;
+    } catch {
+      payload = null;
+    }
+
     if (!response.ok) {
+      if (!payload || typeof payload !== "object") {
+        throw new Error(
+          `Request failed (${response.status}). Backend returned non-JSON error. Check /api/health and Vercel logs.`
+        );
+      }
       const errorCode = payload.code || "FROGNAV_UNKNOWN";
-      const detail = payload.detail || payload.error || "No backend detail provided.";
-      const backendMessage = payload.error || "Request failed.";
-      throw new Error(`Request failed (${response.status}) [${errorCode}]: ${backendMessage} — ${detail}`);
+      const detail = payload.detail || "No backend detail provided.";
+      const where = payload.where || "unknown";
+      throw new Error(`Request failed (${response.status}) [${errorCode}] ${detail} (where: ${where})`);
+    }
+
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Backend returned non-JSON error. Check /api/health and Vercel logs.");
     }
 
     lastPlan = payload;

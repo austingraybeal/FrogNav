@@ -1,4 +1,5 @@
-const { normalizeLevel, getLevelContext, searchCatalog } = require('../lib/catalogRules');
+'use strict';
+const { normalizeLevel, getLevelContext, searchCatalog } = require('../../lib/catalogRules'); // ← fixed path
 
 module.exports = async function handler(req, res) {
   // ── Method guard ────────────────────────────────────────────────────────────
@@ -12,8 +13,8 @@ module.exports = async function handler(req, res) {
   // ── Parse + validate query params ───────────────────────────────────────────
   const q = String(req.query?.q || '').trim();
 
-  // Early return for empty query — no need to load catalog rules at all
-  if (!q) {
+  // Early return for empty or too-short query
+  if (!q || q.length < 2) {
     return res.status(200).json({ results: [] });
   }
 

@@ -1,6 +1,139 @@
 {
-  "buckets": [
-    { "id": "GENED-ENG", "name": "English Composition", "placeholder": "ENGL 10803" },
-    { "id": "GENED-MATH", "name": "Mathematics",        "placeholder": "MATH 10043" }
+  "source": "TCU Undergraduate Catalog 2025-2026",
+  "description": "TCU Core Curriculum - all BS students including Kinesiology majors must complete 39-63 hours of Core Curriculum. Some courses may satisfy multiple requirements, reducing total hours needed.",
+  "totalHoursRange": "39-63",
+  "competencies": [
+    "Critical and Creative Thinking (30 hours)",
+    "Quantitative and Scientific Reasoning (9 hours)",
+    "Communication (15 hours)",
+    "Responsible Citizenship (9 hours)"
+  ],
+  "requirements": {
+    "Critical and Creative Thinking": {
+      "totalHours": 30,
+      "buckets": [
+        {
+          "id": "FAR",
+          "name": "Fine Arts",
+          "hours": 3,
+          "outcome": "Explore the creative and expressive processes of the human experience in the arts."
+        },
+        {
+          "id": "HUM",
+          "name": "Humanities",
+          "hours": 9,
+          "outcome": "Use humanistic modes of inquiry to analyze human experiences and expressions across space and time."
+        },
+        {
+          "id": "SSC",
+          "name": "Social Sciences",
+          "hours": 9,
+          "outcome": "Apply social science methodologies to analyze fundamental social processes that characterize human experiences."
+        },
+        {
+          "id": "HT",
+          "name": "Historical Traditions",
+          "hours": 3,
+          "outcome": "Examine the processes that create change over time in the human experience."
+        },
+        {
+          "id": "LT",
+          "name": "Literary Traditions",
+          "hours": 3,
+          "outcome": "Examine literature's connections to society and culture."
+        },
+        {
+          "id": "RT",
+          "name": "Religious Traditions",
+          "hours": 3,
+          "outcome": "Examine the role of religion in society, culture and individual life."
+        }
+      ]
+    },
+    "Quantitative and Scientific Reasoning": {
+      "totalHours": 9,
+      "buckets": [
+        {
+          "id": "MATH",
+          "name": "Mathematics",
+          "hours": 3,
+          "outcome": "Apply mathematical reasoning to solve problems.",
+          "commonCourses": [
+            "MATH 10043 Elementary Statistics",
+            "MATH 10054 Precalculus with Trigonometry"
+          ]
+        },
+        {
+          "id": "NSC",
+          "name": "Natural Sciences",
+          "hours": 6,
+          "outcome": "Use scientific reasoning to evaluate ideas in the natural world.",
+          "commonCourses": [
+            "BIOL 20204 Anatomy & Physiology",
+            "BIOL 20214 Anatomy & Physiology",
+            "CHEM 10113 General Chemistry I",
+            "PHYS 10154 General Physics I with Lab"
+          ]
+        }
+      ]
+    },
+    "Communication": {
+      "totalHours": 15,
+      "buckets": [
+        {
+          "id": "OCO",
+          "name": "Oral Communication",
+          "hours": 3,
+          "outcome": "Express messages in various situations using appropriate verbal and nonverbal communication skills."
+        },
+        {
+          "id": "WCO1",
+          "name": "Written Communication 1",
+          "hours": 3,
+          "outcome": "Express ideas in various situations using writing processes and strategies."
+        },
+        {
+          "id": "WCO2",
+          "name": "Written Communication 2",
+          "hours": 3,
+          "outcome": "Analyze and compose evidence-based arguments in various forms."
+        },
+        {
+          "id": "WEM",
+          "name": "Writing Emphasis",
+          "hours": 3,
+          "outcome": "Write for a specific discipline, profession, or field using a writing process that emphasizes revision."
+        }
+      ]
+    },
+    "Responsible Citizenship": {
+      "totalHours": 9,
+      "buckets": [
+        {
+          "id": "CA",
+          "name": "Cultural Awareness",
+          "hours": 3,
+          "outcome": "Explore culture and cultural phenomena as sites of identity, difference, understanding, or collaboration."
+        },
+        {
+          "id": "GA",
+          "name": "Global Awareness",
+          "hours": 3,
+          "outcome": "Analyze the dynamics, processes, or legacies of global systems."
+        },
+        {
+          "id": "CSV",
+          "name": "Citizenship and Social Values",
+          "hours": 3,
+          "outcome": "Examine the knowledge, skills, values, or motivation needed to participate or lead within diverse communities."
+        }
+      ]
+    }
+  },
+  "notes": [
+    "No more than four requirements (not including OCO and WCO) may be met in one subject area as indicated by prefix.",
+    "Courses fulfilling core curriculum requirements may also count toward other degree requirements.",
+    "Kinesiology majors: MATH 10043 satisfies Math requirement; BIOL 20204 and BIOL 20214 satisfy Natural Sciences for most majors.",
+    "Harris College students must take Cultural Awareness, Global Awareness, and Citizenship/Social Values courses at TCU \u2014 these cannot transfer in."
   ]
 }

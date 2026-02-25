@@ -43,13 +43,15 @@ function buildTermSequence(startTermRaw) {
     .trim().match(/^(Fall|Spring|Summer)\s+(\d{4})$/i);
   let season = m ? m[1][0].toUpperCase() + m[1].slice(1).toLowerCase() : 'Fall';
   let year   = m ? Number(m[2]) : 2026;
+  // Summer is not a standard start term — snap forward to Fall
   if (season === 'Summer') { season = 'Fall'; }
 
+  // Always start exactly at the given term — never go backwards
   const terms = [];
   while (terms.length < 8) {
     terms.push(`${season} ${year}`);
-    if (season === 'Fall')   { season = 'Spring'; }
-    else                     { season = 'Fall'; year += 1; }
+    if (season === 'Fall') { season = 'Spring'; }
+    else                   { season = 'Fall'; year += 1; }
   }
   return terms;
 }
@@ -299,8 +301,8 @@ module.exports = async function handler(req, res) {
   const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules);
 
   const userMessage = lastPlan
-  ? `The student has an existing plan. Update or answer based on it.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}`
-  : JSON.stringify({ action, profile, message });
+    ? `The student has an existing degree plan. Update or build on it based on their message — do NOT start from scratch. Preserve all existing terms and courses unless the student explicitly asks to change them.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}`
+    : JSON.stringify({ action, profile, message });
 
   // Call Claude with timeout
   const controller  = new AbortController();

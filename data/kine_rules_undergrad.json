@@ -1,30 +1,438 @@
 {
+  "source": "TCU Undergraduate Catalog 2025-2026",
+  "extractionStatus": "verified",
+  "policies": {
+    "passFail": "No kinesiology core, foundations, emphasis, or associated requirements courses may be taken on a P/NC basis.",
+    "minimumGrade": "C- minimum in all core, foundations, emphasis, and associated requirements courses.",
+    "gpaForMOSCandHEFI": "Minimum 2.5 GPA in all kinesiology core, foundations, and emphasis courses to graduate with MOSC or HEFI.",
+    "gpaForPE": "PE and PE with Strength and Conditioning majors must maintain a minimum 2.75 overall GPA to remain in the major.",
+    "progressionPolicy": "Once a student has earned 54 hours toward the BS degree, they must have a minimum 2.5 cumulative GPA to enroll in KINE or HLTH courses at the 30000 level or higher.",
+    "totalCreditsRequired": 120,
+    "transferPolicy": "All KINE/HLTH major coursework must be taken at TCU. Up to 4 courses may transfer in (non-KINE/HLTH). Science associated requirements must be taken at a 4-year institution. No concurrent enrollment at another university."
+  },
   "majors": {
-    "Movement Science": {
-      "allowedSubjects": ["KINE", "BIOL", "CHEM"],
+    "Health and Fitness": {
+      "degree": "BS",
+      "totalMajorHours": 50,
       "buckets": [
-        { "id": "MVSC-CORE", "name": "Core Requirements" }
-      ],
-      "policies": [
-        "Minimum 2.5 GPA required for upper-division KINE courses.",
-        "Students must complete KINE 10013 before any 30000-level KINE course."
+        {
+          "id": "HEFI-CORE",
+          "name": "Kinesiology Core (14 hours)",
+          "requiredCourses": [
+            "KINE 10101",
+            "KINE 10603",
+            "KINE 30403",
+            "KINE 30623",
+            "KINE 30634"
+          ],
+          "notes": "Required for all Kinesiology majors."
+        },
+        {
+          "id": "HEFI-FOUNDATION",
+          "name": "Foundation Courses (27 hours)",
+          "requiredCourses": [
+            "HLTH 30233",
+            "HLTH 30423",
+            "HLTH 40203",
+            "KINE 20313",
+            "KINE 30523",
+            "KINE 30833",
+            "KINE 40513",
+            "KINE 40903"
+          ],
+          "chooseFrom": [
+            "KINE 30713",
+            "KINE 30733",
+            "KINE 51413",
+            "KINE 51423"
+          ],
+          "minCourses": 1,
+          "chooseFromLabel": "Choose 1 of the following (3 hours): Psychology elective"
+        },
+        {
+          "id": "HEFI-EMPHASIS",
+          "name": "Emphasis Courses (choose 9 hours)",
+          "minCredits": 9,
+          "chooseFrom": [
+            "HLTH 30203",
+            "KINE 30843",
+            "KINE 30343",
+            "KINE 40543"
+          ],
+          "notes": "Clinical Emphasis: HLTH 30203, KINE 30843. Strength and Conditioning: KINE 30343, KINE 40543."
+        },
+        {
+          "id": "HEFI-ASSOCIATED",
+          "name": "Associated Requirements (17 hours)",
+          "requiredCourses": [
+            "BIOL 20204",
+            "BIOL 20214",
+            "MANA 30153",
+            "MATH 10043",
+            "PSYC 10213"
+          ]
+        }
       ]
     },
-    "Health & Fitness": {
-      "allowedSubjects": ["KINE", "NUTR", "HLTH"],
+    "Movement Science": {
+      "degree": "BS",
+      "totalMajorHours": 41,
+      "notes": "Students often pursue graduate programs in kinesiology, athletic training, OT, PT, PA, or other health professions.",
       "buckets": [
-        { "id": "HF-CORE", "name": "Core Requirements" }
-      ],
-      "policies": []
+        {
+          "id": "MOSC-CORE",
+          "name": "Kinesiology Core (14 hours)",
+          "requiredCourses": [
+            "KINE 10101",
+            "KINE 10603",
+            "KINE 30403",
+            "KINE 30623",
+            "KINE 30634"
+          ]
+        },
+        {
+          "id": "MOSC-FOUNDATION",
+          "name": "Foundation Courses (15 hours)",
+          "requiredCourses": [
+            "KINE 30423",
+            "KINE 30843",
+            "KINE 40103",
+            "KINE 40903"
+          ],
+          "chooseFrom": [
+            "KINE 30713",
+            "KINE 30733",
+            "KINE 51413",
+            "KINE 51423"
+          ],
+          "minCourses": 1,
+          "chooseFromLabel": "Choose 1 (3 hours): Psychology elective"
+        },
+        {
+          "id": "MOSC-EMPHASIS",
+          "name": "Emphasis Courses (choose 12 hours)",
+          "minCredits": 12,
+          "chooseFrom": [
+            "HLTH 30233",
+            "HLTH 30423",
+            "HLTH 40203",
+            "KINE 20313",
+            "KINE 30523",
+            "KINE 30833",
+            "KINE 40793"
+          ]
+        },
+        {
+          "id": "MOSC-ASSOCIATED",
+          "name": "Associated Requirements (27 hours)",
+          "requiredCourses": [
+            "BIOL 20204",
+            "BIOL 20214",
+            "CHEM 10113",
+            "CHEM 10125",
+            "MATH 10043",
+            "MATH 10054",
+            "PHYS 10154"
+          ]
+        }
+      ]
+    },
+    "Movement Science/MS Athletic Training (MOSC 3+2)": {
+      "degree": "BS then MSAT",
+      "totalMajorHours": 41,
+      "notes": "5-year program (3 pre-professional + 2 professional). Students must complete 110 pre-professional hours, maintain 3.0 GPA, earn C or better in all courses, and complete a secondary application to enter the professional program. See TCU Graduate Catalog for MSAT curriculum.",
+      "buckets": [
+        {
+          "id": "3PLUS2-CORE",
+          "name": "Kinesiology Core (14 hours)",
+          "requiredCourses": [
+            "KINE 10101",
+            "KINE 10603",
+            "KINE 30403",
+            "KINE 30623",
+            "KINE 30634"
+          ]
+        },
+        {
+          "id": "3PLUS2-FOUNDATION",
+          "name": "Foundation Courses (9 hours)",
+          "requiredCourses": [
+            "KINE 30423",
+            "KINE 30843"
+          ],
+          "chooseFrom": [
+            "KINE 30713",
+            "KINE 30733"
+          ],
+          "minCourses": 1,
+          "chooseFromLabel": "Choose 1 (3 hours): Psychology of Sport OR Exercise Psychology"
+        },
+        {
+          "id": "3PLUS2-EMPHASIS",
+          "name": "Emphasis Courses (choose 12 hours)",
+          "minCredits": 12,
+          "chooseFrom": [
+            "HLTH 30233",
+            "HLTH 30423",
+            "HLTH 40203",
+            "KINE 20313",
+            "KINE 30523",
+            "KINE 30833"
+          ]
+        },
+        {
+          "id": "3PLUS2-ASSOCIATED",
+          "name": "Associated Requirements (27 hours)",
+          "requiredCourses": [
+            "BIOL 20204",
+            "BIOL 20214",
+            "CHEM 10113",
+            "CHEM 10125",
+            "MATH 10043",
+            "MATH 10054",
+            "PHYS 10154"
+          ]
+        },
+        {
+          "id": "3PLUS2-MSAT-PREREQS",
+          "name": "MSAT Pre-Professional Requirements",
+          "requiredCourses": [
+            "PSYC 10213",
+            "BIOL 10003",
+            "HLTH 20203",
+            "NTDT 30331"
+          ],
+          "notes": "Required before admission to MSAT professional program."
+        }
+      ]
+    },
+    "Physical Education": {
+      "degree": "BS",
+      "totalMajorHours": 41,
+      "notes": "Prepares students to teach PE K-12. Teacher certification requires compliance with College of Education requirements including student teaching.",
+      "buckets": [
+        {
+          "id": "PE-CORE",
+          "name": "Kinesiology Core (14 hours)",
+          "requiredCourses": [
+            "KINE 10101",
+            "KINE 10603",
+            "KINE 30403",
+            "KINE 30623",
+            "KINE 30634"
+          ]
+        },
+        {
+          "id": "PE-FOUNDATION",
+          "name": "Foundation Courses (24 hours)",
+          "requiredCourses": [
+            "KINE 20313",
+            "KINE 20403",
+            "KINE 30343",
+            "KINE 30833",
+            "KINE 40313",
+            "KINE 40623",
+            "KINE 40633"
+          ],
+          "notes": "KINE 40633 (Teaching Outdoor Education) offered every other fall."
+        },
+        {
+          "id": "PE-EMPHASIS",
+          "name": "Emphasis Courses (choose 6 hours)",
+          "minCredits": 6,
+          "chooseFrom": [
+            "KINE 30713",
+            "KINE 30733",
+            "KINE 30423"
+          ]
+        },
+        {
+          "id": "PE-ASSOCIATED",
+          "name": "Associated Requirements (25 hours)",
+          "requiredCourses": [
+            "EDUC 20003",
+            "EDUC 30001",
+            "EDUC 41113",
+            "EDUC 30123",
+            "EDUC 30143",
+            "EDUC 30603",
+            "EDUC 40213",
+            "EDUC 40966"
+          ],
+          "notes": "EDUC 40966 is 6-credit All Level Student Teaching. Must meet all College of Education admission/retention requirements."
+        }
+      ]
+    },
+    "Physical Education with Strength and Conditioning": {
+      "degree": "BS",
+      "totalMajorHours": 53,
+      "notes": "Enables teaching PE K-12 AND adds knowledge/skills for strength and conditioning coaching. Teacher certification requirements apply.",
+      "buckets": [
+        {
+          "id": "PESC-CORE",
+          "name": "Kinesiology Core (14 hours)",
+          "requiredCourses": [
+            "KINE 10101",
+            "KINE 10603",
+            "KINE 30403",
+            "KINE 30623",
+            "KINE 30634"
+          ]
+        },
+        {
+          "id": "PESC-FOUNDATION",
+          "name": "Foundation Courses (24 hours)",
+          "requiredCourses": [
+            "KINE 20313",
+            "KINE 20403",
+            "KINE 30343",
+            "KINE 30423",
+            "KINE 30833",
+            "KINE 40313",
+            "KINE 40623",
+            "KINE 40633"
+          ]
+        },
+        {
+          "id": "PESC-EMPHASIS",
+          "name": "Emphasis Courses (choose 15 hours)",
+          "minCredits": 15,
+          "chooseFrom": [
+            "KINE 30713",
+            "KINE 30733",
+            "KINE 30523",
+            "KINE 40513",
+            "KINE 30443",
+            "HLTH 30423"
+          ]
+        },
+        {
+          "id": "PESC-ASSOCIATED",
+          "name": "Associated Requirements (25 hours)",
+          "requiredCourses": [
+            "EDUC 20003",
+            "EDUC 41113",
+            "EDUC 30123",
+            "EDUC 30143",
+            "EDUC 30603",
+            "EDUC 30001",
+            "EDUC 40213",
+            "EDUC 40966"
+          ],
+          "notes": "EDUC 40966 is 6-credit All Level Student Teaching."
+        }
+      ]
     }
   },
   "minors": {
-    "Health Promotion": {
-      "allowedSubjects": ["HLTH", "KINE"],
-      "buckets": [
-        { "id": "HPRO-MINOR", "name": "Health Promotion Minor" }
+    "Coaching": {
+      "totalHours": 18,
+      "requiredCourses": [
+        "KINE 20313",
+        "KINE 40313",
+        "KINE 30343",
+        "KINE 30713",
+        "KINE 40513",
+        "KINE 30443"
       ]
+    },
+    "Fitness": {
+      "totalHours": 19,
+      "requiredCourses": [
+        "KINE 10603",
+        "KINE 30523",
+        "KINE 30634",
+        "KINE 40513"
+      ],
+      "electiveCourses": {
+        "minCredits": 6,
+        "chooseFrom": [
+          "KINE 20313",
+          "KINE 30343",
+          "KINE 40543"
+        ]
+      }
+    },
+    "Health": {
+      "totalHours": "18-19",
+      "requiredCourses": [
+        "HLTH 20203",
+        "HLTH 30233",
+        "HLTH 30203",
+        "HLTH 30423"
+      ],
+      "electiveCourses": {
+        "minCourses": 2,
+        "chooseFrom": [
+          "HLTH 30213",
+          "HLTH 40203",
+          "KINE 30634",
+          "KINE 30733"
+        ],
+        "notes": "HLTH 30213 recommended for teacher prep; HLTH 40203 recommended for medical/allied health fields."
+      }
+    },
+    "Movement Science": {
+      "totalHours": 19,
+      "requiredCourses": [
+        "KINE 10603",
+        "KINE 30403",
+        "KINE 30423",
+        "KINE 30623",
+        "KINE 30634"
+      ],
+      "electiveCourses": {
+        "minCredits": 3,
+        "chooseFrom": [
+          "KINE 30523",
+          "KINE 30713",
+          "KINE 30833"
+        ]
+      }
+    },
+    "Physical Education": {
+      "totalHours": 18,
+      "notes": "Designed for individuals who want to teach PE as a second field. This minor alone does NOT suffice for certification \u2014 must also hold a bachelor's degree in another teaching field and complete 31 additional hours in Teacher Education Program.",
+      "requiredCourses": [
+        "KINE 10603",
+        "KINE 20403",
+        "KINE 40623"
+      ],
+      "chooseFromRequired": {
+        "minCourses": 1,
+        "chooseFrom": [
+          "KINE 30803",
+          "KINE 30833"
+        ],
+        "label": "Choose 1: Adapted Physical Activity OR Physical Activity and Disability"
+      },
+      "electiveCourses": {
+        "minCourses": 2,
+        "chooseFrom": [
+          "KINE 30423",
+          "KINE 30623",
+          "KINE 30634",
+          "HLTH 30423"
+        ]
+      }
+    },
+    "Sport and Exercise Psychology": {
+      "totalHours": 18,
+      "requiredCourses": [
+        "KINE 30713",
+        "KINE 30733"
+      ],
+      "electiveCourses": {
+        "minCourses": 4,
+        "chooseFrom": [
+          "HLTH 30203",
+          "KINE 30343",
+          "KINE 30403",
+          "KINE 30723",
+          "KINE 51413",
+          "KINE 51423"
+        ]
+      }
     }
   }
 }
-

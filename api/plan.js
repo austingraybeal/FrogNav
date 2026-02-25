@@ -103,7 +103,7 @@ const PLAN_SCHEMA = {
 // ── Catalog rules — lazy singleton ───────────────────────────────────────────
 // FIX #1: path was './lib/catalogRules' but this file lives in api/ — must go up one level
 function requireCatalogRules() {
-  return require('../lib/catalogRules');
+  return require('./lib/catalogRules');
 }
 
 // ── Request body parser ───────────────────────────────────────────────────────

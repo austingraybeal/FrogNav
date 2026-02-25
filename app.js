@@ -56,6 +56,11 @@ const replaceToInput    = document.getElementById('replaceTo');
 const replaceBtn        = document.getElementById('replaceBtn');
 const catalogOptions    = document.getElementById('catalogOptions');
 const replaceWarnings   = document.getElementById('replaceWarnings');
+const checklistModal    = document.getElementById('checklistModal');
+const closeChecklistBtn = document.getElementById('closeChecklistBtn');
+const checklistGroups   = document.getElementById('checklistGroups');
+const checklistDoneBtn  = document.getElementById('checklistDoneBtn');
+const checklistSkipBtn  = document.getElementById('checklistSkipBtn');
 
 // ── Major/Level Sync ──────────────────────────────────────────────────────────
 const levelSelect    = profileForm.elements.namedItem('level');
@@ -90,6 +95,7 @@ syncMajorOptions(); // run once on page load
 let messages = [];
 let lastPlan = null;
 let loading  = false;
+let pendingAction = null; // stores { action, prompt } while checklist is open
 
 // ── Status bar ────────────────────────────────────────────────────────────────
 function setStatus(message, isError = false) {
@@ -564,6 +570,102 @@ function quickActionPrompt(action, profile) {
 // ── Modal helpers ─────────────────────────────────────────────────────────────
 function openModal()  { profileModal.hidden = false; }
 function closeModal() { profileModal.hidden = true;  }
+// ── Checklist helpers ─────────────────────────────────────────────────────────
+function openChecklist()  { checklistModal.hidden = false; }
+function closeChecklist() { checklistModal.hidden = true;  }
+
+function buildChecklistGroups(requiredCourses) {
+  checklistGroups.innerHTML = '';
+
+  // Group courses by their category
+  const groups = {};
+  requiredCourses.forEach(course => {
+    const group = course.group || 'Other';
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(course);
+  });
+
+  // Get already-checked courses from profile
+  const alreadyChecked = new Set(
+    (readProfile().completedCourses || '')
+      .split(',')
+      .map(c => c.trim().toUpperCase())
+      .filter(Boolean)
+  );
+
+  Object.entries(groups).forEach(([groupName, courses]) => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'checklist-group';
+
+    const heading = document.createElement('h3');
+    heading.textContent = groupName;
+    groupEl.appendChild(heading);
+
+    const ul = document.createElement('ul');
+    courses.forEach(course => {
+      const li    = document.createElement('li');
+      const label = document.createElement('label');
+      const cb    = document.createElement('input');
+      cb.type    = 'checkbox';
+      cb.value   = course.code;
+      cb.name    = 'checklist-course';
+      cb.checked = alreadyChecked.has(course.code.toUpperCase());
+
+      const textWrap = document.createElement('span');
+      const title    = document.createElement('span');
+      title.textContent = `${course.code} — ${course.title}`;
+
+      const meta  = document.createElement('span');
+      meta.className   = 'checklist-course-meta';
+      meta.textContent = course.credits ? ` (${course.credits} cr)` : '';
+
+      textWrap.appendChild(title);
+      textWrap.appendChild(meta);
+      label.appendChild(cb);
+      label.appendChild(textWrap);
+      li.appendChild(label);
+      ul.appendChild(li);
+    });
+
+    groupEl.appendChild(ul);
+    checklistGroups.appendChild(groupEl);
+  });
+}
+
+async function openChecklistForAction(action, prompt) {
+  pendingAction = { action, prompt };
+
+  // Load required courses for the student's major from kine_rules
+  const profile = readProfile();
+  try {
+    const response = await fetch(`/api/checklist-courses?level=${encodeURIComponent(profile.level)}&major=${encodeURIComponent(profile.majorProgram)}`);
+    const payload  = await response.json().catch(() => ({ courses: [] }));
+    buildChecklistGroups(Array.isArray(payload.courses) ? payload.courses : []);
+  } catch {
+    buildChecklistGroups([]);
+  }
+
+  openChecklist();
+}
+
+function commitChecklist() {
+  const checked = [...checklistGroups.querySelectorAll('input[type="checkbox"]:checked')]
+    .map(cb => cb.value)
+    .join(', ');
+
+  // Update the hidden textarea so readProfile() picks it up
+  const completedField = document.getElementById('completedCourses');
+  if (completedField) completedField.value = checked;
+  saveProfile();
+  closeChecklist();
+
+  // Now fire the action that was waiting
+  if (pendingAction) {
+    const { action, prompt } = pendingAction;
+    pendingAction = null;
+    callAssistant(prompt, action);
+  }
+}
 
 // ── Quick-action button listeners ────────────────────────────────────────────
 quickActionButtons.forEach(button => {
@@ -595,7 +697,15 @@ quickActionButtons.forEach(button => {
       );
     }
 
-    callAssistant(quickActionPrompt(action, profile), action);
+    const prompt = quickActionPrompt(action, profile);
+
+    // Show checklist interstitial if completedCourses is empty
+    if (!profile.completedCourses && profile.level === 'undergrad') {
+      openChecklistForAction(action, prompt);
+      return;
+    }
+
+    callAssistant(prompt, action);
   });
 });
 
@@ -613,6 +723,20 @@ profileForm.addEventListener('input',  () => { saveProfile(); updateQuickActionL
 profileForm.addEventListener('change', () => { saveProfile(); updateQuickActionLabels(); });
 
 // ── Modal listeners ───────────────────────────────────────────────────────────
+// ── Checklist listeners ───────────────────────────────────────────────────────
+closeChecklistBtn.addEventListener('click', closeChecklist);
+checklistModal.addEventListener('click', event => {
+  if (event.target.matches('[data-close-checklist]')) closeChecklist();
+});
+checklistDoneBtn.addEventListener('click', commitChecklist);
+checklistSkipBtn.addEventListener('click', () => {
+  closeChecklist();
+  if (pendingAction) {
+    const { action, prompt } = pendingAction;
+    pendingAction = null;
+    callAssistant(prompt, action);
+  }
+});
 openProfileBtn.addEventListener('click', openModal);
 closeProfileBtn.addEventListener('click', closeModal);
 profileModal.addEventListener('click', event => {

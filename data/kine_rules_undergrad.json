@@ -1,156 +1,28 @@
 {
-  "source": "data/tcu_undergrad_catalog.pdf",
-  "extractionStatus": "Curated extraction for Kinesiology undergraduate pathways.",
-  "policies": [
-    "No P/NC for KINE core/foundation/emphasis/associated requirements; C- minimum.",
-    "GPA rules: 2.5 for Movement Science and Health and Fitness core+foundation+emphasis.",
-    "GPA rules: 2.75 overall for Physical Education and Physical Education with Strength and Conditioning to remain in program.",
-    "Minimum 30 credit hours must be completed at TCU (residency requirement).",
-    "Standard prerequisite progression: foundational courses (1000-2000 level) must be completed before advanced courses (3000-4000 level).",
-    "Do not exceed 18 credit hours per term without academic advisor approval.",
-    "Students must declare their major by the end of their sophomore year."
-  ],
   "majors": {
     "Movement Science": {
-      "default": true,
-      "allowedSubjects": ["KINE", "HLTH"],
+      "allowedSubjects": ["KINE", "BIOL", "CHEM"],
       "buckets": [
-        {
-          "id": "MS-FOUNDATION",
-          "name": "Foundation Requirements"
-        },
-        {
-          "id": "MS-CORE",
-          "name": "Core Requirements"
-        },
-        {
-          "id": "MS-EMPHASIS",
-          "name": "Emphasis Electives"
-        }
+        { "id": "MVSC-CORE", "name": "Core Requirements" }
+      ],
+      "policies": [
+        "Minimum 2.5 GPA required for upper-division KINE courses.",
+        "Students must complete KINE 10013 before any 30000-level KINE course."
       ]
     },
-    "Health and Fitness": {
-      "allowedSubjects": ["KINE", "HLTH"],
+    "Health & Fitness": {
+      "allowedSubjects": ["KINE", "NUTR", "HLTH"],
       "buckets": [
-        {
-          "id": "HF-FOUNDATION",
-          "name": "Foundation Requirements"
-        },
-        {
-          "id": "HF-CORE",
-          "name": "Core Requirements"
-        },
-        {
-          "id": "HF-EMPHASIS",
-          "name": "Emphasis Electives"
-        }
-      ]
-    },
-    "Physical Education": {
-      "allowedSubjects": ["KINE", "HLTH", "EDUC"],
-      "buckets": [
-        {
-          "id": "PE-FOUNDATION",
-          "name": "Foundation Requirements"
-        },
-        {
-          "id": "PE-CORE",
-          "name": "Core Requirements"
-        },
-        {
-          "id": "PE-EMPHASIS",
-          "name": "Emphasis Electives"
-        }
-      ]
-    },
-    "Physical Education with Strength and Conditioning": {
-      "allowedSubjects": ["KINE", "HLTH", "EDUC"],
-      "buckets": [
-        {
-          "id": "PESC-FOUNDATION",
-          "name": "Foundation Requirements"
-        },
-        {
-          "id": "PESC-CORE",
-          "name": "Core Requirements"
-        },
-        {
-          "id": "PESC-EMPHASIS",
-          "name": "Emphasis Electives"
-        }
-      ]
-    },
-    "Movement Science/MS Athletic Training (3+2)": {
-      "allowedSubjects": ["KINE", "HLTH", "ATTR"],
-      "buckets": [
-        {
-          "id": "MSAT-FOUNDATION",
-          "name": "Foundation Requirements"
-        },
-        {
-          "id": "MSAT-CORE",
-          "name": "Core Requirements"
-        },
-        {
-          "id": "MSAT-EMPHASIS",
-          "name": "Emphasis Electives"
-        }
-      ]
+        { "id": "HF-CORE", "name": "Core Requirements" }
+      ],
+      "policies": []
     }
   },
   "minors": {
-    "Coaching": {
-      "allowedSubjects": ["KINE", "HLTH"],
+    "Health Promotion": {
+      "allowedSubjects": ["HLTH", "KINE"],
       "buckets": [
-        {
-          "id": "MIN-COACHING",
-          "name": "Minor Requirements"
-        }
-      ]
-    },
-    "Fitness": {
-      "allowedSubjects": ["KINE", "HLTH"],
-      "buckets": [
-        {
-          "id": "MIN-FITNESS",
-          "name": "Minor Requirements"
-        }
-      ]
-    },
-    "Health": {
-      "allowedSubjects": ["KINE", "HLTH"],
-      "buckets": [
-        {
-          "id": "MIN-HEALTH",
-          "name": "Minor Requirements"
-        }
-      ]
-    },
-    "Movement Science": {
-      "allowedSubjects": ["KINE", "HLTH"],
-      "buckets": [
-        {
-          "id": "MIN-MS",
-          "name": "Minor Requirements"
-        }
-      ]
-    },
-    "Physical Education": {
-      "allowedSubjects": ["KINE", "HLTH", "EDUC"],
-      "buckets": [
-        {
-          "id": "MIN-PE",
-          "name": "Minor Requirements"
-        }
-      ]
-    },
-    "Sport and Exercise Psychology": {
-      "allowedSubjects": ["KINE", "HLTH", "PSYC"],
-      "buckets": [
-        {
-          "id": "MIN-SEP",
-          "name": "Minor Requirements"
-        }
+        { "id": "HPRO-MINOR", "name": "Health Promotion Minor" }
       ]
     }
   }

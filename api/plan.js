@@ -50,8 +50,8 @@ function buildTermSequence(startTermRaw) {
   const terms = [];
   while (terms.length < 8) {
     terms.push(`${season} ${year}`);
-    if (season === 'Fall') { season = 'Spring'; }
-    else                   { season = 'Fall'; year += 1; }
+    if (season === 'Fall') { season = 'Spring'; year += 1; }
+    else                   { season = 'Fall'; }
   }
   return terms;
 }

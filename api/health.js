@@ -18,7 +18,7 @@ module.exports = function handler(req, res) {
   });
 
   const allOk   = Object.values(status).every(v => v === 'ok');
-  const apiKey  = Boolean(process.env.OPENAI_API_KEY);
+  const apiKey = Boolean(process.env.ANTHROPIC_API_KEY);
 
   return res.status(allOk && apiKey ? 200 : 503).json({
     healthy:    allOk && apiKey,

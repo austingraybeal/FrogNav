@@ -1,37 +1,28 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = path.join(__dirname, '..', '..');
+const root = process.cwd();
 
 function loadJson(relativePath, options = {}) {
-  const { optional = false, fallback = null } = options;
-  const fullPath = path.join(root, relativePath);
-  try {
-    return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-  } catch (error) {
-    if (optional && error.code === 'ENOENT') return fallback;
-    throw error;
-  }
+  let kineRulesUndergrad = null;
+try {
+  kineRulesUndergrad = JSON.parse(
+    fs.readFileSync(path.join(root, 'data', 'kine_rules_undergrad.json'), 'utf8')
+  );
+} catch (err) {
+  console.warn('[catalogRules] kine_rules_undergrad.json not found or invalid — kineRules will be null.');
 }
+
 
 function normalizeLevel(level) {
   return String(level || 'undergrad').trim().toLowerCase() === 'grad' ? 'grad' : 'undergrad';
 }
 
-const LEVEL_PATHS = {
-  undergrad: {
-    catalogPath: path.join(root, 'data', 'catalog_index_undergrad.json'),
-    catalogIndexPath: 'data/catalog_index_undergrad.json',
-    kineRulesPath: 'data/kine_rules_undergrad.json',
-    genedRulesPath: 'data/gened_rules_undergrad.json',
-  },
-  grad: {
-    catalogPath: path.join(root, 'data', 'catalog_index_grad.json'),
-    catalogIndexPath: 'data/catalog_index_grad.json',
-    kineRulesPath: 'data/kine_rules_grad.json',
-    genedRulesPath: null,
-  },
-};
+const LEVEL_PATHS = Object.freeze({
+  undergrad: path.join(root, 'data', 'undergrad'),
+  grad:      path.join(root, 'data', 'grad'),
+});
+
 
 const levelDataCache = new Map();
 
@@ -145,8 +136,22 @@ function searchCatalog(query, levelContext, limit = 12) {
     }
   });
 
-  return results.slice(0, Math.max(1, limit));
-}
+const query = q.toLowerCase().trim();
+return catalog
+  .filter(course => {
+    const code  = (course.code  || '').toLowerCase();
+    const title = (course.title || '').toLowerCase();
+    return code.includes(query) || title.includes(query);
+  })
+  .sort((a, b) => {
+    const aCode  = (a.code  || '').toLowerCase();
+    const bCode  = (b.code  || '').toLowerCase();
+    const aStart = aCode.startsWith(query) ? 0 : 1;
+    const bStart = bCode.startsWith(query) ? 0 : 1;
+    return aStart - bStart;
+  })
+  .slice(0, limit);
+
 
 module.exports = {
   normalizeCode,

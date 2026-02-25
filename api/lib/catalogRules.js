@@ -62,11 +62,18 @@ function getCachedLevelData(level) {
   // Load catalog — stored as a plain object { [CODE]: { title, credits, description, ... } }
   const rawCatalog = loadJson(paths.catalogIndexPath, { optional: true, fallback: {} });
 
-  // Build a normalised Map for O(1) lookups by course code
-  const catalogIndex = new Map();
-  Object.entries(rawCatalog).forEach(([code, course]) => {
-    catalogIndex.set(normalizeCode(code), course);
-  });
+// Build a normalised Map for O(1) lookups by course code
+// Support both array format { courses: [...] } and legacy object format { CODE: course }
+const catalogIndex = new Map();
+const courseList = Array.isArray(rawCatalog.courses)
+  ? rawCatalog.courses
+  : Object.entries(rawCatalog).map(([code, course]) => ({ code, ...course }));
+
+courseList.forEach(course => {
+  if (course.code) {
+    catalogIndex.set(normalizeCode(course.code), course);
+  }
+});
 
   const loaded = {
     catalogPath:  paths.catalogPath,

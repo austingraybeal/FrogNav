@@ -163,6 +163,17 @@ OUTPUT SCHEMA (return this exact structure, no extra keys):
 }`;
 }
 
+// ── Term ordering (for filtering stale terms) ─────────────────────────────────
+
+function termOrder(termStr) {
+  const m = String(termStr || '').match(/^(Fall|Spring|Summer)\s+(\d{4})$/i);
+  if (!m) return 0;
+  const year = Number(m[2]);
+  const season = m[1].toLowerCase();
+  const offset = season === 'spring' ? 0 : season === 'summer' ? 1 : 2;
+  return year * 3 + offset;
+}
+
 // ── Response normalizer ───────────────────────────────────────────────────────
 
 function normalizePlan(raw, profile) {
@@ -186,10 +197,17 @@ function normalizePlan(raw, profile) {
   const terms = defaultTerms.map(label =>
     termMap.get(label) || { term: label, courses: [], totalCredits: 0 }
   );
-  // Append any extra terms the AI added beyond the default 8
+  // Append any extra terms the AI added beyond the default 8,
+  // but only if they come AFTER the start term (prevents stale Spring 2026 etc.)
+  const startIdx = defaultTerms.length > 0
+    ? termOrder(defaultTerms[0])
+    : 0;
   (raw.terms || []).forEach(t => {
     const key = String(t.term || '').trim();
-    if (key && !defaultTerms.includes(key)) terms.push(termMap.get(key));
+    if (key && !defaultTerms.includes(key) && termOrder(key) >= startIdx) {
+      const entry = termMap.get(key);
+      if (entry) terms.push(entry);
+    }
   });
 
   // Guarantee disclaimer

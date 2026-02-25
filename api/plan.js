@@ -3,10 +3,10 @@
 const fs   = require('fs');
 const path = require('path');
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 
 // Allow MODEL to be overridden via environment variable for easy upgrades
-const MODEL = process.env.FROGNAV_MODEL || 'gpt-4o-mini';
+const MODEL = process.env.FROGNAV_MODEL || 'claude-sonnet-4-20250514';
 
 const VALID_ACTIONS = new Set(['build', 'add_minor', 'honors', 'compare', 'chat']);
 
@@ -487,10 +487,10 @@ module.exports = async function handler(req, res) {
     }
 
     // ── API key guard ──────────────────────────────────────────────────────────
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(503).json({
         code:   'FROGNAV_CONFIG',
-        detail: 'OPENAI_API_KEY is not configured on this deployment.',
+        detail: 'ANTHROPIC_API_KEY is not configured on this deployment.',
       });
     }
 
@@ -545,26 +545,26 @@ module.exports = async function handler(req, res) {
 
     let response;
     try {
-      response = await fetch(OPENAI_URL, {
-        method:  'POST',
-        signal:  controller.signal,
-        headers: {
-          Authorization:  `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model:           MODEL,
-          temperature:     0.2,
-          response_format: { type: 'json_schema', json_schema: PLAN_SCHEMA },
-          messages: [
-            { role: 'system', content: systemPrompt },
-            {
-              role:    'user',
-              content: JSON.stringify({ action, profile: safeProfile, lastPlan, message }),
-            },
-          ],
-        }),
-      });
+      response = await fetch(ANTHROPIC_URL, {
+  method:  'POST',
+  signal:  controller.signal,
+  headers: {
+    'x-api-key':         process.env.ANTHROPIC_API_KEY,
+    'anthropic-version': '2023-06-01',
+    'Content-Type':      'application/json',
+  },
+  body: JSON.stringify({
+    model:      MODEL,
+    max_tokens: 4096,
+    system:     systemPrompt,
+    messages: [
+      {
+        role:    'user',
+        content: JSON.stringify({ action, profile: safeProfile, lastPlan, message }),
+      },
+    ],
+  }),
+});
     } catch (fetchError) {
       clearTimeout(abortTimer);
       const isTimeout = fetchError?.name === 'AbortError';
@@ -591,16 +591,16 @@ module.exports = async function handler(req, res) {
         res,
         response.status,
         String(backendMessage).slice(0, 240),
-        'FROGNAV_OPENAI_ERROR'
+        'FROGNAV_API_ERROR'
       );
     }
 
-    const content = payload?.choices?.[0]?.message?.content;
+    const content = payload?.content?.[0]?.text;
     if (!content || typeof content !== 'string') {
       return sendJsonError(
         res, 502,
         'AI response did not include message content.',
-        'FROGNAV_OPENAI_BAD_PAYLOAD'
+        'FROGNAV_BAD_PAYLOAD'
       );
     }
 

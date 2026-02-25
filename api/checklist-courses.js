@@ -20,7 +20,6 @@ module.exports = function handler(req, res) {
   const major = String(req.query.major || '').trim();
 
   if (level !== 'undergrad') {
-    // Grad checklist not yet implemented — return empty
     return res.status(200).json({ courses: [] });
   }
 
@@ -31,35 +30,47 @@ module.exports = function handler(req, res) {
     return res.status(500).json({ code: 'RULES_NOT_FOUND', courses: [] });
   }
 
-  // Find the matching major
+  // Find matching major (case-insensitive)
   const majorKey  = Object.keys(rules.majors || {}).find(
     k => k.toLowerCase() === major.toLowerCase()
   );
   const majorData = majorKey ? rules.majors[majorKey] : null;
 
-  if (!majorData) {
+  if (!majorData || !Array.isArray(majorData.buckets)) {
     return res.status(200).json({ courses: [] });
   }
 
-  // Flatten all requirement groups into a list with a group label
+  // Load catalog for title/credit lookup
+  const catalogPath = path.join(process.cwd(), 'data', 'undergrad', 'catalog.json');
+  const catalog     = loadJson(catalogPath);
+  const courseMap   = new Map();
+  if (catalog && Array.isArray(catalog.courses)) {
+    catalog.courses.forEach(c => {
+      if (c.code) courseMap.set(c.code.toUpperCase(), c);
+    });
+  }
+
+  function resolveCourse(code, groupName) {
+    const entry = courseMap.get(code.toUpperCase());
+    return {
+      code,
+      title:   entry?.title       || code,
+      credits: entry?.credits     ?? null,
+      group:   groupName,
+    };
+  }
+
   const courses = [];
-  const sections = majorData.requirements || majorData.sections || {};
 
-  Object.entries(sections).forEach(([groupName, groupData]) => {
-    const courseList = Array.isArray(groupData)
-      ? groupData
-      : Array.isArray(groupData.courses)
-        ? groupData.courses
-        : [];
+  majorData.buckets.forEach(bucket => {
+    const groupName = bucket.name || bucket.id || 'Other';
 
-    courseList.forEach(course => {
-      if (!course || !course.code) return;
-      courses.push({
-        code:    course.code,
-        title:   course.title   || course.name || course.code,
-        credits: course.credits ?? null,
-        group:   groupName,
-      });
+    (bucket.requiredCourses || []).forEach(code => {
+      courses.push(resolveCourse(code, groupName));
+    });
+
+    (bucket.chooseFrom || []).forEach(code => {
+      courses.push(resolveCourse(code, groupName));
     });
   });
 

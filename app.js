@@ -57,6 +57,35 @@ const replaceBtn        = document.getElementById('replaceBtn');
 const catalogOptions    = document.getElementById('catalogOptions');
 const replaceWarnings   = document.getElementById('replaceWarnings');
 
+// ── Major/Level Sync ──────────────────────────────────────────────────────────
+const levelSelect    = profileForm.elements.namedItem('level');
+const undergradGroup = document.getElementById('undergradMajors');
+const gradGroup      = document.getElementById('gradMajors');
+const majorSelect    = document.getElementById('majorProgram');
+
+function syncMajorOptions() {
+  const level  = levelSelect?.value || 'undergrad';
+  const isGrad = level === 'grad';
+
+  // Show/hide the entire optgroup
+  undergradGroup.hidden = isGrad;
+  gradGroup.hidden      = !isGrad;
+
+  // Disable options in hidden groups so they can't be submitted
+  [...undergradGroup.options].forEach(opt => opt.disabled = isGrad);
+  [...gradGroup.options].forEach(opt => opt.disabled      = !isGrad);
+
+  // If currently selected major belongs to the now-hidden group, reset it
+  const selectedOpt = majorSelect.querySelector(`option[value="${majorSelect.value}"]`);
+  if (selectedOpt && selectedOpt.disabled) {
+    majorSelect.value = '';
+  }
+}
+
+levelSelect?.addEventListener('change', syncMajorOptions);
+syncMajorOptions(); // run once on page load
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── App state ─────────────────────────────────────────────────────────────────
 let messages = [];
 let lastPlan = null;

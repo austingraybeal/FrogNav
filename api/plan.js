@@ -608,11 +608,16 @@ module.exports = async function handler(req, res) {
 
     // ── Parse, normalize, and constrain the plan ───────────────────────────────
     let parsedPlan;
-    try {
-      parsedPlan = JSON.parse(content);
-    } catch (parseError) {
-      return sendInternalError(res, parseError, 'parse-openai-json');
-    }
+try {
+  const cleaned = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+  parsedPlan = JSON.parse(cleaned);
+} catch (parseError) {
+  return sendInternalError(res, parseError, 'parse-openai-json');
+}
 
     const plan        = normalizePlanShape(parsedPlan, safeProfile);
     const constrained = enforcePlanConstraints(plan, safeProfile, levelContext);

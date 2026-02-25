@@ -187,6 +187,28 @@
         </form>
       </section>
     </div>
+    
+  <!-- Completed Courses Checklist Modal -->
+  <div id="checklistModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-checklist></div>
+    <section
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="checklistTitle"
+    >
+      <div class="modal-header">
+        <h2 id="checklistTitle">Completed Courses</h2>
+        <button id="closeChecklistBtn" type="button" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="checklist-intro">Check off any courses you've already completed. This helps FrogNav build a more accurate plan.</p>
+      <div id="checklistGroups" class="checklist-groups"></div>
+      <div class="checklist-footer">
+        <button id="checklistSkipBtn" type="button" class="text-link">Skip — no completed courses</button>
+        <button id="checklistDoneBtn" type="button" class="quick-action">Done</button>
+      </div>
+    </section>
+  </div>
 
     <!-- Chat composer — aria-controls links it to the chat thread -->
     <footer class="composer-wrap">

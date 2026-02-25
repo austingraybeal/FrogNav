@@ -1,22 +1,27 @@
-const fs = require('fs');
+'use strict';
+
+const fs   = require('fs');
 const path = require('path');
 
-module.exports = function handler(req, res) {
-  const root = process.cwd();
-  const files = {
-    undergradCsv: fs.existsSync(path.join(root, 'data', 'tcu_courses_undergrad.csv')),
-    gradCsv: fs.existsSync(path.join(root, 'data', 'tcu_courses_grad.csv')),
-    undergradPdf: fs.existsSync(path.join(root, 'data', 'tcu_undergrad_catalog.pdf')),
-    gradPdf: fs.existsSync(path.join(root, 'data', 'tcu_grad_catalog.pdf')),
-    kineRules: fs.existsSync(path.join(root, 'data', 'kine_rules_undergrad.json')),
-    genedRules: fs.existsSync(path.join(root, 'data', 'gened_rules_undergrad.json')),
-  };
+const FILES_TO_CHECK = {
+  'undergrad/catalog':   path.join(process.cwd(), 'data', 'undergrad', 'catalog.json'),
+  'undergrad/gened':     path.join(process.cwd(), 'data', 'undergrad', 'gened_rules.json'),
+  'grad/catalog':        path.join(process.cwd(), 'data', 'grad',      'catalog.json'),
+  'kine_rules_undergrad': path.join(process.cwd(), 'data', 'kine_rules_undergrad.json'),
+};
 
-  return res.status(200).json({
-    ok: true,
-    hasOpenAIKey: Boolean(process.env.OPENAI_API_KEY),
-    nodeVersion: process.version,
-    cwd: root,
-    files,
+module.exports = function handler(req, res) {
+  const status = {};
+  Object.entries(FILES_TO_CHECK).forEach(([key, filePath]) => {
+    status[key] = fs.existsSync(filePath) ? 'ok' : 'missing';
+  });
+
+  const allOk   = Object.values(status).every(v => v === 'ok');
+  const apiKey  = Boolean(process.env.OPENAI_API_KEY);
+
+  return res.status(allOk && apiKey ? 200 : 503).json({
+    healthy:    allOk && apiKey,
+    openaiKey:  apiKey ? 'set' : 'MISSING',
+    dataFiles:  status,
   });
 };

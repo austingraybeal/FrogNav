@@ -427,7 +427,9 @@ function buildSystemPrompt(safeProfile, levelContext) {
 
   const majorKeys = Object.keys(kineRules.majors  || {}).join(', ') || '(none)';
   const minorKeys = Object.keys(kineRules.minors  || {}).join(', ') || '(none)';
-  const policyLines = (kineRules.policies || []).map(line => `- ${line}`).join('\n') || '(none)';
+  const policies = kineRules.policies || {};
+const policyLines = (Array.isArray(policies) ? policies : Object.values(policies))
+  .map(line => `- ${line}`).join('\n') || '(none)';
   const genedPlaceholders = (genedRules.buckets || [])
     .map(b => b.placeholder)
     .join(' | ') || 'none';

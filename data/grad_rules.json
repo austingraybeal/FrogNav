@@ -1,0 +1,191 @@
+{
+  "source": "TCU Graduate Catalog 2025-2026 - Kinesiology Department, Harris College of Nursing & Health Sciences",
+  "department": "Kinesiology",
+  "lastVerified": "2025-2026",
+
+  "programs": [
+    {
+      "id": "MSAT",
+      "name": "Master of Science in Athletic Training",
+      "degree": "MS",
+      "totalHours": 48,
+      "duration": "2 years (summer start)",
+      "accreditation": "CAATE (Commission on Accreditation of Athletic Training Education)",
+      "applicationService": "ATCAS (Athletic Training Centralized Application Service)",
+      "applicationDeadline": "April 15 (cohort starts summer); applications open July 1",
+
+      "admissionRequirements": {
+        "degree": "Bachelor's degree from regionally accredited institution",
+        "gpa": "3.0 or higher",
+        "gradeInPrereqs": "C or better in all prerequisite courses",
+        "observationHours": "100 hours in athletic training setting under BOC ATC supervision (must be completed by first class day)",
+        "references": "Two reference forms with letters addressing academic abilities, interpersonal skills, and AT potential",
+        "materials": ["Resume/CV", "Personal statement (strong written communication required)", "Interview via ATCAS", "Official transcripts"]
+      },
+
+      "prerequisiteCourses": [
+        { "name": "Biology I (with lab)", "note": "Science prereqs must include lab component" },
+        { "name": "Chemistry I (with lab)", "note": "Science prereqs must include lab component" },
+        { "name": "Physics I (with lab)", "note": "Science prereqs must include lab component" },
+        { "name": "Anatomy and Physiology I (with lab)", "note": "Science prereqs must include lab component" },
+        { "name": "Anatomy and Physiology II (with lab)", "note": "Science prereqs must include lab component" },
+        { "name": "Exercise Physiology" },
+        { "name": "Biomechanics" },
+        { "code": "HLTH 20313", "name": "Health and Wellness Concepts" },
+        { "name": "Foundations of Sport Injuries" },
+        { "name": "Psychology" },
+        { "name": "Nutrition" },
+        { "name": "Medical Terminology" },
+        { "name": "Statistics" }
+      ],
+
+      "curriculum": [
+        {
+          "term": "Summer 1",
+          "courses": [
+            { "code": "KINE 55013", "name": "Clinical Skills and Emergency Management", "credits": 3 },
+            { "code": "KINE 55023", "name": "Introduction to Therapeutic Interventions", "credits": 3 },
+            { "code": "KINE 55033", "name": "Introduction to Musculoskeletal Evaluation", "credits": 3 },
+            { "code": "KINE 55001", "name": "Athletic Training Clinical I", "credits": 1 }
+          ]
+        },
+        {
+          "term": "Fall 1",
+          "courses": [
+            { "code": "KINE 50104", "name": "Musculoskeletal Evaluation of the Extremities", "credits": 4 },
+            { "code": "KINE 55042", "name": "Research in Athletic Training", "credits": 2 },
+            { "code": "KINE 50214", "name": "Advanced Therapeutic Interventions", "credits": 4 },
+            { "code": "KINE 50201", "name": "Athletic Training Clinical II", "credits": 1 }
+          ]
+        },
+        {
+          "term": "Spring 1",
+          "courses": [
+            { "code": "KINE 50124", "name": "Head, Neck and Spine", "credits": 4 },
+            { "code": "KINE 50224", "name": "General Medical Conditions and Applied Pharmacology", "credits": 4 },
+            { "code": "KINE 50113", "name": "Organization and Administration in Athletic Training", "credits": 3 },
+            { "code": "KINE 50301", "name": "Athletic Training Clinical III", "credits": 1 }
+          ]
+        },
+        {
+          "term": "Summer 2",
+          "courses": [
+            { "code": "KINE 60303", "name": "Athletic Training Field Experience", "credits": 3 }
+          ]
+        },
+        {
+          "term": "Fall 2",
+          "courses": [
+            { "code": "KINE 60453", "name": "Advanced Clinical Skills and Techniques in Athletic Training", "credits": 3 },
+            { "code": "KINE 60413", "name": "Seminar in Athletic Training", "credits": 3 },
+            { "code": "KINE 60403", "name": "Athletic Training Clinical IV", "credits": 3 }
+          ]
+        },
+        {
+          "term": "Spring 2",
+          "courses": [
+            { "code": "KINE 60323", "name": "Behavioral Health Concerns for the Athletic Trainer", "credits": 3 },
+            { "code": "KINE 60313", "name": "Current Trends and Issues in Athletic Training", "credits": 3 },
+            { "code": "KINE 60533", "name": "Athletic Training Clinical V", "credits": 3 }
+          ]
+        }
+      ],
+
+      "retentionPolicy": {
+        "minimumGPA": 3.0,
+        "academicWarning": "Cumulative GPA below 3.0 in any semester",
+        "dismissal": "Failure to raise GPA to 3.0 by end of next enrolled semester; more than two grades of C+ or lower; any grade of F",
+        "maxCGrades": "No more than two grades of C+ or lower may satisfy degree requirements",
+        "incompletePolicy": "I grade must be removed within 60 days of next regular semester or converts to F",
+        "progressionWhileIncomplete": "At discretion of Athletic Training Program Director"
+      },
+
+      "tcuEarlyAdmission": {
+        "description": "TCU undergraduate MOSC 3+2 students (MO32 BS) may apply directly via ATCAS. Must complete 110 hours of undergraduate courses and Movement Science degree requirements before beginning graduate coursework. Does not guarantee admission; students not admitted complete undergraduate degree in Movement Science."
+      }
+    },
+
+    {
+      "id": "MS_KINE",
+      "name": "Master of Science in Kinesiology",
+      "degree": "MS",
+      "totalHours": 33,
+      "note": "Includes 6 thesis hours; resource area and specialization hours vary by student",
+
+      "admissionRequirements": {
+        "degree": "BS or BA degree with 24-hour concentration in kinesiology or equivalent from accredited institution",
+        "gpa": "3.0 or higher recommended"
+      },
+
+      "areasOfEmphasis": [
+        "Biomechanics",
+        "Exercise Physiology",
+        "Exercise Psychology",
+        "Motor Control",
+        "Nutrition",
+        "Physical Activity and Chronic Disease",
+        "Sport Psychology"
+      ],
+
+      "curriculum": [
+        {
+          "category": "Professional Development",
+          "hours": 6,
+          "required": true,
+          "courses": [
+            { "code": "KINE 60103", "name": "Research Methods in Kinesiology", "credits": 3 },
+            { "code": "KINE 60113", "name": "Statistics in Kinesiology", "credits": 3 }
+          ]
+        },
+        {
+          "category": "Academic Core",
+          "hours": 9,
+          "required": true,
+          "courses": [
+            { "code": "KINE 60213", "name": "Advanced Biomechanics", "credits": 3 },
+            { "code": "KINE 60423", "name": "Advanced Motor Behavior", "credits": 3 },
+            { "code": "KINE 60613", "name": "Physiology of Exercise", "credits": 3 }
+          ]
+        },
+        {
+          "category": "Academic Specialization",
+          "hours": "9-12",
+          "required": true,
+          "note": "Courses emphasizing chosen concentration (biomechanics, exercise physiology, exercise psychology, motor control, nutrition, physical activity and chronic disease, or sport psychology)"
+        },
+        {
+          "category": "Resource Area",
+          "hours": "3-6",
+          "required": true,
+          "note": "Courses in related areas determined after review of student preparation and goals. Must have approval of advisor and department chair."
+        },
+        {
+          "category": "Thesis",
+          "hours": 6,
+          "required": true,
+          "courses": [
+            { "code": "KINE 70990", "name": "Thesis", "credits": 6 }
+          ]
+        }
+      ],
+
+      "retentionPolicy": {
+        "minimumGPA": 3.0,
+        "academicWarning": "Cumulative GPA below 3.0 in any semester",
+        "dismissal": "Failure to raise GPA to 3.0 by end of next enrolled semester; grade of F",
+        "maxCGrades": "No more than two grades of C or C+ may satisfy degree requirements",
+        "acceptableGrades": "C or higher; grade of F results in immediate dismissal"
+      }
+    }
+  ],
+
+  "generalGradPolicies": {
+    "transferCredit": "Up to 6 semester hours typically accepted; must carry at least B grade (3.0); must be residence credit (not extension or correspondence); must be applicable to degree program as determined by advisor",
+    "additionalMastersDegree": "Up to 9 hours from prior master's may apply; all applied courses must carry B or better; non-thesis credits only; all credits must be earned within 5 years of matriculation",
+    "acceleratedPrograms": "Up to 12 credit hours at 55000 and 60000 level may count toward both undergraduate and graduate degrees in approved 4+1 programs",
+    "timeLimitMasters": "5 years from earliest credit to be counted on degree (including transfer credit)",
+    "thesisRequirement": "Minimum 6 hours thesis registration; must register at least 1 hour per fall/spring semester while working with committee or using university facilities",
+    "admissionToCandidacy": "Prepared by dean's office after 9+ hours completed and all admission conditions met",
+    "intentToGraduate": "Must file at beginning of semester of planned graduation"
+  }
+}

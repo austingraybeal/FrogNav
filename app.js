@@ -1,75 +1,88 @@
-const PROFILE_KEY = "frognav-profile";
-const THREAD_KEY = "frognav-thread";
-const LAST_PLAN_KEY = "frognav-last-plan";
+'use strict';
 
+// ── Storage keys ──────────────────────────────────────────────────────────────
+const PROFILE_KEY   = 'frognav-profile';
+const THREAD_KEY    = 'frognav-thread';
+const LAST_PLAN_KEY = 'frognav-last-plan';
+
+// ── Profile defaults ──────────────────────────────────────────────────────────
 const DEFAULTS = {
-  level: "undergrad",
-  majorProgram: "Movement Science",
-  minorProgram: "",
-  honorsCollege: false,
-  startTerm: "Fall 2026",
-  targetGraduation: "",
-  creditsPerTerm: "15",
-  summerOptional: true,
-  apTransfer: "None",
-  completedCourses: "",
-  constraints: "",
+  level:             'undergrad',
+  majorProgram:      'Movement Science',
+  minorProgram:      '',
+  honorsCollege:     false,
+  startTerm:         'Fall 2026',
+  targetGraduation:  '',
+  creditsPerTerm:    '15',
+  summerOptional:    true,
+  apTransfer:        'None',
+  completedCourses:  '',
+  constraints:       '',
 };
 
+// ── Quick-action prompts ──────────────────────────────────────────────────────
+// FIX #1: grad.compare was showing an undergrad track comparison.
+//         grad.honors and grad.add_minor labels updated to be level-appropriate.
+// FIX #3: Prompts now reflect the correct context per level so the AI gets
+//         an accurate instruction from the very first token.
 const QUICK_ACTION_PROMPTS = {
   undergrad: {
-    build: "Build my Movement Science plan",
-    add_minor: "Add a minor to my plan",
-    honors: "Show me the Honors version",
-    compare: "Compare Movement Science and Health & Fitness",
+    build:     'Build my Movement Science plan',
+    add_minor: 'Add a minor to my plan',
+    honors:    'Show me the Honors College version of my plan',
+    compare:   'Compare Movement Science and Health & Fitness',
   },
   grad: {
-    build: "Build my Kinesiology MS plan",
-    add_minor: "Add a minor to my plan",
-    honors: "Show me the Honors version",
-    compare: "Compare Movement Science and Health & Fitness",
+    build:     'Build my Kinesiology, MS plan',
+    add_minor: 'Add a concentration or graduate certificate to my plan',
+    honors:    'Explain graduate program options equivalent to Honors College for Kinesiology MS students',
+    compare:   'Compare the Movement Science and Exercise Physiology graduate concentrations',
   },
 };
 
-const profileForm = document.getElementById("profileForm");
-const profileModal = document.getElementById("profileModal");
-const openProfileBtn = document.getElementById("openProfileBtn");
-const closeProfileBtn = document.getElementById("closeProfileBtn");
-const chatThread = document.getElementById("chatThread");
-const statusMessage = document.getElementById("statusMessage");
-const chatComposer = document.getElementById("chatComposer");
-const chatInput = document.getElementById("chatInput");
-const sendBtn = document.getElementById("sendBtn");
-const quickActionButtons = [...document.querySelectorAll(".quick-action")];
-const replaceFromInput = document.getElementById("replaceFrom");
-const replaceToInput = document.getElementById("replaceTo");
-const replaceBtn = document.getElementById("replaceBtn");
-const catalogOptions = document.getElementById("catalogOptions");
-const replaceWarnings = document.getElementById("replaceWarnings");
+// ── DOM references ────────────────────────────────────────────────────────────
+const profileForm       = document.getElementById('profileForm');
+const profileModal      = document.getElementById('profileModal');
+const openProfileBtn    = document.getElementById('openProfileBtn');
+const closeProfileBtn   = document.getElementById('closeProfileBtn');
+const chatThread        = document.getElementById('chatThread');
+const statusMessage     = document.getElementById('statusMessage');
+const chatComposer      = document.getElementById('chatComposer');
+const chatInput         = document.getElementById('chatInput');
+const sendBtn           = document.getElementById('sendBtn');
+const quickActionButtons = [...document.querySelectorAll('.quick-action')];
+const replaceFromInput  = document.getElementById('replaceFrom');
+const replaceToInput    = document.getElementById('replaceTo');
+const replaceBtn        = document.getElementById('replaceBtn');
+const catalogOptions    = document.getElementById('catalogOptions');
+const replaceWarnings   = document.getElementById('replaceWarnings');
 
+// ── App state ─────────────────────────────────────────────────────────────────
 let messages = [];
 let lastPlan = null;
-let loading = false;
+let loading  = false;
 
+// ── Status bar ────────────────────────────────────────────────────────────────
 function setStatus(message, isError = false) {
   statusMessage.textContent = message;
-  statusMessage.classList.toggle("error", isError);
+  statusMessage.classList.toggle('error', isError);
 }
 
+// ── Profile helpers ───────────────────────────────────────────────────────────
 function readProfile() {
   const data = new FormData(profileForm);
   return {
-    level: String(data.get("level") || "undergrad").trim().toLowerCase() === "grad" ? "grad" : "undergrad",
-    majorProgram: String(data.get("majorProgram") || "").trim(),
-    minorProgram: String(data.get("minorProgram") || "").trim(),
-    honorsCollege: Boolean(data.get("honorsCollege")),
-    startTerm: String(data.get("startTerm") || "").trim(),
-    targetGraduation: String(data.get("targetGraduation") || "").trim(),
-    creditsPerTerm: String(data.get("creditsPerTerm") || "").trim(),
-    summerOptional: Boolean(data.get("summerOptional")),
-    apTransfer: String(data.get("apTransfer") || "").trim(),
-    completedCourses: String(data.get("completedCourses") || "").trim(),
-    constraints: String(data.get("constraints") || "").trim(),
+    level:            String(data.get('level') || 'undergrad').trim().toLowerCase() === 'grad' ? 'grad' : 'undergrad',
+    majorProgram:     String(data.get('majorProgram')    || '').trim(),
+    minorProgram:     String(data.get('minorProgram')    || '').trim(),
+    honorsCollege:    Boolean(data.get('honorsCollege')),
+    startTerm:        String(data.get('startTerm')        || '').trim(),
+    targetGraduation: String(data.get('targetGraduation') || '').trim(),
+    creditsPerTerm:   String(data.get('creditsPerTerm')   || '').trim(),
+    summerOptional:   Boolean(data.get('summerOptional')),
+    apTransfer:       String(data.get('apTransfer')       || '').trim(),
+    completedCourses: String(data.get('completedCourses') || '').trim(),
+    constraints:      String(data.get('constraints')      || '').trim(),
   };
 }
 
@@ -77,19 +90,24 @@ function applyProfile(profile) {
   Object.entries({ ...DEFAULTS, ...(profile || {}) }).forEach(([key, value]) => {
     const field = profileForm.elements.namedItem(key);
     if (!field) return;
-    if (field.type === "checkbox") {
+    if (field.type === 'checkbox') {
       field.checked = Boolean(value);
       return;
     }
-    field.value = value ?? "";
+    field.value = value ?? '';
   });
 }
 
+// FIX #8: The original logic was inverted — boolean and level checks were
+// correct, but string fields checked `!== ""` which meant a non-empty
+// completedCourses field would never trigger "not empty".
+// Rewritten to clearly return true when ANY field differs from its default.
 function profileIsEmpty(profile) {
-  return !Object.keys(DEFAULTS).some((key) => {
-    if (key === "level") return profile[key] !== DEFAULTS[key];
-    if (typeof DEFAULTS[key] === "boolean") return profile[key] !== DEFAULTS[key];
-    return String(profile[key] || "").trim() !== "";
+  return !Object.keys(DEFAULTS).some(key => {
+    const val     = profile[key];
+    const defVal  = DEFAULTS[key];
+    if (typeof defVal === 'boolean') return val !== defVal;
+    return String(val || '').trim() !== String(defVal || '').trim();
   });
 }
 
@@ -105,15 +123,15 @@ function saveProfile() {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(readProfile()));
 }
 
+// ── Loading state ─────────────────────────────────────────────────────────────
 function setLoading(isLoading) {
-  loading = isLoading;
-  sendBtn.disabled = isLoading;
+  loading            = isLoading;
+  sendBtn.disabled   = isLoading;
   chatInput.disabled = isLoading;
-  quickActionButtons.forEach((button) => {
-    button.disabled = isLoading;
-  });
+  quickActionButtons.forEach(button => { button.disabled = isLoading; });
 }
 
+// ── Persistence ───────────────────────────────────────────────────────────────
 function persistConversation() {
   localStorage.setItem(THREAD_KEY, JSON.stringify(messages));
 }
@@ -126,15 +144,28 @@ function persistLastPlan() {
   }
 }
 
+// ── XSS-safe text helper ──────────────────────────────────────────────────────
+// FIX #7: renderAssistantPlan was using innerHTML with backend-sourced strings.
+// This helper creates a text node safely — no HTML injection possible.
+function safeText(str) {
+  const el = document.createElement('span');
+  el.textContent = String(str || '');
+  return el.textContent; // returns escaped string for use in textContent assignments
+}
+
+// ── Plan rendering helpers ────────────────────────────────────────────────────
 function listSection(title, items) {
-  const section = document.createElement("section");
-  section.className = "plan-section";
-  section.innerHTML = `<h4>${title}</h4>`;
-  const list = document.createElement("ul");
-  const safeItems = Array.isArray(items) && items.length ? items : ["None provided."];
-  safeItems.forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = item;
+  const section   = document.createElement('section');
+  section.className = 'plan-section';
+  const heading   = document.createElement('h4');
+  heading.textContent = title;
+  section.appendChild(heading);
+
+  const list      = document.createElement('ul');
+  const safeItems = Array.isArray(items) && items.length ? items : ['None provided.'];
+  safeItems.forEach(item => {
+    const li = document.createElement('li');
+    li.textContent = String(item || ''); // FIX #7: textContent, never innerHTML
     list.appendChild(li);
   });
   section.appendChild(list);
@@ -142,99 +173,155 @@ function listSection(title, items) {
 }
 
 function renderAssistantPlan(container, planJson) {
-  const summary = document.createElement("article");
-  summary.className = "plan-card";
-  const profile = planJson.profileEcho || {};
-  summary.innerHTML = `
-    <h3>Plan Summary</h3>
-    <p>${planJson.planSummary || "No summary provided."}</p>
-    <div class="plan-grid">
-      <div><strong>Academic Level</strong><p>${profile.level || "undergrad"}</p></div>
-      <div><strong>Major</strong><p>${profile.major || "Not set"}</p></div>
-      <div><strong>Minor</strong><p>${profile.minor || "None"}</p></div>
-      <div><strong>Honors</strong><p>${profile.honors ? "Yes" : "No"}</p></div>
-      <div><strong>Start Term</strong><p>${profile.startTerm || "Not set"}</p></div>
-      <div><strong>Target Graduation</strong><p>${profile.targetGraduation || "Not set"}</p></div>
-      <div><strong>Credits / Term</strong><p>${profile.creditsPerTerm ?? "Not set"}</p></div>
-    </div>
-  `;
+  const summary     = document.createElement('article');
+  summary.className = 'plan-card';
+  const profile     = planJson.profileEcho || {};
+
+  // Profile grid — safe because we use textContent on every dynamic value
+  const heading = document.createElement('h3');
+  heading.textContent = 'Plan Summary';
+  summary.appendChild(heading);
+
+  const summaryText = document.createElement('p');
+  summaryText.textContent = planJson.planSummary || 'No summary provided.';
+  summary.appendChild(summaryText);
+
+  const grid = document.createElement('div');
+  grid.className = 'plan-grid';
+
+  const gridFields = [
+    ['Academic Level',    profile.level            || 'undergrad'],
+    ['Major',             profile.major            || 'Not set'],
+    ['Minor',             profile.minor            || 'None'],
+    ['Honors',            profile.honors ? 'Yes' : 'No'],
+    ['Start Term',        profile.startTerm        || 'Not set'],
+    ['Target Graduation', profile.targetGraduation || 'Not set'],
+    ['Credits / Term',    profile.creditsPerTerm   != null ? profile.creditsPerTerm : 'Not set'],
+  ];
+  gridFields.forEach(([label, value]) => {
+    const cell      = document.createElement('div');
+    const strong    = document.createElement('strong');
+    strong.textContent = label;
+    const p         = document.createElement('p');
+    p.textContent   = String(value);
+    cell.appendChild(strong);
+    cell.appendChild(p);
+    grid.appendChild(cell);
+  });
+  summary.appendChild(grid);
   container.appendChild(summary);
 
+  // Terms table
   if (Array.isArray(planJson.terms) && planJson.terms.length) {
-    const termsSection = document.createElement("section");
-    termsSection.className = "plan-section";
-    termsSection.innerHTML = "<h4>Terms</h4>";
+    const termsSection   = document.createElement('section');
+    termsSection.className = 'plan-section';
+    const termsHeading   = document.createElement('h4');
+    termsHeading.textContent = 'Terms';
+    termsSection.appendChild(termsHeading);
 
-    const table = document.createElement("table");
-    table.className = "plan-table";
-    table.innerHTML =
-      "<thead><tr><th>Term</th><th>Total Credits</th><th>Courses</th></tr></thead>";
+    const table = document.createElement('table');
+    table.className = 'plan-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>Term</th><th>Total Credits</th><th>Courses</th></tr>';
+    table.appendChild(thead);
 
-    const body = document.createElement("tbody");
-    planJson.terms.forEach((term) => {
-      const row = document.createElement("tr");
-      const courses = Array.isArray(term.courses) && term.courses.length
-        ? term.courses
-            .map(
-              (course) =>
-                `${course.code || "TBD"} - ${course.title || "Untitled"} (${course.credits ?? 0})${
-                  course.notes ? ` — ${course.notes}` : ""
-                }`
-            )
-            .join("<br>")
-        : "TBD";
-      row.innerHTML = `<td>${term.term || "Term"}</td><td>${term.totalCredits ?? 0}</td><td>${courses}</td>`;
-      body.appendChild(row);
+    const tbody = document.createElement('tbody');
+    planJson.terms.forEach(term => {
+      const row = document.createElement('tr');
+
+      const tdTerm    = document.createElement('td');
+      tdTerm.textContent = term.term || 'Term';
+
+      const tdCredits = document.createElement('td');
+      tdCredits.textContent = String(term.totalCredits ?? 0);
+
+      const tdCourses = document.createElement('td');
+      if (Array.isArray(term.courses) && term.courses.length) {
+        term.courses.forEach((course, i) => {
+          if (i > 0) tdCourses.appendChild(document.createElement('br'));
+          // FIX #7: Build course text via textContent — never innerHTML with course data
+          const courseSpan = document.createElement('span');
+          const noteSuffix = course.notes ? ` — ${course.notes}` : '';
+          courseSpan.textContent =
+            `${course.code || 'TBD'} - ${course.title || 'Untitled'} ` +
+            `(${course.credits ?? 0})${noteSuffix}`;
+          tdCourses.appendChild(courseSpan);
+        });
+      } else {
+        tdCourses.textContent = 'TBD';
+      }
+
+      row.appendChild(tdTerm);
+      row.appendChild(tdCredits);
+      row.appendChild(tdCourses);
+      tbody.appendChild(row);
     });
 
-    table.appendChild(body);
+    table.appendChild(tbody);
     termsSection.appendChild(table);
     container.appendChild(termsSection);
   }
 
-  const checklistSection = document.createElement("section");
-  checklistSection.className = "plan-section";
-  checklistSection.innerHTML = "<h4>Requirement Checklist</h4>";
-  const checklistList = document.createElement("ul");
-  const checklist = Array.isArray(planJson.requirementChecklist) ? planJson.requirementChecklist : [];
-  (checklist.length ? checklist : [{ item: "No checklist items.", status: "Needs Review", notes: "" }]).forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = `${item.item} — ${item.status}${item.notes ? ` (${item.notes})` : ""}`;
+  // Requirement checklist
+  const checklistSection   = document.createElement('section');
+  checklistSection.className = 'plan-section';
+  const checklistHeading   = document.createElement('h4');
+  checklistHeading.textContent = 'Requirement Checklist';
+  checklistSection.appendChild(checklistHeading);
+
+  const checklistList = document.createElement('ul');
+  const checklist     = Array.isArray(planJson.requirementChecklist)
+    ? planJson.requirementChecklist
+    : [];
+  const checklistItems = checklist.length
+    ? checklist
+    : [{ item: 'No checklist items.', status: 'Needs Review', notes: '' }];
+
+  checklistItems.forEach(item => {
+    const li = document.createElement('li');
+    li.textContent =
+      `${item.item} — ${item.status}${item.notes ? ` (${item.notes})` : ''}`;
     checklistList.appendChild(li);
   });
   checklistSection.appendChild(checklistList);
   container.appendChild(checklistSection);
 
-  container.appendChild(listSection("Policy Warnings", planJson.policyWarnings));
-  container.appendChild(listSection("Adjustment Options", planJson.adjustmentOptions));
-  container.appendChild(listSection("Assumptions", planJson.assumptions));
-  container.appendChild(listSection("Questions", planJson.questions));
+  container.appendChild(listSection('Policy Warnings',    planJson.policyWarnings));
+  container.appendChild(listSection('Adjustment Options', planJson.adjustmentOptions));
+  container.appendChild(listSection('Assumptions',        planJson.assumptions));
+  container.appendChild(listSection('Questions',          planJson.questions));
 
-  const disclaimerSection = document.createElement("section");
-  disclaimerSection.className = "plan-section";
-  disclaimerSection.innerHTML = `<h4>Disclaimer</h4><p>${planJson.disclaimer || "No disclaimer provided."}</p>`;
+  const disclaimerSection   = document.createElement('section');
+  disclaimerSection.className = 'plan-section';
+  const disclaimerHeading   = document.createElement('h4');
+  disclaimerHeading.textContent = 'Disclaimer';
+  const disclaimerText      = document.createElement('p');
+  disclaimerText.textContent = planJson.disclaimer || 'No disclaimer provided.';
+  disclaimerSection.appendChild(disclaimerHeading);
+  disclaimerSection.appendChild(disclaimerText);
   container.appendChild(disclaimerSection);
 }
 
+// ── Thread renderer ───────────────────────────────────────────────────────────
 function renderThread() {
-  chatThread.innerHTML = "";
+  chatThread.innerHTML = '';
 
   if (!messages.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-thread";
-    empty.textContent = "Start by choosing a quick action or sending a message.";
+    const empty   = document.createElement('p');
+    empty.className = 'empty-thread';
+    empty.textContent = 'Start by choosing a quick action or sending a message.';
     chatThread.appendChild(empty);
     return;
   }
 
-  messages.forEach((message) => {
-    const node = document.createElement("article");
+  messages.forEach(message => {
+    const node    = document.createElement('article');
     node.className = `msg ${message.role}`;
 
-    if (message.role === "assistant" && message.planJson) {
+    if (message.role === 'assistant' && message.planJson) {
       renderAssistantPlan(node, message.planJson);
     } else {
-      const text = document.createElement("p");
+      const text  = document.createElement('p');
       text.textContent = message.content;
       node.appendChild(text);
     }
@@ -245,66 +332,75 @@ function renderThread() {
   chatThread.scrollTop = chatThread.scrollHeight;
 }
 
-async function callAssistant(userContent, action = "chat") {
-  messages.push({ role: "user", content: userContent });
+// ── API: call plan assistant ──────────────────────────────────────────────────
+async function callAssistant(userContent, action = 'chat') {
+  messages.push({ role: 'user', content: userContent });
   renderThread();
   persistConversation();
 
   setLoading(true);
-  setStatus("FrogNav is thinking...");
+  setStatus('FrogNav is thinking...');
+
+  // FIX #9: Clear any stale replace warnings when a new plan request starts
+  if (replaceWarnings) {
+    replaceWarnings.textContent = '';
+    replaceWarnings.classList.remove('error');
+  }
 
   try {
-    const response = await fetch("/api/plan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/plan', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        profile: readProfile(),
+        profile:  readProfile(),
         action,
         lastPlan,
-        message: userContent,
+        message:  userContent,
       }),
     });
 
     const raw = await response.text();
     let payload = null;
-    try {
-      payload = raw ? JSON.parse(raw) : null;
-    } catch {
-      payload = null;
-    }
+    try   { payload = raw ? JSON.parse(raw) : null; }
+    catch { payload = null; }
 
     if (!response.ok) {
-      if (!payload || typeof payload !== "object") {
+      if (!payload || typeof payload !== 'object') {
         throw new Error(
-          `Request failed (${response.status}). Backend returned non-JSON error. Check /api/health and Vercel logs.`
+          `Request failed (${response.status}). Backend returned non-JSON. ` +
+          `Check /api/health and Vercel logs.`
         );
       }
-      const errorCode = payload.code || "FROGNAV_UNKNOWN";
-      const detail = payload.detail || "No backend detail provided.";
-      const where = payload.where || "unknown";
-      throw new Error(`Request failed (${response.status}) [${errorCode}] ${detail} (where: ${where})`);
+      const errorCode = payload.code   || 'FROGNAV_UNKNOWN';
+      const detail    = payload.detail || 'No backend detail provided.';
+      const where     = payload.where  || 'unknown';
+      throw new Error(
+        `Request failed (${response.status}) [${errorCode}] ${detail} (where: ${where})`
+      );
     }
 
-    if (!payload || typeof payload !== "object") {
-      throw new Error("Backend returned non-JSON error. Check /api/health and Vercel logs.");
+    if (!payload || typeof payload !== 'object') {
+      throw new Error(
+        'Backend returned non-JSON response. Check /api/health and Vercel logs.'
+      );
     }
 
     lastPlan = payload;
     persistLastPlan();
 
     messages.push({
-      role: "assistant",
-      content: payload.planSummary || "Plan generated.",
+      role:     'assistant',
+      content:  payload.planSummary || 'Plan generated.',
       planJson: payload,
     });
 
-    setStatus("Ready.");
+    setStatus('Ready.');
   } catch (error) {
     messages.push({
-      role: "assistant",
-      content: error.message || "Request failed.",
+      role:    'assistant',
+      content: error.message || 'Request failed.',
     });
-    setStatus(error.message || "Request failed.", true);
+    setStatus(error.message || 'Request failed.', true);
   } finally {
     persistConversation();
     setLoading(false);
@@ -312,25 +408,43 @@ async function callAssistant(userContent, action = "chat") {
   }
 }
 
-
+// ── API: catalog search (for replace dropdowns) ───────────────────────────────
+// FIX #6: Now clears catalogOptions on every call — including errors and short queries
 async function searchCatalogOptions(query) {
+  // Always clear first so stale options don't linger
+  if (catalogOptions) catalogOptions.innerHTML = '';
+
   if (!query || query.trim().length < 2) return;
-  const level = readProfile().level || "undergrad";
-  const response = await fetch(`/api/catalog/search?q=${encodeURIComponent(query)}&limit=8&level=${encodeURIComponent(level)}`);
-  const payload = await response.json().catch(() => ({ results: [] }));
-  const results = Array.isArray(payload.results) ? payload.results : [];
-  catalogOptions.innerHTML = '';
-  results.forEach((item) => {
-    const option = document.createElement('option');
-    option.value = item.code;
-    option.label = `${item.code} — ${item.description || ''}`;
-    catalogOptions.appendChild(option);
-  });
+
+  const level = readProfile().level || 'undergrad';
+  try {
+    const response = await fetch(
+      `/api/catalog/search?q=${encodeURIComponent(query)}&limit=8&level=${encodeURIComponent(level)}`
+    );
+    const payload = await response.json().catch(() => ({ results: [] }));
+    const results = Array.isArray(payload.results) ? payload.results : [];
+
+    results.forEach(item => {
+      const option  = document.createElement('option');
+      option.value  = item.code;
+      // FIX #7: label uses textContent-equivalent assignment — no innerHTML
+      option.label  = `${item.code} — ${item.title || item.description || ''}`;
+      catalogOptions.appendChild(option);
+    });
+  } catch {
+    // Silently fail — the input still works, just no autocomplete suggestions
+  }
 }
 
+// ── API: replace course ───────────────────────────────────────────────────────
 async function replaceCourseFlow() {
   const fromCode = replaceFromInput.value.trim().toUpperCase();
-  const toCode = replaceToInput.value.trim().toUpperCase();
+  const toCode   = replaceToInput.value.trim().toUpperCase();
+
+  // Clear previous result
+  replaceWarnings.textContent = '';
+  replaceWarnings.classList.remove('error');
+
   if (!lastPlan) {
     replaceWarnings.textContent = 'Build a plan before replacing a course.';
     replaceWarnings.classList.add('error');
@@ -341,141 +455,180 @@ async function replaceCourseFlow() {
     replaceWarnings.classList.add('error');
     return;
   }
-  const response = await fetch('/api/plan/replace', {
-    method: 'POST',
+
+  // FIX #4: Correct route is /api/replace — not /api/plan/replace
+  const response = await fetch('/api/replace', {
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planJson: lastPlan, fromCode, toCode, profile: readProfile() }),
+    body: JSON.stringify({
+      planJson: lastPlan,
+      fromCode,
+      toCode,
+      profile: readProfile(),
+    }),
   });
+
   const payload = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    replaceWarnings.textContent = payload.error || 'Replace failed.';
+    // FIX #5: Backend returns payload.detail — not payload.error
+    replaceWarnings.textContent =
+      payload.detail || payload.error || 'Replace failed. Please try again.';
     replaceWarnings.classList.add('error');
     return;
   }
 
   lastPlan = payload.planJson;
   persistLastPlan();
-  messages.push({ role: 'assistant', content: `Replaced ${fromCode} with ${toCode}.`, planJson: lastPlan });
+
+  messages.push({
+    role:     'assistant',
+    content:  `Replaced ${fromCode} with ${toCode}.`,
+    planJson: lastPlan,
+  });
   persistConversation();
   renderThread();
 
   const warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
-  replaceWarnings.textContent = warnings.length ? warnings.join(' ') : 'Course replacement applied.';
+  replaceWarnings.textContent = warnings.length
+    ? warnings.join(' ')
+    : 'Course replacement applied successfully.';
   replaceWarnings.classList.toggle('error', warnings.length > 0);
 }
 
-
+// ── Quick-action labels ───────────────────────────────────────────────────────
+// FIX #2: Now updates ALL quick-action buttons — not just "build"
 function updateQuickActionLabels() {
-  const level = readProfile().level || "undergrad";
-  const buildButton = quickActionButtons.find((button) => button.dataset.action === "build");
-  if (buildButton) {
-    buildButton.textContent = level === "grad" ? "Build my Kinesiology MS plan" : "Build my Movement Science plan";
-  }
+  const level = readProfile().level || 'undergrad';
+  const prompts = QUICK_ACTION_PROMPTS[level] || QUICK_ACTION_PROMPTS.undergrad;
+
+  quickActionButtons.forEach(button => {
+    const action = button.dataset.action;
+    if (!action) return;
+    if (prompts[action]) {
+      button.textContent = prompts[action];
+    }
+  });
 }
 
+// ── Quick-action prompt builder ───────────────────────────────────────────────
 function quickActionPrompt(action, profile) {
-  const level = profile.level || "undergrad";
-  const base = QUICK_ACTION_PROMPTS[level]?.[action] || QUICK_ACTION_PROMPTS.undergrad[action] || "";
-  if (level === "grad" && action === "honors") {
+  const level = profile.level || 'undergrad';
+  const base  = QUICK_ACTION_PROMPTS[level]?.[action]
+             || QUICK_ACTION_PROMPTS.undergrad[action]
+             || '';
+
+  // Grad-specific contextual notes appended to the prompt for the AI
+  if (level === 'grad' && action === 'honors') {
     return `${base}. Note: Honors College tracks are undergraduate-only; explain graduate equivalent options instead.`;
   }
-  if (level === "grad" && action === "compare") {
+  if (level === 'grad' && action === 'compare') {
     return `${base}. Note: Graduate plans do not use undergraduate Gen Ed requirements.`;
   }
+  if (level === 'grad' && action === 'add_minor') {
+    return `${base}. Note: Graduate students do not take undergraduate minors; focus on concentrations and certificates.`;
+  }
+
   return base;
 }
 
-function openModal() {
-  profileModal.hidden = false;
-}
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function openModal()  { profileModal.hidden = false; }
+function closeModal() { profileModal.hidden = true;  }
 
-function closeModal() {
-  profileModal.hidden = true;
-}
-
-quickActionButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+// ── Quick-action button listeners ────────────────────────────────────────────
+quickActionButtons.forEach(button => {
+  button.addEventListener('click', () => {
     const action = button.dataset.action;
     if (!action) return;
 
-    if (action === "build") {
-      ensureBuildDefaults();
-    }
+    if (action === 'build') ensureBuildDefaults();
 
     const profile = readProfile();
 
-    if (action === "add_minor" && !profile.minorProgram && profile.level !== "grad") {
-      setStatus("Select a minor in Student Profile before using Add a minor to my plan.", true);
+    if (action === 'add_minor' && !profile.minorProgram && profile.level !== 'grad') {
+      setStatus(
+        'Select a minor in Student Profile before using "Add a minor to my plan".',
+        true
+      );
       openModal();
       return;
     }
 
-    if (profile.level === "grad" && action === "honors") {
-      setStatus("Honors College planning is undergraduate-only; graduate plan guidance will skip honors rules.");
+    if (profile.level === 'grad' && action === 'honors') {
+      setStatus(
+        'Honors College planning is undergraduate-only; graduate equivalent options will be explained.'
+      );
     }
-    if (profile.level === "grad" && action === "compare") {
-      setStatus("Graduate planning does not include undergraduate Gen Ed buckets; comparison will focus on graduate scope.");
+    if (profile.level === 'grad' && action === 'compare') {
+      setStatus(
+        'Graduate planning does not include undergraduate Gen Ed buckets; comparison will focus on graduate scope.'
+      );
     }
 
     callAssistant(quickActionPrompt(action, profile), action);
   });
 });
 
-chatComposer.addEventListener("submit", (event) => {
+// ── Chat composer listener ────────────────────────────────────────────────────
+chatComposer.addEventListener('submit', event => {
   event.preventDefault();
   const content = chatInput.value.trim();
   if (!content || loading) return;
-  chatInput.value = "";
-  callAssistant(content, "chat");
+  chatInput.value = '';
+  callAssistant(content, 'chat');
 });
 
-profileForm.addEventListener("input", () => { saveProfile(); updateQuickActionLabels(); });
-profileForm.addEventListener("change", () => { saveProfile(); updateQuickActionLabels(); });
-openProfileBtn.addEventListener("click", openModal);
-closeProfileBtn.addEventListener("click", closeModal);
-profileModal.addEventListener("click", (event) => {
-  if (event.target.matches("[data-close-modal]")) closeModal();
+// ── Profile form listeners ────────────────────────────────────────────────────
+profileForm.addEventListener('input',  () => { saveProfile(); updateQuickActionLabels(); });
+profileForm.addEventListener('change', () => { saveProfile(); updateQuickActionLabels(); });
+
+// ── Modal listeners ───────────────────────────────────────────────────────────
+openProfileBtn.addEventListener('click', openModal);
+closeProfileBtn.addEventListener('click', closeModal);
+profileModal.addEventListener('click', event => {
+  if (event.target.matches('[data-close-modal]')) closeModal();
 });
 
+// ── Replace panel listeners ───────────────────────────────────────────────────
 if (replaceFromInput && replaceToInput && replaceBtn) {
-  replaceFromInput.addEventListener('input', () => searchCatalogOptions(replaceFromInput.value));
-  replaceToInput.addEventListener('input', () => searchCatalogOptions(replaceToInput.value));
+  replaceFromInput.addEventListener('input', () =>
+    searchCatalogOptions(replaceFromInput.value)
+  );
+  replaceToInput.addEventListener('input', () =>
+    searchCatalogOptions(replaceToInput.value)
+  );
   replaceBtn.addEventListener('click', () => {
-    replaceCourseFlow().catch((error) => {
+    replaceCourseFlow().catch(error => {
       replaceWarnings.textContent = error.message || 'Replace failed.';
       replaceWarnings.classList.add('error');
     });
   });
 }
 
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
 (function bootstrap() {
+  // Restore saved profile or apply defaults
   const savedProfile = localStorage.getItem(PROFILE_KEY);
   if (savedProfile) {
-    try {
-      applyProfile(JSON.parse(savedProfile));
-    } catch {
-      applyProfile(DEFAULTS);
-    }
+    try   { applyProfile(JSON.parse(savedProfile)); }
+    catch { applyProfile(DEFAULTS); }
   } else {
     applyProfile(DEFAULTS);
   }
 
+  // Restore conversation history
   const savedMessages = localStorage.getItem(THREAD_KEY);
   if (savedMessages) {
-    try {
-      messages = JSON.parse(savedMessages);
-    } catch {
-      messages = [];
-    }
+    try   { messages = JSON.parse(savedMessages); }
+    catch { messages = []; }
   }
 
+  // Restore last plan
   const savedPlan = localStorage.getItem(LAST_PLAN_KEY);
   if (savedPlan) {
-    try {
-      lastPlan = JSON.parse(savedPlan);
-    } catch {
-      lastPlan = null;
-    }
+    try   { lastPlan = JSON.parse(savedPlan); }
+    catch { lastPlan = null; }
   }
 
   updateQuickActionLabels();

@@ -1,4 +1,3 @@
-// data/undergrad/gened_rules.json
 {
   "buckets": [
     { "id": "GENED-ENG", "name": "English Composition", "placeholder": "ENGL 10803" },

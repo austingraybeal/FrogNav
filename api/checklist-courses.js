@@ -50,12 +50,20 @@ module.exports = function handler(req, res) {
     });
   }
 
-  function resolveCourse(code, groupName) {
+ function resolveCourse(code, groupName) {
     const entry = courseMap.get(code.toUpperCase());
+    // Catalog has no title field — extract first sentence of description as title
+    let title = code;
+    if (entry?.description) {
+      const firstSentence = entry.description.split(/[.!?]/)[0].trim();
+      title = firstSentence.length > 0 && firstSentence.length < 80
+        ? firstSentence
+        : code;
+    }
     return {
       code,
-      title:   entry?.title       || code,
-      credits: entry?.credits     ?? null,
+      title,
+      credits: entry?.credits ?? null,
       group:   groupName,
     };
   }

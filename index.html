@@ -3,11 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="FrogNav — TCU Kinesiology AI degree-planning advisor." />
     <title>FrogNav</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app-bg"></div>
+    <!-- Decorative background — hidden from screen readers -->
+    <div class="app-bg" aria-hidden="true"></div>
+
     <main class="hub" aria-label="FrogNav home">
       <header class="hub-header">
         <h1>FrogNav</h1>
@@ -15,62 +18,88 @@
         <button id="openProfileBtn" class="text-link" type="button">Student Profile</button>
       </header>
 
+      <!-- Quick action buttons — labels updated dynamically by app.js -->
       <section class="quick-actions" aria-label="Quick actions">
-        <button class="quick-action" data-action="build" type="button">Build my Movement Science plan</button>
+        <button class="quick-action" data-action="build"     type="button">Build my plan</button>
         <button class="quick-action" data-action="add_minor" type="button">Add a minor to my plan</button>
-        <button class="quick-action" data-action="honors" type="button">Show me the Honors version</button>
-        <button class="quick-action" data-action="compare" type="button">Compare Movement Science and Health &amp; Fitness</button>
+        <button class="quick-action" data-action="honors"    type="button">Show me the Honors version</button>
+        <button class="quick-action" data-action="compare"   type="button">Compare programs</button>
       </section>
 
       <section id="chatThread" class="chat-thread" aria-live="polite"></section>
 
-      
-      <section class="replace-panel" aria-label="Replace a course">
-        <h3>Replace a course</h3>
+      <!-- Replace panel — each input has its own datalist to prevent overwrite -->
+      <section class="replace-panel" aria-labelledby="replacePanelTitle">
+        <h3 id="replacePanelTitle">Replace a course</h3>
         <div class="replace-grid">
           <div>
             <label for="replaceFrom">From</label>
-            <input id="replaceFrom" list="catalogOptions" placeholder="e.g. KINE 20203" />
+            <input
+              id="replaceFrom"
+              list="catalogOptionsFrom"
+              placeholder="e.g. KINE 20203"
+              autocomplete="off"
+            />
+            <datalist id="catalogOptionsFrom"></datalist>
           </div>
           <div>
             <label for="replaceTo">To</label>
-            <input id="replaceTo" list="catalogOptions" placeholder="e.g. KINE 3XXXX" />
+            <input
+              id="replaceTo"
+              list="catalogOptionsTo"
+              placeholder="e.g. KINE 30143"
+              autocomplete="off"
+            />
+            <datalist id="catalogOptionsTo"></datalist>
           </div>
           <button id="replaceBtn" type="button">Replace</button>
         </div>
-        <p id="replaceWarnings" class="status"></p>
-        <datalist id="catalogOptions"></datalist>
+        <p id="replaceWarnings" class="status" role="status" aria-live="polite"></p>
       </section>
 
       <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
     </main>
 
+    <!-- Student Profile Modal -->
     <div id="profileModal" class="modal" hidden>
       <div class="modal-backdrop" data-close-modal></div>
-      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <section
+        class="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profileTitle"
+      >
         <div class="modal-header">
           <h2 id="profileTitle">Student Profile</h2>
           <button id="closeProfileBtn" type="button" class="icon-btn" aria-label="Close">✕</button>
         </div>
 
         <form id="profileForm" class="profile-form" novalidate>
+
+          <!-- Academic Level — controls which majors are visible below -->
           <label for="level">Academic Level</label>
           <select id="level" name="level">
             <option value="undergrad" selected>Undergraduate</option>
             <option value="grad">Graduate</option>
           </select>
 
+          <!-- Major — undergrad and grad options separated by optgroup -->
           <label for="majorProgram">Major / Program</label>
           <select id="majorProgram" name="majorProgram">
             <option value="">Select a major</option>
-            <option value="Movement Science">Movement Science</option>
-            <option value="Health and Fitness">Health and Fitness</option>
-            <option value="Physical Education">Physical Education</option>
-            <option value="Physical Education with Strength and Conditioning">Physical Education with Strength and Conditioning</option>
-            <option value="Movement Science/MS Athletic Training (3+2)">Movement Science/MS Athletic Training (3+2)</option>
-            <option value="Kinesiology, MS">Kinesiology, MS</option>
+            <optgroup id="undergradMajors" label="Undergraduate">
+              <option value="Movement Science">Movement Science</option>
+              <option value="Health and Fitness">Health and Fitness</option>
+              <option value="Physical Education">Physical Education</option>
+              <option value="Physical Education with Strength and Conditioning">Physical Education with Strength and Conditioning</option>
+              <option value="Movement Science/MS Athletic Training (3+2)">Movement Science/MS Athletic Training (3+2)</option>
+            </optgroup>
+            <optgroup id="gradMajors" label="Graduate">
+              <option value="Kinesiology, MS">Kinesiology, MS</option>
+            </optgroup>
           </select>
 
+          <!-- Minor -->
           <label for="minorProgram">Minor</label>
           <select id="minorProgram" name="minorProgram">
             <option value="">None</option>
@@ -82,37 +111,93 @@
             <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
           </select>
 
+          <!-- Honors -->
           <fieldset class="toggle-fieldset">
             <legend>Honors College</legend>
-            <label><input type="checkbox" id="honorsCollege" name="honorsCollege" /> Include Honors track</label>
+            <label>
+              <input type="checkbox" id="honorsCollege" name="honorsCollege" />
+              Include Honors track
+            </label>
           </fieldset>
 
+          <!-- Term inputs -->
           <label for="startTerm">Start term</label>
-          <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2026" />
+          <input
+            id="startTerm"
+            name="startTerm"
+            type="text"
+            placeholder="Fall 2026"
+            pattern="^(Fall|Spring|Summer)\s+\d{4}$"
+            title="Format: Fall 2026, Spring 2027, Summer 2027"
+          />
 
           <label for="targetGraduation">Target graduation</label>
-          <input id="targetGraduation" name="targetGraduation" type="text" placeholder="Spring 2030" />
+          <input
+            id="targetGraduation"
+            name="targetGraduation"
+            type="text"
+            placeholder="Spring 2030"
+            pattern="^(Fall|Spring|Summer)\s+\d{4}$"
+            title="Format: Fall 2026, Spring 2027, Summer 2027"
+          />
 
+          <!-- Credits and summer -->
           <label for="creditsPerTerm">Credits per term</label>
-          <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="24" placeholder="15" />
+          <input
+            id="creditsPerTerm"
+            name="creditsPerTerm"
+            type="number"
+            min="1"
+            max="18"
+            placeholder="15"
+          />
 
-          <label><input type="checkbox" id="summerOptional" name="summerOptional" checked /> Summer optional</label>
+          <label>
+            <input type="checkbox" id="summerOptional" name="summerOptional" checked />
+            Summer optional (include summer terms only if needed)
+          </label>
 
+          <!-- Transfer / AP credit -->
           <label for="apTransfer">AP / transfer credit</label>
-          <textarea id="apTransfer" name="apTransfer" rows="3" placeholder="None"></textarea>
+          <textarea
+            id="apTransfer"
+            name="apTransfer"
+            rows="3"
+            placeholder="e.g. AP Biology (4) = BIOL 10504, Transfer: KINE 10103"
+          ></textarea>
 
+          <!-- Completed courses -->
           <label for="completedCourses">Completed courses</label>
-          <textarea id="completedCourses" name="completedCourses" rows="4" placeholder="KINE 10103, BIOL 10504"></textarea>
+          <textarea
+            id="completedCourses"
+            name="completedCourses"
+            rows="4"
+            placeholder="KINE 10103, BIOL 10504"
+          ></textarea>
 
+          <!-- Constraints -->
           <label for="constraints">Constraints</label>
-          <textarea id="constraints" name="constraints" rows="4" placeholder="No Friday classes"></textarea>
+          <textarea
+            id="constraints"
+            name="constraints"
+            rows="4"
+            placeholder="No Friday classes, working 20hrs/week"
+          ></textarea>
+
         </form>
       </section>
     </div>
 
+    <!-- Chat composer — aria-controls links it to the chat thread -->
     <footer class="composer-wrap">
       <form id="chatComposer" class="composer" autocomplete="off">
-        <input id="chatInput" type="text" placeholder="Message FrogNav..." />
+        <input
+          id="chatInput"
+          type="text"
+          placeholder="Message FrogNav..."
+          aria-label="Message input"
+          aria-controls="chatThread"
+        />
         <button id="sendBtn" type="submit">Send</button>
       </form>
     </footer>
@@ -120,3 +205,4 @@
     <script src="app.js"></script>
   </body>
 </html>
+

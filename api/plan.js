@@ -298,7 +298,9 @@ module.exports = async function handler(req, res) {
   // Build prompt
   const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules);
 
-  const userMessage = JSON.stringify({ action, profile, lastPlan, message });
+  const userMessage = lastPlan
+  ? `The student has an existing plan. Update or answer based on it.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}`
+  : JSON.stringify({ action, profile, message });
 
   // Call Claude with timeout
   const controller  = new AbortController();

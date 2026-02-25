@@ -77,8 +77,8 @@ function syncMajorOptions() {
   gradGroup.hidden      = !isGrad;
 
   // Disable options in hidden groups so they can't be submitted
-  [...undergradGroup.options].forEach(opt => opt.disabled = isGrad);
-  [...gradGroup.options].forEach(opt => opt.disabled      = !isGrad);
+  [...undergradGroup.querySelectorAll('option')].forEach(opt => opt.disabled = isGrad);
+[...gradGroup.querySelectorAll('option')].forEach(opt => opt.disabled = !isGrad);
 
   // If currently selected major belongs to the now-hidden group, reset it
   const selectedOpt = majorSelect.querySelector(`option[value="${majorSelect.value}"]`);

@@ -3,9 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="FrogNav — TCU Kinesiology AI degree-planning advisor." />
-    <title>FrogNav</title>
+    <meta name="description" content="FrogForward — TCU Kinesiology AI degree-planning advisor." />
+    <title>FrogForward</title>
     <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+    <style>
+      .hub-header { position: relative; overflow: hidden; min-height: 160px; padding-bottom: 1.5rem; }
+      .hub-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.2rem,11vw,6rem); letter-spacing: 0.04em; line-height: 1; white-space: nowrap; }
+      .frog-mascot { position: absolute; bottom: -30px; right: -40px; width: 260px; opacity: 0.95; z-index: 1; pointer-events: none; }
+      .hub-header-text { position: relative; z-index: 2; }
+    </style>
   </head>
   <body>
     <!-- Decorative background — hidden from screen readers -->
@@ -13,9 +20,12 @@
 
     <main class="hub" aria-label="FrogNav home">
       <header class="hub-header">
-        <h1>FrogNav</h1>
-        <p>TCU Kinesiology AI degree-planning advisor.</p>
-        <button id="openProfileBtn" class="text-link" type="button">Student Profile</button>
+        <div class="hub-header-text">
+          <h1><span style="color:#ffffff">Frog</span><span style="color:#7c3aed">Forward</span></h1>
+          <p>TCU Kinesiology AI degree-planning advisor.</p>
+          <button id="openProfileBtn" class="text-link" type="button">Student Profile</button>
+        </div>
+        <img class="frog-mascot" src="frog.png" alt="" aria-hidden="true" />
       </header>
 
       <!-- Quick action buttons — labels updated dynamically by app.js -->

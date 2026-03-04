@@ -252,7 +252,7 @@ function renderAssistantPlan(container, planJson) {
   // Terms table
   if (Array.isArray(planJson.terms) && planJson.terms.length) {
     const termsSection   = document.createElement('section');
-    termsSection.className = 'plan-section';
+    termsSection.className = 'plan-section has-table';
     const termsHeading   = document.createElement('h4');
     termsHeading.textContent = 'Terms';
     termsSection.appendChild(termsHeading);

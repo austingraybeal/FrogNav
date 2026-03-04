@@ -38,34 +38,6 @@
 
       <section id="chatThread" class="chat-thread" aria-live="polite"></section>
 
-      <!-- Replace panel — each input has its own datalist to prevent overwrite -->
-      <section class="replace-panel" aria-labelledby="replacePanelTitle">
-        <h3 id="replacePanelTitle">Replace a course</h3>
-        <div class="replace-grid">
-          <div>
-            <label for="replaceFrom">From</label>
-            <input
-              id="replaceFrom"
-              list="catalogOptionsFrom"
-              placeholder="e.g. KINE 20203"
-              autocomplete="off"
-            />
-            <datalist id="catalogOptionsFrom"></datalist>
-          </div>
-          <div>
-            <label for="replaceTo">To</label>
-            <input
-              id="replaceTo"
-              list="catalogOptionsTo"
-              placeholder="e.g. KINE 30143"
-              autocomplete="off"
-            />
-            <datalist id="catalogOptionsTo"></datalist>
-          </div>
-          <button id="replaceBtn" type="button">Replace</button>
-        </div>
-        <p id="replaceWarnings" class="status" role="status" aria-live="polite"></p>
-      </section>
 
       <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
     </main>

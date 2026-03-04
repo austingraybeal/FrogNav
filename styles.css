@@ -613,3 +613,47 @@ body::-webkit-scrollbar-button,
   pointer-events: none;
   z-index: 1;
 }
+
+/* ── Plan details toggle ─────────────────────────────────────────────────── */
+.plan-details-toggle {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.plan-details-toggle summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.3rem 0;
+  user-select: none;
+}
+.plan-details-toggle summary:hover { color: var(--text); }
+.plan-details-toggle[open] summary { color: var(--text); }
+
+/* ── What's next ─────────────────────────────────────────────────────────── */
+.next-steps { margin-top: 1.25rem; }
+.next-steps-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+}
+.next-steps-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.next-step-btn {
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.next-step-btn:hover {
+  background: rgba(126, 77, 255, 0.2);
+  border-color: var(--purple);
+}

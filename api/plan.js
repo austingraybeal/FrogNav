@@ -159,6 +159,9 @@ OUTPUT SCHEMA (return this exact structure, no extra keys):
   "adjustmentOptions": ["string"],
   "assumptions": ["string"],
   "questions": ["string"],
+  "nextSteps": [
+    { "label": "string — short button label (max 5 words)", "prompt": "string — full prompt to send" }
+  ],
   "disclaimer": "string"
 }`;
 }
@@ -243,8 +246,12 @@ function normalizePlan(raw, profile) {
     policyWarnings:    (raw.policyWarnings    || []).map(String),
     adjustmentOptions: (raw.adjustmentOptions || []).map(String),
     assumptions,
-    questions:         (raw.questions         || []).map(String),
-    disclaimer:        finalDisclaimer,
+    questions: (raw.questions || []).map(String),
+    nextSteps: (raw.nextSteps || []).slice(0, 3).map(s => ({
+      label: String(s.label || '').trim(),
+      prompt: String(s.prompt || '').trim(),
+    })),
+    disclaimer: finalDisclaimer,
   };
 }
 
@@ -274,7 +281,8 @@ function fallbackPlan(profile, warning) {
       'Term availability not provided; verify in TCU Class Search.',
       'Prerequisite sequencing assumed based on standard progression.',
     ],
-    questions:  ['Would you like to try again?'],
+    questions: ['Would you like to try again?'],
+    nextSteps: [{ label: 'Try again', prompt: 'Please try building my plan again.' }],
     disclaimer: REQUIRED_DISCLAIMER,
   };
 }

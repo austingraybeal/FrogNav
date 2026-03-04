@@ -331,20 +331,47 @@ function renderAssistantPlan(container, planJson) {
   checklistSection.appendChild(checklistList);
   container.appendChild(checklistSection);
 
-  container.appendChild(listSection('Policy Warnings',    planJson.policyWarnings));
   container.appendChild(listSection('Adjustment Options', planJson.adjustmentOptions));
-  container.appendChild(listSection('Assumptions',        planJson.assumptions));
   container.appendChild(listSection('Questions',          planJson.questions));
 
-  const disclaimerSection   = document.createElement('section');
-  disclaimerSection.className = 'plan-section';
-  const disclaimerHeading   = document.createElement('h4');
-  disclaimerHeading.textContent = 'Disclaimer';
-  const disclaimerText      = document.createElement('p');
-  disclaimerText.textContent = planJson.disclaimer || 'No disclaimer provided.';
-  disclaimerSection.appendChild(disclaimerHeading);
-  disclaimerSection.appendChild(disclaimerText);
-  container.appendChild(disclaimerSection);
+  // Policy Warnings + Assumptions collapsed into a details toggle
+  if (
+    (planJson.policyWarnings?.length || planJson.assumptions?.length)
+  ) {
+    const details = document.createElement('details');
+    details.className = 'plan-details-toggle';
+    const summary = document.createElement('summary');
+    summary.textContent = 'ℹ️ Policies & Assumptions';
+    details.appendChild(summary);
+    if (planJson.policyWarnings?.length) {
+      details.appendChild(listSection('Policy Warnings', planJson.policyWarnings));
+    }
+    if (planJson.assumptions?.length) {
+      details.appendChild(listSection('Assumptions', planJson.assumptions));
+    }
+    container.appendChild(details);
+  }
+
+  // What's next
+  if (Array.isArray(planJson.nextSteps) && planJson.nextSteps.length) {
+    const nextSection = document.createElement('section');
+    nextSection.className = 'plan-section next-steps';
+    const nextHeading = document.createElement('p');
+    nextHeading.className = 'next-steps-label';
+    nextHeading.textContent = 'What would you like to do next?';
+    nextSection.appendChild(nextHeading);
+    const btnRow = document.createElement('div');
+    btnRow.className = 'next-steps-btns';
+    planJson.nextSteps.forEach(step => {
+      const btn = document.createElement('button');
+      btn.className = 'next-step-btn';
+      btn.textContent = step.label;
+      btn.addEventListener('click', () => callAssistant(step.prompt, 'chat'));
+      btnRow.appendChild(btn);
+    });
+    nextSection.appendChild(btnRow);
+    container.appendChild(nextSection);
+  }
 }
 
 // ── Thread renderer ───────────────────────────────────────────────────────────

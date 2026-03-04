@@ -1,0 +1,200 @@
+{
+  "version": "1.0",
+  "description": "Career-based course recommendations for TCU Kinesiology majors. Used to replace generic TCU Core placeholders and free electives with courses that best prepare students for their intended career path.",
+  "careerTracks": {
+
+    "Pre-PT/OT/DPT": {
+      "label": "Pre-Physical or Occupational Therapy (DPT/OT)",
+      "applicableMajors": ["Movement Science", "Movement Science/MS Athletic Training (MOSC 3+2)"],
+      "description": "Optimizes plan for doctorate-level PT or OT programs. Prioritizes biology, chemistry, physics, psychology, and statistics.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10044"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "CHEM 20123", "title": "Organic Chemistry I", "credits": 3, "notes": "Required by most DPT and OT programs" },
+        { "code": "CHEM 20133", "title": "Organic Chemistry II", "credits": 3, "notes": "Required by most DPT programs" },
+        { "code": "PSYC 30213", "title": "Abnormal Psychology", "credits": 3, "notes": "Recommended for OT applicants" },
+        { "code": "PSYC 30413", "title": "Developmental Psychology", "credits": 3, "notes": "Highly valued by OT programs" },
+        { "code": "NTDT 30331", "title": "Nutrition", "credits": 3, "notes": "Recommended for health professional applications" },
+        { "code": "BIOL 30204", "title": "Genetics", "credits": 4, "notes": "Strengthens science background for grad school" },
+        { "code": "HLTH 20203", "title": "First Aid and CPR", "credits": 3, "notes": "Required clinical prerequisite" },
+        { "code": "KINE 30523", "title": "Exercise Assessment and Prescription", "credits": 3, "notes": "Directly applicable to PT/OT clinical practice" }
+      ],
+      "advisingNote": "Most DPT programs require observation hours (100+ hrs recommended). OT programs require volunteer/shadowing experience. Plan to take the GRE by junior year."
+    },
+
+    "Pre-Med/DO/PA": {
+      "label": "Pre-Medicine, DO, or Physician Assistant",
+      "applicableMajors": ["Movement Science", "Health and Fitness", "Movement Science/MS Athletic Training (MOSC 3+2)"],
+      "description": "Optimizes plan for medical school (MD/DO) or PA programs. Prioritizes biology, chemistry, biochemistry, physics, and statistics.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10044"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "CHEM 20123", "title": "Organic Chemistry I", "credits": 3, "notes": "Required by all MD/DO/PA programs" },
+        { "code": "CHEM 20133", "title": "Organic Chemistry II", "credits": 3, "notes": "Required by all MD/DO/PA programs" },
+        { "code": "CHEM 30213", "title": "Biochemistry I", "credits": 3, "notes": "Required or strongly recommended by most programs; MCAT tested" },
+        { "code": "BIOL 30204", "title": "Genetics", "credits": 4, "notes": "Required or strongly recommended; MCAT tested" },
+        { "code": "BIOL 30304", "title": "Cell Biology", "credits": 4, "notes": "Recommended for MD/DO applicants" },
+        { "code": "PSYC 10213", "title": "Introduction to Psychology", "credits": 3, "notes": "MCAT tested — Psychology and Social Sciences section" },
+        { "code": "SOCL 10213", "title": "Introduction to Sociology", "credits": 3, "notes": "MCAT tested — Psychology and Social Sciences section" },
+        { "code": "NTDT 30331", "title": "Nutrition", "credits": 3, "notes": "Recommended for PA applicants" },
+        { "code": "STAT 20853", "title": "Elementary Statistics", "credits": 3, "notes": "Required by many PA programs; replaces MATH 10043 if not already taken" }
+      ],
+      "advisingNote": "MCAT preparation should begin no later than spring of junior year. MD/DO programs require 1000+ clinical hours. PA programs typically require 2000-3000 patient care hours. Join TCU Pre-Health Professions advising early."
+    },
+
+    "Coaching/Strength and Conditioning": {
+      "label": "Coaching or Strength & Conditioning",
+      "applicableMajors": ["Movement Science", "Health and Fitness", "Physical Education with Strength and Conditioning"],
+      "description": "Optimizes plan for careers in athletic performance, strength and conditioning, or coaching. Prioritizes biomechanics, exercise physiology, and performance courses.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10043"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "KINE 30343", "title": "Theory and Practice of Strength Training", "credits": 3, "notes": "Core for CSCS exam preparation" },
+        { "code": "KINE 40513", "title": "Advanced Strength and Conditioning", "credits": 3, "notes": "Advanced CSCS preparation" },
+        { "code": "KINE 40543", "title": "Practicum in Strength and Conditioning", "credits": 3, "notes": "Hands-on experience — highly recommended" },
+        { "code": "NTDT 30331", "title": "Nutrition", "credits": 3, "notes": "Sports nutrition knowledge essential for S&C careers" },
+        { "code": "KINE 30713", "title": "Psychology of Sport", "credits": 3, "notes": "Athlete motivation and performance psychology" },
+        { "code": "HLTH 30423", "title": "Nutrition and Physical Activity", "credits": 3, "notes": "Applied nutrition for performance" },
+        { "code": "MANA 30153", "title": "Management", "credits": 3, "notes": "Useful for coaching/program management roles" }
+      ],
+      "advisingNote": "Consider pursuing the CSCS (Certified Strength and Conditioning Specialist) certification through NSCA after graduation. Internship experience with a collegiate or professional program is highly valuable."
+    },
+
+    "Teaching/Physical Education": {
+      "label": "Teaching — Physical Education (K-12)",
+      "applicableMajors": ["Physical Education", "Physical Education with Strength and Conditioning"],
+      "description": "Optimizes plan for K-12 PE teacher certification. Education sequence is required and structured — limited flexibility in electives.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10043"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "EDUC 20003", "title": "Introduction to Education", "credits": 3, "notes": "Required — take early" },
+        { "code": "SPED 30003", "title": "Special Education", "credits": 3, "notes": "Recommended for all PE teachers — inclusive classrooms" },
+        { "code": "KINE 30713", "title": "Psychology of Sport", "credits": 3, "notes": "Valuable for motivating K-12 students" },
+        { "code": "HLTH 20203", "title": "First Aid and CPR", "credits": 3, "notes": "Required for most school districts" },
+        { "code": "KINE 30833", "title": "Physical Activity and Disability", "credits": 3, "notes": "Adapted PE — valuable for inclusive teaching" }
+      ],
+      "advisingNote": "Texas teacher certification requires passing the TExES PE 7-12 exam. Student teaching (EDUC 40966, 6 credits) is typically completed in the final semester. Apply to the College of Education teacher preparation program by sophomore year."
+    },
+
+    "Sport and Exercise Psychology": {
+      "label": "Sport & Exercise Psychology (Grad School Path)",
+      "applicableMajors": ["Movement Science", "Health and Fitness"],
+      "description": "Optimizes plan for graduate programs in sport psychology, counseling, or performance psychology. Prioritizes psychology coursework alongside kinesiology.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10043"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "PSYC 30213", "title": "Abnormal Psychology", "credits": 3, "notes": "Highly recommended for counseling/psychology graduate programs" },
+        { "code": "PSYC 30413", "title": "Developmental Psychology", "credits": 3, "notes": "Valuable context for working with athletes at various stages" },
+        { "code": "KINE 30723", "title": "Mental Performance Consulting", "credits": 3, "notes": "Directly aligned with sport psych career path" },
+        { "code": "KINE 51413", "title": "Psychology of Aging and Physical Activity", "credits": 3, "notes": "Broadens scope for exercise psychology practice" },
+        { "code": "KINE 51423", "title": "Psychology of Injury in Physical Activity", "credits": 3, "notes": "Critical for working with injured athletes" },
+        { "code": "STAT 20853", "title": "Elementary Statistics", "credits": 3, "notes": "Required for most graduate programs in psychology" },
+        { "code": "SOCL 10213", "title": "Introduction to Sociology", "credits": 3, "notes": "Useful context for understanding group dynamics in sport" }
+      ],
+      "advisingNote": "Graduate programs in sport psychology (MS or PhD) typically require GRE scores and research experience. Seek a research assistantship or independent study with a TCU faculty member by junior year. Consider the CMPC (Certified Mental Performance Consultant) credential pathway."
+    },
+
+    "Clinical/Allied Health": {
+      "label": "Clinical or Allied Health (non-MD)",
+      "applicableMajors": ["Health and Fitness", "Movement Science"],
+      "description": "Optimizes plan for careers in clinical exercise physiology, cardiac rehab, corporate wellness, or allied health. Prioritizes health science, nutrition, and clinical coursework.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10043"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "NTDT 30331", "title": "Nutrition", "credits": 3, "notes": "Essential for clinical exercise and wellness roles" },
+        { "code": "HLTH 20203", "title": "First Aid and CPR", "credits": 3, "notes": "Required for most clinical positions" },
+        { "code": "KINE 30523", "title": "Exercise Assessment and Prescription", "credits": 3, "notes": "Core clinical skill" },
+        { "code": "PSYC 10213", "title": "Introduction to Psychology", "credits": 3, "notes": "Useful for patient communication and behavior change" },
+        { "code": "MANA 30153", "title": "Management", "credits": 3, "notes": "Helpful for wellness program management roles" },
+        { "code": "BIOL 30204", "title": "Genetics", "credits": 4, "notes": "Strengthens science background for clinical settings" }
+      ],
+      "advisingNote": "Consider pursuing the ACSM-EP (Exercise Physiologist) certification or CEP (Clinical Exercise Physiologist) after graduation. ACE and NSCA certifications are also widely recognized in wellness and fitness settings."
+    },
+
+    "Undecided": {
+      "label": "Undecided / Exploring Options",
+      "applicableMajors": ["Movement Science", "Health and Fitness", "Physical Education", "Physical Education with Strength and Conditioning", "Movement Science/MS Athletic Training (MOSC 3+2)"],
+      "description": "Uses balanced general education courses. AI will ask the student about career interests to refine future plans.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10043"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "NTDT 30331", "title": "Nutrition", "credits": 3, "notes": "Broadly useful across all kinesiology career paths" },
+        { "code": "HLTH 20203", "title": "First Aid and CPR", "credits": 3, "notes": "Useful regardless of career path" },
+        { "code": "PSYC 10213", "title": "Introduction to Psychology", "credits": 3, "notes": "Broadly applicable" },
+        { "code": "MANA 30153", "title": "Management", "credits": 3, "notes": "Useful for any leadership or administrative role" }
+      ],
+      "advisingNote": "No career goal selected. The plan uses balanced general education defaults. Consider meeting with a TCU advisor or exploring the career tracks available in FrogForward to get a more tailored plan."
+    }
+
+  }
+}

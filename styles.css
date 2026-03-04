@@ -952,31 +952,33 @@ body::-webkit-scrollbar-button,
 
 /* ── Layout with sidebar ─────────────────────────────────────────────────── */
 body {
-  padding-left: 220px;
+  padding-left: 0;
 }
 .hub {
-  margin: 0 auto;
-  width: min(1100px, 92%);
+  margin-left: 220px;
+  margin-right: 0;
+  width: min(1100px, calc(100vw - 260px));
   min-height: 100vh;
   padding: 4rem 0 8rem;
 }
 .hub-header {
   text-align: center;
 }
-
 /* Empty state — flex centering in content area */
 .hub:not(.has-messages) {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem 6rem;
+  height: 100vh;
+  min-height: 0;
+  padding: clamp(1rem, 5vh, 4rem) 1rem clamp(4rem, 8vh, 8rem);
+  box-sizing: border-box;
 }
 .hub:not(.has-messages) .hub-header {
   width: 100%;
   max-width: 780px;
 }
-
 /* Greeting */
 .empty-greeting {
   display: none;
@@ -992,8 +994,7 @@ body {
 .hub:not(.has-messages) .empty-greeting {
   display: block;
 }
-
-/* Composer — static in empty state, fixed when chatting */
+/* Composer — static in empty state */
 .composer-wrap {
   position: static !important;
   transform: none !important;
@@ -1002,25 +1003,23 @@ body {
   width: 100%;
   max-width: 780px;
 }
-
-/* Override: fixed to bottom when chatting */
+/* Fixed to bottom when chatting */
 .hub.has-messages ~ footer.composer-wrap {
   position: fixed !important;
   bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%) !important;
-  width: min(1100px, 92%);
+  left: 220px;
+  right: 0;
+  margin: 0 auto;
+  width: min(1100px, calc(100vw - 260px));
+  transform: none !important;
   max-width: none;
 }
-
-/* Site disclaimer centered in content area */
+/* Site disclaimer */
 .site-disclaimer {
-  left: 50%;
+  left: calc(220px + (100vw - 220px) / 2);
   transform: translateX(-50%);
 }
-
 @media (max-width: 760px) {
-  body { padding-left: 0; }
   .sidebar {
     width: 100%;
     height: auto;
@@ -1031,7 +1030,16 @@ body {
     border-bottom: 1px solid var(--border);
     padding: 0.5rem;
   }
-  .hub { margin-left: 0; }
+  .hub {
+    margin-left: 0;
+    width: 92vw;
+  }
+  .hub.has-messages ~ footer.composer-wrap {
+    left: 0;
+    width: 92vw;
+    margin: 0 auto;
+  }
+  .site-disclaimer { left: 50%; }
   .sidebar-bottom { display: none; }
   .sidebar-section { display: none; }
 }

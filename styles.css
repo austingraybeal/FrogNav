@@ -170,7 +170,7 @@ body {
 
 /* Empty state — composer centered vertically on screen */
 .hub:not(.has-messages) .composer-wrap {
-  top: 50% !important;
+  top: 50vh !important;
   bottom: auto !important;
   transform: translate(-50%, -50%) !important;
 }

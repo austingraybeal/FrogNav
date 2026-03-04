@@ -194,7 +194,7 @@
     <!-- Chat composer — aria-controls links it to the chat thread -->
     <footer class="composer-wrap">
   <div class="composer" style="position:relative">
-    <button id="plusBtn" class="plus-btn" type="button" aria-label="Quick actions" aria-expanded="false" aria-controls="quickActionPopover">+</button>
+    <p id="composerGreeting" class="composer-greeting"></p>
     <div id="quickActionPopover" class="quick-action-popover" hidden>
       <p class="popover-label">Quick actions</p>
       <button class="popover-action" data-action="build" type="button">Build my plan</button>
@@ -202,10 +202,13 @@
       <button class="popover-action" data-action="honors" type="button">Show me the Honors version</button>
       <button class="popover-action" data-action="compare" type="button">Compare programs</button>
     </div>
-    <form id="chatComposer" class="composer" autocomplete="off" style="flex:1;border:none;padding:0;background:transparent">
-      <input id="chatInput" type="text" placeholder="Message FrogNav..." aria-label="Message input" aria-controls="chatThread" />
-      <button id="sendBtn" type="submit">Send</button>
-    </form>
+    <div class="composer-input-row">
+      <button id="plusBtn" class="plus-btn" type="button" aria-label="Quick actions" aria-expanded="false" aria-controls="quickActionPopover">+</button>
+      <form id="chatComposer" autocomplete="off" style="flex:1;display:flex;gap:0.6rem">
+        <input id="chatInput" type="text" placeholder="Message FrogNav..." aria-label="Message input" aria-controls="chatThread" style="flex:1" />
+        <button id="sendBtn" type="submit">Send</button>
+      </form>
+    </div>
   </div>
 </footer>
 

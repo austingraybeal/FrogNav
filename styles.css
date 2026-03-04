@@ -180,7 +180,18 @@ body {
   grid-template-columns: 1fr;
   grid-template-rows: auto auto;
   padding: 1.25rem 1.25rem 0.75rem;
-  width: min(680px, 92vw);
+  width: min(780px, 92vw);
+}
+
+.hub:not(.has-messages) .composer-wrap::before {
+  content: 'Where would you like to start?';
+  display: block;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
 }
 
 .hub:not(.has-messages) .composer > div {

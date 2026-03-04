@@ -384,25 +384,34 @@ emptyGreeting.style.cssText = 'text-align:center;font-size:1.5rem;font-weight:60
 emptyGreeting.textContent = 'Welcome to FrogForward! Where would you like to start?';
 composerWrap.parentNode.insertBefore(emptyGreeting, composerWrap);
 
+function getSidebarOffset() {
+  const sidebar = document.querySelector('.sidebar');
+  return sidebar ? sidebar.offsetWidth : 0;
+}
+
 function positionComposer(hasMessages) {
   const eg = document.getElementById('emptyGreeting');
+  const sidebarW = getSidebarOffset();
+  const contentCenter = sidebarW + (window.innerWidth - sidebarW) / 2;
+
   if (hasMessages) {
     composerWrap.style.top = '';
     composerWrap.style.bottom = '1rem';
+    composerWrap.style.left = contentCenter + 'px';
     composerWrap.style.transform = 'translateX(-50%)';
     composerWrap.style.width = '';
     if (eg) eg.style.display = 'none';
   } else {
     composerWrap.style.top = '50vh';
     composerWrap.style.bottom = 'auto';
+    composerWrap.style.left = contentCenter + 'px';
     composerWrap.style.transform = 'translate(-50%, -50%)';
     composerWrap.style.width = 'min(780px, 92vw)';
     if (eg) {
       eg.style.display = 'block';
       eg.style.position = 'fixed';
-      eg.style.left = '50%';
+      eg.style.left = contentCenter + 'px';
       eg.style.width = 'min(780px, 92vw)';
-      // Wait for layout before measuring position
       requestAnimationFrame(() => {
         const rect = composerWrap.getBoundingClientRect();
         eg.style.transform = 'translateX(-50%)';

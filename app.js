@@ -867,12 +867,63 @@ profileModal.addEventListener('click', event => {
   if (event.target.matches('[data-close-modal]')) closeModal();
 });
 
+// New Chat button
+const newChatBtn = document.getElementById('newChatBtn');
+if (newChatBtn) {
+  newChatBtn.addEventListener('click', () => {
+    messages = [];
+    lastPlan = null;
+    persistConversation();
+    persistLastPlan();
+    chatInput.value = '';
+    setStatus('');
+    renderThread();
+  });
+}
+
+// Sidebar profile card updater
+function updateSidebarProfile() {
+  const profile = readProfile();
+  const majorEl = document.getElementById('sidebarMajor');
+  const careerEl = document.getElementById('sidebarCareer');
+  const fillEl = document.getElementById('sidebarProfileFill');
+  const labelEl = document.getElementById('sidebarProfileBarLabel');
+
+  if (majorEl) {
+    majorEl.textContent = profile.majorProgram || 'No major set';
+  }
+  if (careerEl) {
+    if (profile.careerGoal) {
+      careerEl.textContent = profile.careerGoal;
+      careerEl.style.display = '';
+    } else {
+      careerEl.style.display = 'none';
+    }
+  }
+
+  // Completion bar (same 5 fields as modal bar)
+  const fields = [
+    profile.majorProgram,
+    profile.careerGoal,
+    profile.startTerm,
+    profile.creditsPerTerm,
+    profile.completedCourses,
+  ];
+  const filled = fields.filter(v => v && String(v).trim() !== '').length;
+  const pct = Math.round((filled / fields.length) * 100);
+  if (fillEl) fillEl.style.width = pct + '%';
+  if (labelEl) {
+    labelEl.textContent = pct === 100 ? '✓ Complete' : `${pct}% complete`;
+  }
+}
+
 // Save profile button
 const saveProfileBtn = document.getElementById('saveProfileBtn');
 const profileSaveStatus = document.getElementById('profileSaveStatus');
 if (saveProfileBtn) {
   saveProfileBtn.addEventListener('click', () => {
     saveProfile();
+    updateSidebarProfile();
     profileSaveStatus.textContent = '✓ Saved';
     profileSaveStatus.classList.add('visible');
     setTimeout(() => profileSaveStatus.classList.remove('visible'), 2000);
@@ -949,5 +1000,6 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
   }
 
   updateQuickActionLabels();
+  updateSidebarProfile();
   renderThread();
 })();

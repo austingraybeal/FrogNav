@@ -343,12 +343,27 @@ function renderAssistantPlan(container, planJson) {
 }
 
 // ── Thread renderer ───────────────────────────────────────────────────────────
+const composerWrap = document.querySelector('.composer-wrap');
+
+function positionComposer(hasMessages) {
+  if (hasMessages) {
+    composerWrap.style.top = '';
+    composerWrap.style.bottom = '1rem';
+    composerWrap.style.transform = 'translateX(-50%)';
+  } else {
+    composerWrap.style.top = '50vh';
+    composerWrap.style.bottom = 'auto';
+    composerWrap.style.transform = 'translate(-50%, -50%)';
+  }
+}
+
 function renderThread() {
   chatThread.innerHTML = '';
 
   if (!messages.length) {
     chatThread.hidden = true;
     hub.classList.remove('has-messages');
+    positionComposer(false);
     if (composerGreeting) {
       composerGreeting.textContent = 'Hey! I\'m FrogNav — your TCU Kinesiology degree-planning assistant. Tap + to get started, or just type a question below.';
     }
@@ -357,6 +372,7 @@ function renderThread() {
 
   chatThread.hidden = false;
   hub.classList.add('has-messages');
+  positionComposer(true);
 
   messages.forEach(message => {
     const node    = document.createElement('article');

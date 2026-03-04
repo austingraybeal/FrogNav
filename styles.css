@@ -953,8 +953,6 @@ body::-webkit-scrollbar-button,
 /* ── Layout with sidebar ─────────────────────────────────────────────────── */
 .hub {
   margin-left: 220px;
-  width: calc(100vw - 220px);
-  max-width: calc(1100px + 220px);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -996,15 +994,15 @@ body::-webkit-scrollbar-button,
 .hub.has-messages .composer-wrap {
   position: fixed;
   bottom: 1rem;
-  left: calc(220px + (100vw - 220px) / 2);
-  transform: translateX(-50%);
+  left: 50%;
+  transform: translateX(calc(-50% + 110px));
   width: min(1100px, calc(100vw - 240px));
 }
 .site-disclaimer {
   position: fixed;
   bottom: 0.3rem;
-  left: calc(220px + (100vw - 220px) / 2);
-  transform: translateX(-50%);
+  left: 50%;
+  transform: translateX(calc(-50% + 110px));
   font-size: 0.65rem;
   color: var(--muted);
   opacity: 0.5;
@@ -1030,9 +1028,13 @@ body::-webkit-scrollbar-button,
   }
   .hub.has-messages .composer-wrap {
     left: 50%;
+    transform: translateX(-50%);
     width: 92vw;
   }
-  .site-disclaimer { left: 50%; }
+  .site-disclaimer {
+    left: 50%;
+    transform: translateX(-50%);
+  }
   .sidebar-bottom { display: none; }
   .sidebar-section { display: none; }
 }

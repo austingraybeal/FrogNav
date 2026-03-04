@@ -37,7 +37,15 @@
       </section>
 
       <section id="chatThread" class="chat-thread" aria-live="polite" hidden></section>
-<p id="statusMessage" class="status" role="status" aria-live="polite"></p>
+<div id="statusMessage" class="status" role="status" aria-live="polite">
+  <span id="statusSpinner" class="status-spinner" hidden>
+    <svg class="spinner-ring" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="rgba(126,77,255,0.25)" stroke-width="2.5"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <span id="statusText"></span>
+</div>
       
     </main>
 

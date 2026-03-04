@@ -865,6 +865,46 @@ profileModal.addEventListener('click', event => {
   if (event.target.matches('[data-close-modal]')) closeModal();
 });
 
+// Save profile button
+const saveProfileBtn = document.getElementById('saveProfileBtn');
+const profileSaveStatus = document.getElementById('profileSaveStatus');
+if (saveProfileBtn) {
+  saveProfileBtn.addEventListener('click', () => {
+    saveProfile();
+    profileSaveStatus.textContent = '✓ Saved';
+    profileSaveStatus.classList.add('visible');
+    setTimeout(() => profileSaveStatus.classList.remove('visible'), 2000);
+  });
+}
+
+// Profile completion bar
+function updateProfileCompletion() {
+  const fill = document.getElementById('profileCompletionFill');
+  const label = document.getElementById('profileCompletionLabel');
+  if (!fill || !label) return;
+  const fields = [
+    document.getElementById('majorProgram')?.value,
+    document.getElementById('careerGoal')?.value,
+    document.getElementById('startTerm')?.value,
+    document.getElementById('creditsPerTerm')?.value,
+    document.getElementById('completedCourses')?.value,
+  ];
+  const filled = fields.filter(v => v && v.trim() !== '' && v !== 'Select a major' && v !== 'Select a career goal').length;
+  const pct = Math.round((filled / fields.length) * 100);
+  fill.style.width = pct + '%';
+  if (pct === 100) {
+    label.textContent = '✓ Profile complete — FrogNav has everything it needs';
+    label.style.color = 'var(--purple-soft)';
+  } else {
+    label.textContent = `${filled} of ${fields.length} key fields complete`;
+    label.style.color = '';
+  }
+}
+
+document.getElementById('profileForm')?.addEventListener('input', updateProfileCompletion);
+profileModal?.addEventListener('toggle', updateProfileCompletion);
+updateProfileCompletion();
+
 // ── Replace panel listeners ───────────────────────────────────────────────────
 if (replaceFromInput && replaceToInput && replaceBtn) {
   replaceFromInput.addEventListener('input', () =>

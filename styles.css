@@ -463,6 +463,18 @@ html, body, .chat-thread, .modal-panel {
   scrollbar-color: rgba(126, 77, 255, 0.5) transparent;
 }
 
+body {
+  padding-right: 14px;
+}
+
+.chat-thread {
+  padding-right: 14px;
+}
+
+.modal-panel {
+  padding-right: 1.5rem;
+}
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 .chat-thread::-webkit-scrollbar,

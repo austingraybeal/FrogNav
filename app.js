@@ -365,7 +365,7 @@ function renderThread() {
     hub.classList.remove('has-messages');
     positionComposer(false);
     if (composerGreeting) {
-      composerGreeting.textContent = 'Hey! I\'m FrogNav — your TCU Kinesiology degree-planning assistant. Tap + to get started, or just type a question below.';
+      composerGreeting.textContent = 'Hey! What can I help you plan today?';
     }
     return;
   }

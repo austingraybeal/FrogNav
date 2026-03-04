@@ -458,29 +458,44 @@ body {
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
+html, body, .chat-thread, .modal-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(126, 77, 255, 0.5) transparent;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.chat-thread::-webkit-scrollbar,
+.modal-panel::-webkit-scrollbar {
   width: 6px;
 }
-::-webkit-scrollbar-track {
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.chat-thread::-webkit-scrollbar-track,
+.modal-panel::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.chat-thread::-webkit-scrollbar-thumb,
+.modal-panel::-webkit-scrollbar-thumb {
   background: rgba(126, 77, 255, 0.45);
   border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.chat-thread::-webkit-scrollbar-thumb:hover,
+.modal-panel::-webkit-scrollbar-thumb:hover {
   background: rgba(126, 77, 255, 0.75);
 }
-::-webkit-scrollbar-button {
+
+html::-webkit-scrollbar-button,
+body::-webkit-scrollbar-button,
+.chat-thread::-webkit-scrollbar-button,
+.modal-panel::-webkit-scrollbar-button {
   display: none;
 }
 
-/* Push scrollbar away from content */
-.chat-thread {
-  scrollbar-gutter: stable;
-  padding-right: 12px;
-}
-.modal-panel {
-  scrollbar-gutter: stable;
-  padding-right: 1.25rem;
-}

@@ -102,9 +102,14 @@ let loading  = false;
 let pendingAction = null; // stores { action, prompt } while checklist is open
 
 // ── Status bar ────────────────────────────────────────────────────────────────
+const statusSpinner = document.getElementById('statusSpinner');
+const statusText = document.getElementById('statusText');
+
 function setStatus(message, isError = false) {
-  statusMessage.textContent = message;
+  statusText.textContent = message;
   statusMessage.classList.toggle('error', isError);
+  const isThinking = message === 'FrogNav is thinking...';
+  if (statusSpinner) statusSpinner.hidden = !isThinking;
 }
 
 // ── Profile helpers ───────────────────────────────────────────────────────────

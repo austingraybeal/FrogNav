@@ -572,3 +572,29 @@ body::-webkit-scrollbar-button,
   transition: background 0.2s;
 }
 #sendBtn:hover { background: #6c3de0 !important; }
+
+/* ── Status / loading indicator ─────────────────────────────────────────── */
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+}
+
+.status-spinner {
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-spinner[hidden] { display: none; }
+
+.spinner-ring {
+  width: 18px;
+  height: 18px;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

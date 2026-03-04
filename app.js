@@ -341,16 +341,23 @@ function renderAssistantPlan(container, planJson) {
 }
 
 // ── Thread renderer ───────────────────────────────────────────────────────────
+const hub = document.querySelector('.hub');
+const composerGreeting = document.getElementById('composerGreeting');
+
 function renderThread() {
   chatThread.innerHTML = '';
 
   if (!messages.length) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-thread';
-    empty.textContent = 'Hey! I\'m FrogNav — your TCU Kinesiology degree-planning assistant. Tap + to get started, or just type a question below.';
-    chatThread.appendChild(empty);
+    chatThread.hidden = true;
+    hub.classList.remove('has-messages');
+    if (composerGreeting) {
+      composerGreeting.textContent = 'Hey! I\'m FrogNav — your TCU Kinesiology degree-planning assistant. Tap + to get started, or just type a question below.';
+    }
     return;
   }
+
+  chatThread.hidden = false;
+  hub.classList.add('has-messages');
 
   messages.forEach(message => {
     const node    = document.createElement('article');

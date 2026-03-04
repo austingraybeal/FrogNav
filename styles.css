@@ -951,35 +951,28 @@ body::-webkit-scrollbar-button,
 }
 
 /* ── Layout with sidebar ─────────────────────────────────────────────────── */
-body {
-  padding-left: 0;
-}
 .hub {
   margin-left: 220px;
-  margin-right: 0;
-  width: min(1100px, calc(100vw - 260px));
+  width: calc(100vw - 220px);
+  max-width: calc(1100px + 220px);
   min-height: 100vh;
-  padding: 4rem 0 8rem;
-}
-.hub-header {
-  text-align: center;
-}
-/* Empty state — flex centering in content area */
-.hub:not(.has-messages) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
-  min-height: 0;
-  padding: clamp(1rem, 5vh, 4rem) 1rem clamp(4rem, 8vh, 8rem);
+  justify-content: flex-start;
+  padding: 4rem 2rem 8rem;
   box-sizing: border-box;
 }
-.hub:not(.has-messages) .hub-header {
+.hub-header {
+  text-align: center;
   width: 100%;
   max-width: 780px;
 }
-/* Greeting */
+.hub:not(.has-messages) {
+  justify-content: center;
+  padding-top: clamp(2rem, 10vh, 8rem);
+  padding-bottom: clamp(4rem, 10vh, 8rem);
+}
 .empty-greeting {
   display: none;
   text-align: center;
@@ -994,30 +987,31 @@ body {
 .hub:not(.has-messages) .empty-greeting {
   display: block;
 }
-/* Composer — static in empty state */
 .composer-wrap {
-  position: static !important;
-  transform: none !important;
-  bottom: auto !important;
-  left: auto !important;
+  position: static;
+  transform: none;
   width: 100%;
   max-width: 780px;
 }
-/* Fixed to bottom when chatting */
-.hub.has-messages ~ footer.composer-wrap {
-  position: fixed !important;
+.hub.has-messages .composer-wrap {
+  position: fixed;
   bottom: 1rem;
-  left: 220px;
-  right: 0;
-  margin: 0 auto;
-  width: min(1100px, calc(100vw - 260px));
-  transform: none !important;
-  max-width: none;
-}
-/* Site disclaimer */
-.site-disclaimer {
   left: calc(220px + (100vw - 220px) / 2);
   transform: translateX(-50%);
+  width: min(1100px, calc(100vw - 240px));
+}
+.site-disclaimer {
+  position: fixed;
+  bottom: 0.3rem;
+  left: calc(220px + (100vw - 220px) / 2);
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  color: var(--muted);
+  opacity: 0.5;
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
 }
 @media (max-width: 760px) {
   .sidebar {
@@ -1032,12 +1026,11 @@ body {
   }
   .hub {
     margin-left: 0;
-    width: 92vw;
+    width: 100vw;
   }
-  .hub.has-messages ~ footer.composer-wrap {
-    left: 0;
+  .hub.has-messages .composer-wrap {
+    left: 50%;
     width: 92vw;
-    margin: 0 auto;
   }
   .site-disclaimer { left: 50%; }
   .sidebar-bottom { display: none; }

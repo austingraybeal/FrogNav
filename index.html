@@ -63,131 +63,133 @@
           <button id="closeProfileBtn" type="button" class="icon-btn" aria-label="Close">✕</button>
         </div>
 
-        <form id="profileForm" class="profile-form" novalidate>
+        <div class="profile-completion" id="profileCompletion">
+  <div class="profile-completion-bar"><div class="profile-completion-fill" id="profileCompletionFill"></div></div>
+  <span class="profile-completion-label" id="profileCompletionLabel">Complete your profile for a better plan</span>
+</div>
 
-          <!-- Academic Level — controls which majors are visible below -->
-          <label for="level">Academic Level</label>
-          <select id="level" name="level">
-            <option value="undergrad" selected>Undergraduate</option>
-            <option value="grad">Graduate</option>
-          </select>
+<form id="profileForm" class="profile-form" novalidate>
 
-          <!-- Major — undergrad and grad options separated by optgroup -->
-          <label for="majorProgram">Major / Program</label>
-          <select id="majorProgram" name="majorProgram">
-            <option value="">Select a major</option>
-            <optgroup id="undergradMajors" label="Undergraduate">
-              <option value="Movement Science">Movement Science</option>
-              <option value="Health &amp; Fitness">Health &amp; Fitness</option>
-              <option value="Physical Education">Physical Education</option>
-              <option value="Physical Education with Strength and Conditioning">Physical Education with Strength and Conditioning</option>
-              <option value="Movement Science/MS Athletic Training (3+2)">Movement Science/MS Athletic Training (3+2)</option>
-            </optgroup>
-            <optgroup id="gradMajors" label="Graduate">
-              <option value="Kinesiology, MS">Kinesiology, MS</option>
-            </optgroup>
-          </select>
-
-          <!-- Minor -->
-          <label for="minorProgram">Minor</label>
-          <select id="minorProgram" name="minorProgram">
-            <option value="">None</option>
-            <option value="Coaching">Coaching</option>
-            <option value="Fitness">Fitness</option>
-            <option value="Health">Health</option>
-            <option value="Movement Science">Movement Science</option>
-            <option value="Physical Education">Physical Education</option>
-            <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
-          </select>
-
-          <!-- Honors -->
-          <fieldset class="toggle-fieldset">
-            <legend>Honors College</legend>
-            <label>
-              <input type="checkbox" id="honorsCollege" name="honorsCollege" />
-              Include Honors track
-            </label>
-          </fieldset>
-
-          <!-- Term inputs -->
-          <label for="startTerm">Start term</label>
-          <input
-            id="startTerm"
-            name="startTerm"
-            type="text"
-            placeholder="Fall 2026"
-            pattern="^(Fall|Spring|Summer)\s+\d{4}$"
-            title="Format: Fall 2026, Spring 2027, Summer 2027"
-          />
-
-          <label for="targetGraduation">Target graduation</label>
-          <input
-            id="targetGraduation"
-            name="targetGraduation"
-            type="text"
-            placeholder="Spring 2030"
-            pattern="^(Fall|Spring|Summer)\s+\d{4}$"
-            title="Format: Fall 2026, Spring 2027, Summer 2027"
-          />
-
-          <!-- Credits and summer -->
-          <label for="creditsPerTerm">Credits per term</label>
-          <input
-            id="creditsPerTerm"
-            name="creditsPerTerm"
-            type="number"
-            min="1"
-            max="18"
-            placeholder="15"
-          />
-
-          <label>
-            <input type="checkbox" id="summerOptional" name="summerOptional" checked />
-            Summer optional (include summer terms only if needed)
-          </label>
-
-          <!-- Transfer / AP credit -->
-          <label for="apTransfer">AP / transfer credit</label>
-          <textarea
-            id="apTransfer"
-            name="apTransfer"
-            rows="3"
-            placeholder="e.g. AP Biology (4) = BIOL 10504, Transfer: KINE 10103"
-          ></textarea>
-
-          <!-- Completed courses -->
-          <label for="completedCourses">Completed courses</label>
-          <textarea
-            id="completedCourses"
-            name="completedCourses"
-            rows="4"
-            placeholder="KINE 10103, BIOL 10504"
-          ></textarea>
-          
-<!-- Career Goal -->
-<label for="careerGoal">Career Goal</label>
-<select id="careerGoal" name="careerGoal">
-  <option value="">Select a career goal</option>
-  <option value="Pre-PT/OT/DPT">Pre-Physical or Occupational Therapy (DPT/OT)</option>
-  <option value="Pre-Med/DO/PA">Pre-Medicine, DO, or Physician Assistant</option>
-  <option value="Coaching/Strength and Conditioning">Coaching or Strength & Conditioning</option>
-  <option value="Teaching/Physical Education">Teaching — Physical Education (K-12)</option>
-  <option value="Sport and Exercise Psychology">Sport & Exercise Psychology (Grad School)</option>
-  <option value="Clinical/Allied Health">Clinical or Allied Health (non-MD)</option>
-  <option value="Undecided">Undecided / Exploring Options</option>
-</select>
-          <!-- Constraints -->
-          <label for="constraints">Constraints</label>
-          <textarea
-            id="constraints"
-            name="constraints"
-            rows="4"
-            placeholder="No Friday classes, working 20hrs/week"
-          ></textarea>
-
-        </form>
-      </section>
+  <!-- ── Section 1: Academic Info ── -->
+  <div class="profile-section">
+    <h3 class="profile-section-title">🎓 Academic Info</h3>
+    <div class="profile-field">
+      <label for="level">Academic Level</label>
+      <select id="level" name="level">
+        <option value="undergrad" selected>Undergraduate</option>
+        <option value="grad">Graduate</option>
+      </select>
     </div>
+    <div class="profile-field">
+      <label for="majorProgram">Major / Program</label>
+      <select id="majorProgram" name="majorProgram">
+        <option value="">Select a major</option>
+        <optgroup id="undergradMajors" label="Undergraduate">
+          <option value="Movement Science">Movement Science</option>
+          <option value="Health and Fitness">Health and Fitness</option>
+          <option value="Physical Education">Physical Education</option>
+          <option value="Physical Education with Strength and Conditioning">PE with Strength & Conditioning</option>
+          <option value="Movement Science/MS Athletic Training (MOSC 3+2)">Movement Science / AT (3+2)</option>
+        </optgroup>
+        <optgroup id="gradMajors" label="Graduate">
+          <option value="Kinesiology, MS">Kinesiology, MS</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="profile-field">
+      <label for="minorProgram">Minor</label>
+      <select id="minorProgram" name="minorProgram">
+        <option value="">None</option>
+        <option value="Coaching">Coaching</option>
+        <option value="Fitness">Fitness</option>
+        <option value="Health">Health</option>
+        <option value="Movement Science">Movement Science</option>
+        <option value="Physical Education">Physical Education</option>
+        <option value="Sport and Exercise Psychology">Sport and Exercise Psychology</option>
+      </select>
+    </div>
+    <div class="profile-field profile-field--inline">
+      <label>
+        <input type="checkbox" id="honorsCollege" name="honorsCollege" />
+        <span>Include Honors College track</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── Section 2: Career Goal ── -->
+  <div class="profile-section">
+    <h3 class="profile-section-title">🎯 Career Goal</h3>
+    <p class="profile-section-hint">This helps FrogNav recommend the right electives and gen-ed courses for your path.</p>
+    <div class="profile-field">
+      <label for="careerGoal">Career Path</label>
+      <select id="careerGoal" name="careerGoal">
+        <option value="">Select a career goal</option>
+        <option value="Pre-PT/OT/DPT">Pre-Physical or Occupational Therapy (DPT/OT)</option>
+        <option value="Pre-Med/DO/PA">Pre-Medicine, DO, or Physician Assistant</option>
+        <option value="Coaching/Strength and Conditioning">Coaching or Strength & Conditioning</option>
+        <option value="Teaching/Physical Education">Teaching — Physical Education (K-12)</option>
+        <option value="Sport and Exercise Psychology">Sport & Exercise Psychology (Grad School)</option>
+        <option value="Clinical/Allied Health">Clinical or Allied Health (non-MD)</option>
+        <option value="Undecided">Undecided / Exploring Options</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Schedule ── -->
+  <div class="profile-section">
+    <h3 class="profile-section-title">📅 Schedule</h3>
+    <div class="profile-field-row">
+      <div class="profile-field">
+        <label for="startTerm">Start term</label>
+        <input id="startTerm" name="startTerm" type="text" placeholder="Fall 2026"
+          pattern="^(Fall|Spring|Summer)\s+\d{4}$"
+          title="Format: Fall 2026" />
+      </div>
+      <div class="profile-field">
+        <label for="targetGraduation">Target graduation</label>
+        <input id="targetGraduation" name="targetGraduation" type="text" placeholder="Spring 2030"
+          pattern="^(Fall|Spring|Summer)\s+\d{4}$"
+          title="Format: Spring 2030" />
+      </div>
+    </div>
+    <div class="profile-field">
+      <label for="creditsPerTerm">Credits per term</label>
+      <input id="creditsPerTerm" name="creditsPerTerm" type="number" min="1" max="18" placeholder="15" />
+    </div>
+    <div class="profile-field profile-field--inline">
+      <label>
+        <input type="checkbox" id="summerOptional" name="summerOptional" checked />
+        <span>Include summer terms only if needed</span>
+      </label>
+    </div>
+    <div class="profile-field">
+      <label for="constraints">Scheduling constraints</label>
+      <textarea id="constraints" name="constraints" rows="2"
+        placeholder="e.g. No Friday classes, working 20hrs/week"></textarea>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Completed Work ── -->
+  <div class="profile-section">
+    <h3 class="profile-section-title">✅ Completed Work</h3>
+    <div class="profile-field">
+      <label for="completedCourses">Completed courses</label>
+      <textarea id="completedCourses" name="completedCourses" rows="3"
+        placeholder="e.g. KINE 10101, BIOL 20204"></textarea>
+    </div>
+    <div class="profile-field">
+      <label for="apTransfer">AP / transfer credit</label>
+      <textarea id="apTransfer" name="apTransfer" rows="2"
+        placeholder="e.g. AP Biology (4) = BIOL 10504"></textarea>
+    </div>
+  </div>
+
+</form>
+
+<div class="profile-save-bar">
+  <button id="saveProfileBtn" type="button" class="profile-save-btn">Save Profile</button>
+  <span id="profileSaveStatus" class="profile-save-status"></span>
+</div>
     
   <!-- Completed Courses Checklist Modal -->
   <div id="checklistModal" class="modal" hidden>

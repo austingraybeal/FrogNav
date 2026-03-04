@@ -347,7 +347,7 @@ const composerWrap = document.querySelector('.composer-wrap');
 const emptyGreeting = document.createElement('p');
 emptyGreeting.id = 'emptyGreeting';
 emptyGreeting.style.cssText = 'text-align:center;font-size:1.5rem;font-weight:600;color:var(--text);margin:0 0 1.25rem;letter-spacing:-0.01em;display:none;';
-emptyGreeting.textContent = 'Welcome to FrogForward, your TCU AI Advising Agent. Where would you like to start?';
+emptyGreeting.textContent = 'Welcome to FrogForward! Where would you like to start?';
 composerWrap.parentNode.insertBefore(emptyGreeting, composerWrap);
 
 function positionComposer(hasMessages) {

@@ -953,9 +953,16 @@ body::-webkit-scrollbar-button,
 /* ── Layout shift for sidebar ────────────────────────────────────────────── */
 .hub {
   margin-left: 220px;
+  width: calc(min(1100px, 92vw));
 }
 .composer-wrap {
-  left: calc(50% + 110px);
+  left: calc(220px + (100vw - 220px) / 2);
+}
+#emptyGreeting {
+  left: calc(220px + (100vw - 220px) / 2) !important;
+}
+.hub-header {
+  text-align: center;
 }
 
 @media (max-width: 760px) {

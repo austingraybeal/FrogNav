@@ -18,6 +18,7 @@ const DEFAULTS = {
   apTransfer:        'None',
   completedCourses:  '',
   constraints:       '',
+  careerGoal:        '',
 };
 
 // ── Quick-action prompts ──────────────────────────────────────────────────────
@@ -126,7 +127,8 @@ function readProfile() {
     summerOptional:   Boolean(data.get('summerOptional')),
     apTransfer:       String(data.get('apTransfer')       || '').trim(),
     completedCourses: String(data.get('completedCourses') || '').trim(),
-    constraints:      String(data.get('constraints')      || '').trim(),
+     constraints:      String(data.get('constraints')      || '').trim(),
+    careerGoal:       String(data.get('careerGoal')       || '').trim(),
   };
 }
 

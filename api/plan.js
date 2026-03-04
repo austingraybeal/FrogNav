@@ -103,8 +103,16 @@ function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
       career.freeElectiveRecommendations
         .map(c => `- ${c.code} — ${c.title} (${c.credits} cr): ${c.notes}`)
         .join('\n') +
-      `\nPrioritize these over generic free electives. Only substitute if already completed or unavailable.`
-    : 'No career goal selected — use balanced general electives and ask the student about their career interests in the questions field.';
+      `\n\nCRITICAL ELECTIVE RULES:\n` +
+      `1. Use ALL career elective recommendations above before using any generic FREE-ELECTIVE placeholder.\n` +
+      `2. Sequence career electives strategically — prerequisites first, advanced courses later.\n` +
+      `3. After exhausting career electives, fill remaining slots with TCU Core gen-ed courses (English, History, Government, Religion, Oral Communication, Cultural Awareness, Humanities, Social Sciences) — these are REQUIRED for graduation and must appear somewhere in the plan.\n` +
+      `4. Only use FREE-ELECTIVE placeholders as a last resort when ALL career electives AND all TCU Core slots are filled.\n` +
+      `5. A realistic 4-year plan should have NO MORE than 2-3 free elective placeholders total.`
+    : `No career goal selected.\n` +
+      `CRITICAL: Fill free elective slots with TCU Core gen-ed courses (English, History, Government, Religion, Oral Communication, Cultural Awareness, Humanities, Social Sciences) — these are REQUIRED for graduation.\n` +
+      `Ask the student about their career interests in the questions field.\n` +
+      `Add a nextStep button labeled "Set my career goal" with prompt "I'd like to set my career goal to get a more personalized plan. What are my options?"`;
 
   const careerAdvisingNote = career?.advisingNote
     ? `CAREER ADVISING NOTE: ${career.advisingNote}`

@@ -184,14 +184,7 @@ body {
 }
 
 .hub:not(.has-messages) .composer-wrap::before {
-  content: 'Where would you like to start?';
-  display: block;
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 1.25rem;
-  letter-spacing: -0.01em;
+  display: none;
 }
 
 .hub:not(.has-messages) .composer > div {

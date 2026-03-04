@@ -49,7 +49,9 @@ const chatThread        = document.getElementById('chatThread');
 const statusMessage     = document.getElementById('statusMessage');
 const chatComposer      = document.getElementById('chatComposer');
 const chatInput         = document.getElementById('chatInput');
-const sendBtn           = document.getElementById('sendBtn');
+const sendBtn = document.getElementById('sendBtn');
+const plusBtn = document.getElementById('plusBtn');
+const quickActionPopover = document.getElementById('quickActionPopover');
 const quickActionButtons = [...document.querySelectorAll('.quick-action')];
 const replaceFromInput  = document.getElementById('replaceFrom');
 const replaceToInput    = document.getElementById('replaceTo');
@@ -164,6 +166,7 @@ function setLoading(isLoading) {
   sendBtn.disabled   = isLoading;
   chatInput.disabled = isLoading;
   quickActionButtons.forEach(button => { button.disabled = isLoading; });
+  if (plusBtn) plusBtn.disabled = isLoading;
 }
 
 // ── Persistence ───────────────────────────────────────────────────────────────
@@ -342,9 +345,9 @@ function renderThread() {
   chatThread.innerHTML = '';
 
   if (!messages.length) {
-    const empty   = document.createElement('p');
+    const empty = document.createElement('p');
     empty.className = 'empty-thread';
-    empty.textContent = 'Start by choosing a quick action or sending a message.';
+    empty.textContent = 'Hey! I\'m FrogNav — your TCU Kinesiology degree-planning assistant. Tap + to get started, or just type a question below.';
     chatThread.appendChild(empty);
     return;
   }
@@ -708,6 +711,50 @@ quickActionButtons.forEach(button => {
     callAssistant(prompt, action);
   });
 });
+
+// ── Plus button + popover listeners ────────────────────────────────────────
+if (plusBtn && quickActionPopover) {
+  plusBtn.addEventListener('click', () => {
+    const isOpen = !quickActionPopover.hidden;
+    quickActionPopover.hidden = isOpen;
+    plusBtn.setAttribute('aria-expanded', String(!isOpen));
+    plusBtn.classList.toggle('open', !isOpen);
+  });
+
+  document.addEventListener('click', event => {
+    if (!quickActionPopover.hidden &&
+        !plusBtn.contains(event.target) &&
+        !quickActionPopover.contains(event.target)) {
+      quickActionPopover.hidden = true;
+      plusBtn.setAttribute('aria-expanded', 'false');
+      plusBtn.classList.remove('open');
+    }
+  });
+
+  quickActionPopover.querySelectorAll('.popover-action').forEach(button => {
+    button.addEventListener('click', () => {
+      quickActionPopover.hidden = true;
+      plusBtn.setAttribute('aria-expanded', 'false');
+      plusBtn.classList.remove('open');
+
+      const action = button.dataset.action;
+      if (!action) return;
+      if (action === 'build') ensureBuildDefaults();
+      const profile = readProfile();
+      if (action === 'add_minor' && !profile.minorProgram && profile.level !== 'grad') {
+        setStatus('Select a minor in Student Profile before using "Add a minor to my plan".', true);
+        openModal();
+        return;
+      }
+      const prompt = quickActionPrompt(action, profile);
+      if (!profile.completedCourses && profile.level === 'undergrad') {
+        openChecklistForAction(action, prompt);
+        return;
+      }
+      callAssistant(prompt, action);
+    });
+  });
+}
 
 // ── Chat composer listener ────────────────────────────────────────────────────
 chatComposer.addEventListener('submit', event => {

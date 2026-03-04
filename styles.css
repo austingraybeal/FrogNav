@@ -598,3 +598,18 @@ body::-webkit-scrollbar-button,
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Site disclaimer ─────────────────────────────────────────────────────── */
+.site-disclaimer {
+  position: fixed;
+  bottom: 0.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  color: var(--muted);
+  opacity: 0.5;
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+}

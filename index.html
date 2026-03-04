@@ -14,19 +14,68 @@
       .hub-header-text { position: relative; z-index: 2; }
     </style>
   </head>
-  <body>
-    <!-- Decorative background — hidden from screen readers -->
-    <div class="app-bg" aria-hidden="true"></div>
+ <body>
+  <!-- Decorative background — hidden from screen readers -->
+  <div class="app-bg" aria-hidden="true"></div>
 
-    <main class="hub" aria-label="FrogNav home">
-      <header class="hub-header">
-        <div class="hub-header-text">
-          <h1><span style="color:#ffffff">Frog</span><span style="color:#7c3aed">Forward</span></h1>
-          <p>TCU Kinesiology AI degree-planning advisor.</p>
-          <button id="openProfileBtn" class="text-link" type="button">Student Profile</button>
+  <!-- ── Left Sidebar ── -->
+  <nav class="sidebar" aria-label="FrogForward navigation">
+
+    <div class="sidebar-top">
+      <button id="newChatBtn" class="sidebar-new-chat" type="button">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        New Chat
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-label">Quick Actions</p>
+      <button class="sidebar-action quick-action" data-action="build" type="button">
+        <span class="sidebar-action-icon">📋</span>
+        <span class="sidebar-action-text">Build my plan</span>
+      </button>
+      <button class="sidebar-action quick-action" data-action="add_minor" type="button">
+        <span class="sidebar-action-icon">➕</span>
+        <span class="sidebar-action-text">Add a minor</span>
+      </button>
+      <button class="sidebar-action quick-action" data-action="honors" type="button">
+        <span class="sidebar-action-icon">🏅</span>
+        <span class="sidebar-action-text">Honors version</span>
+      </button>
+      <button class="sidebar-action quick-action" data-action="compare" type="button">
+        <span class="sidebar-action-icon">⚖️</span>
+        <span class="sidebar-action-text">Compare programs</span>
+      </button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button id="openProfileBtn" class="sidebar-profile-card" type="button" aria-label="Open Student Profile">
+        <div class="sidebar-profile-header">
+          <span class="sidebar-profile-icon">👤</span>
+          <span class="sidebar-profile-title">Student Profile</span>
+          <span class="sidebar-profile-edit">✎</span>
         </div>
-        <img class="frog-mascot" src="frog.png" alt="" aria-hidden="true" />
-      </header>
+        <div class="sidebar-profile-meta" id="sidebarProfileMeta">
+          <span id="sidebarMajor" class="sidebar-profile-chip">No major set</span>
+          <span id="sidebarCareer" class="sidebar-profile-chip sidebar-profile-chip--career" style="display:none"></span>
+        </div>
+        <div class="sidebar-profile-bar-wrap">
+          <div class="sidebar-profile-bar"><div class="sidebar-profile-bar-fill" id="sidebarProfileFill"></div></div>
+          <span class="sidebar-profile-bar-label" id="sidebarProfileBarLabel">Profile incomplete</span>
+        </div>
+      </button>
+    </div>
+
+  </nav>
+
+  <main class="hub" aria-label="FrogNav home">
+    <header class="hub-header">
+      <div class="hub-header-text">
+        <h1><span style="color:#ffffff">Frog</span><span style="color:#7c3aed">Forward</span></h1>
+        <p>TCU Kinesiology AI degree-planning advisor.</p>
+      </div>
+      <img class="frog-mascot" src="frog.png" alt="" aria-hidden="true" />
+    </header>
 
       <!-- Quick action buttons — labels updated dynamically by app.js -->
       <section class="quick-actions" aria-label="Quick actions" style="display:none">

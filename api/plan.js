@@ -58,7 +58,7 @@ function buildTermSequence(startTermRaw) {
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(profile, kineRules, genedRules) {
+function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
   const major      = (kineRules.majors || {})[profile.majorProgram] || null;
   const minorData  = profile.minorProgram
     ? (kineRules.minors || {})[profile.minorProgram] || null
@@ -87,9 +87,28 @@ function buildSystemPrompt(profile, kineRules, genedRules) {
   }
 
   // Gen-ed placeholders
-  const genedList = (genedRules.buckets || [])
-    .map(b => `- ${b.name}: use placeholder code "${b.placeholder}"`)
-    .join('\n') || '(none)';
+   // Career-based course defaults
+  const career = careerDefaults?.careerTracks?.[profile.careerGoal] || null;
+
+  const genedList = (genedRules.buckets || []).map(b => {
+    const recommended = career?.genedRecommendations?.[b.id];
+    if (recommended && recommended.length) {
+      return `- ${b.name}: PREFER ${recommended.join(' or ')} (fits career goal: ${profile.careerGoal})`;
+    }
+    return `- ${b.name}: use placeholder code "${b.placeholder}"`;
+  }).join('\n') || '(none)';
+
+  const careerElectivesBlock = career?.freeElectiveRecommendations?.length
+    ? `CAREER-BASED FREE ELECTIVE RECOMMENDATIONS (career goal: ${profile.careerGoal}):\n` +
+      career.freeElectiveRecommendations
+        .map(c => `- ${c.code} — ${c.title} (${c.credits} cr): ${c.notes}`)
+        .join('\n') +
+      `\nPrioritize these over generic free electives. Only substitute if already completed or unavailable.`
+    : 'No career goal selected — use balanced general electives and ask the student about their career interests in the questions field.';
+
+  const careerAdvisingNote = career?.advisingNote
+    ? `CAREER ADVISING NOTE: ${career.advisingNote}`
+    : '';
 
   // Key policies
   const policies = kineRules.policies || {};
@@ -124,6 +143,12 @@ ${minorBlock}
 
 TCU CORE (GEN-ED) PLACEHOLDERS — use these codes exactly for unspecified core slots:
 ${genedList}
+
+CAREER GOAL: ${profile.careerGoal || 'Not set — ask the student in the questions field'}
+
+${careerElectivesBlock}
+
+${careerAdvisingNote}
 
 KEY POLICIES:
 ${policyText}
@@ -322,9 +347,11 @@ module.exports = async function handler(req, res) {
   const genedRules = profile.level === 'undergrad'
     ? (loadJson(genedFile) || { buckets: [] })
     : { buckets: [] };
+  const careerDefaultsFile = path.join(process.cwd(), 'data', 'career_defaults.json');
+  const careerDefaults = loadJson(careerDefaultsFile) || { careerTracks: {} };
 
   // Build prompt
-  const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules);
+  const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules, careerDefaults);
 
   const userMessage = lastPlan
     ? `The student has an existing degree plan. Update or build on it based on their message — do NOT start from scratch. Preserve all existing terms and courses unless the student explicitly asks to change them.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}`

@@ -399,13 +399,15 @@ function positionComposer(hasMessages) {
     composerWrap.style.width = 'min(780px, 92vw)';
     if (eg) {
       eg.style.display = 'block';
-      // Position greeting above composer
-      const rect = composerWrap.getBoundingClientRect();
       eg.style.position = 'fixed';
       eg.style.left = '50%';
-      eg.style.transform = 'translateX(-50%)';
-      eg.style.top = (rect.top - 60) + 'px';
       eg.style.width = 'min(780px, 92vw)';
+      // Wait for layout before measuring position
+      requestAnimationFrame(() => {
+        const rect = composerWrap.getBoundingClientRect();
+        eg.style.transform = 'translateX(-50%)';
+        eg.style.top = (rect.top - 60) + 'px';
+      });
     }
   }
 }

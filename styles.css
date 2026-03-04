@@ -296,6 +296,12 @@ body {
   padding: 0.4rem 0;
   background: none;
 }
+.plan-section.has-table {
+  border: 1px solid rgba(184, 157, 255, 0.2);
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: rgba(126, 77, 255, 0.06);
+}
 
 .plan-section h4,
 .plan-card h3 {

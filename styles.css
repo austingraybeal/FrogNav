@@ -175,6 +175,13 @@ body {
   transition: padding 0.3s ease, border-radius 0.3s ease;
 }
 
+/* Empty state — composer centered vertically on screen */
+.hub:not(.has-messages) .composer-wrap {
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+}
+
 /* Empty state — taller/wider composer with greeting inside */
 .hub:not(.has-messages) .composer {
   grid-template-columns: 1fr;

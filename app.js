@@ -52,6 +52,8 @@ const chatInput         = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const plusBtn = document.getElementById('plusBtn');
 const quickActionPopover = document.getElementById('quickActionPopover');
+const hub = document.querySelector('.hub');
+const composerGreeting = document.getElementById('composerGreeting');
 const quickActionButtons = [...document.querySelectorAll('.quick-action')];
 const replaceFromInput  = document.getElementById('replaceFrom');
 const replaceToInput    = document.getElementById('replaceTo');
@@ -341,9 +343,6 @@ function renderAssistantPlan(container, planJson) {
 }
 
 // ── Thread renderer ───────────────────────────────────────────────────────────
-const hub = document.querySelector('.hub');
-const composerGreeting = document.getElementById('composerGreeting');
-
 function renderThread() {
   chatThread.innerHTML = '';
 

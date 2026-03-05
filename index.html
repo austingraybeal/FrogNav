@@ -96,33 +96,6 @@
   <span id="statusText"></span>
 </div>
       
-    <!-- Chat composer — aria-controls links it to the chat thread -->
-    <p id="emptyGreeting" class="empty-greeting"></p>
-    <footer class="composer-wrap">
-      <div class="composer" style="position:relative">
-        <p id="composerGreeting" class="composer-greeting"></p>
-        <div id="quickActionPopover" class="quick-action-popover" hidden>
-          <p class="popover-label">Quick actions</p>
-          <button class="popover-action" data-action="build" type="button">Build my plan</button>
-          <button class="popover-action" data-action="add_minor" type="button">Add a minor to my plan</button>
-          <button class="popover-action" data-action="honors" type="button">Show me the Honors version</button>
-          <button class="popover-action" data-action="compare" type="button">Compare programs</button>
-        </div>
-        <div class="composer-input-row">
-          <button id="plusBtn" class="plus-btn" type="button" aria-label="Quick actions" aria-expanded="false" aria-controls="quickActionPopover">+</button>
-          <form id="chatComposer" autocomplete="off" style="flex:1;display:flex;gap:0.6rem">
-            <input id="chatInput" type="text" placeholder="Message FrogNav..." aria-label="Message input" aria-controls="chatThread" style="flex:1" />
-            <button id="sendBtn" type="submit" aria-label="Send">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 13V3M8 3L3 8M8 3L13 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </form>
-        </div>
-      </div>
-    </footer>
-    <p class="site-disclaimer">This is planning assistance only and does not replace official advising or the TCU degree audit system.</p>
-
     </main>
 
     <!-- Student Profile Modal -->
@@ -292,7 +265,32 @@
     </section>
   </div>
 
+    <!-- Chat composer — aria-controls links it to the chat thread -->
+    <p class="site-disclaimer">This is planning assistance only and does not replace official advising or the TCU degree audit system.</p>
+<footer class="composer-wrap">
+  <div class="composer" style="position:relative">
+    <p id="composerGreeting" class="composer-greeting"></p>
+    <div id="quickActionPopover" class="quick-action-popover" hidden>
+      <p class="popover-label">Quick actions</p>
+      <button class="popover-action" data-action="build" type="button">Build my plan</button>
+      <button class="popover-action" data-action="add_minor" type="button">Add a minor to my plan</button>
+      <button class="popover-action" data-action="honors" type="button">Show me the Honors version</button>
+      <button class="popover-action" data-action="compare" type="button">Compare programs</button>
+    </div>
+    <div class="composer-input-row">
+      <button id="plusBtn" class="plus-btn" type="button" aria-label="Quick actions" aria-expanded="false" aria-controls="quickActionPopover">+</button>
+      <form id="chatComposer" autocomplete="off" style="flex:1;display:flex;gap:0.6rem">
+        <input id="chatInput" type="text" placeholder="Message FrogNav..." aria-label="Message input" aria-controls="chatThread" style="flex:1" />
+        <button id="sendBtn" type="submit" aria-label="Send">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 13V3M8 3L3 8M8 3L13 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+      </form>
+    </div>
+  </div>
+</footer>
+
     <script src="app.js"></script>
   </body>
 </html>
-

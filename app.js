@@ -406,7 +406,8 @@ function positionComposer(hasMessages) {
       requestAnimationFrame(() => {
         const rect = composerWrap.getBoundingClientRect();
         eg.style.transform = 'translateX(-50%)';
-        eg.style.top = (rect.top - 60) + 'px';
+eg.style.left = 'calc(220px + (100vw - 220px) / 2)';
+eg.style.top = (rect.top - 60) + 'px';
       });
     }
   }

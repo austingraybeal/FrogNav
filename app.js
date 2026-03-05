@@ -379,7 +379,7 @@ function renderAssistantPlan(container, planJson) {
 // ── Thread renderer ───────────────────────────────────────────────────────────
 const composerWrap = document.querySelector('.composer-wrap');
 const emptyGreeting = document.getElementById('emptyGreeting');
-if (emptyGreeting) emptyGreeting.textContent = 'Welcome to FrogForward! Where would you like to start?';
+if (emptyGreeting) emptyGreeting.textContent = '';
 
 function positionComposer(hasMessages) {
   // Pure CSS handles all positioning — nothing needed here

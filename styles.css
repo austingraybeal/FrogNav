@@ -816,7 +816,10 @@ body::-webkit-scrollbar-button,
 }
 .sidebar-new-chat:hover { background: #6c3de0; }
 
-.sidebar-section { padding: 0.25rem 0; }
+.sidebar-section {
+  padding: 0.25rem 0;
+  display: none;
+}
 
 .sidebar-label {
   font-size: 0.68rem;

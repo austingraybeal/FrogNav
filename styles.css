@@ -953,11 +953,12 @@ body::-webkit-scrollbar-button,
 /* ── Layout shift for sidebar ────────────────────────────────────────────── */
 .hub {
   margin-left: 220px;
+  width: calc(100vw - 220px);
 }
 .composer-wrap {
-  left: calc(50% + 110px);
+  left: calc(220px + (100vw - 220px) / 2);
+  transform: translateX(-50%);
 }
-
 @media (max-width: 760px) {
   .sidebar {
     width: 100%;

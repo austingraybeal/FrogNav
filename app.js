@@ -378,11 +378,38 @@ function renderAssistantPlan(container, planJson) {
 
 // ── Thread renderer ───────────────────────────────────────────────────────────
 const composerWrap = document.querySelector('.composer-wrap');
-const emptyGreeting = document.getElementById('emptyGreeting');
-if (emptyGreeting) emptyGreeting.textContent = '';
+const emptyGreeting = document.createElement('p');
+emptyGreeting.id = 'emptyGreeting';
+emptyGreeting.style.cssText = 'text-align:center;font-size:1.5rem;font-weight:600;color:var(--text);margin:0 0 1.25rem;letter-spacing:-0.01em;display:none;';
+emptyGreeting.textContent = 'Welcome to FrogForward! Where would you like to start?';
+composerWrap.parentNode.insertBefore(emptyGreeting, composerWrap);
 
 function positionComposer(hasMessages) {
-  // Pure CSS handles all positioning — nothing needed here
+  const eg = document.getElementById('emptyGreeting');
+  if (hasMessages) {
+    composerWrap.style.top = '';
+    composerWrap.style.bottom = '1rem';
+    composerWrap.style.transform = 'translateX(-50%)';
+    composerWrap.style.width = '';
+    if (eg) eg.style.display = 'none';
+  } else {
+    composerWrap.style.top = '50vh';
+    composerWrap.style.bottom = 'auto';
+    composerWrap.style.transform = 'translate(-50%, -50%)';
+    composerWrap.style.width = 'min(780px, 92vw)';
+    if (eg) {
+      eg.style.display = 'block';
+      eg.style.position = 'fixed';
+      eg.style.left = '50%';
+      eg.style.width = 'min(780px, 92vw)';
+      // Wait for layout before measuring position
+      requestAnimationFrame(() => {
+        const rect = composerWrap.getBoundingClientRect();
+        eg.style.transform = 'translateX(-50%)';
+        eg.style.top = (rect.top - 60) + 'px';
+      });
+    }
+  }
 }
 
 function renderThread() {

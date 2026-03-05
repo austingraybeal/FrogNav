@@ -394,7 +394,7 @@ function positionComposer(hasMessages) {
     composerWrap.style.width = '';
     if (eg) eg.style.display = 'none';
   } else {
-    composerWrap.style.top = '50vh';
+    composerWrap.style.top = 'calc(50vh + 80px)';
     composerWrap.style.bottom = 'auto';
     composerWrap.style.transform = 'translate(-50%, -50%)';
     composerWrap.style.width = 'min(780px, 92vw)';

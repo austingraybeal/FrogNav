@@ -184,7 +184,14 @@ body {
 }
 
 .hub:not(.has-messages) .composer-wrap::before {
-  display: none;
+  content: 'Where would you like to start?';
+  display: block;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
 }
 
 .hub:not(.has-messages) .composer > div {
@@ -816,10 +823,7 @@ body::-webkit-scrollbar-button,
 }
 .sidebar-new-chat:hover { background: #6c3de0; }
 
-.sidebar-section {
-  padding: 0.25rem 0;
-  display: none;
-}
+.sidebar-section { padding: 0.25rem 0; }
 
 .sidebar-label {
   font-size: 0.68rem;
@@ -947,27 +951,33 @@ body::-webkit-scrollbar-button,
 }
 
 /* ── Layout with sidebar ─────────────────────────────────────────────────── */
+body {
+  padding-left: 220px;
+}
 .hub {
-  margin-left: 220px;
-  width: calc(100vw - 220px);
+  margin: 0 auto;
+  width: min(1100px, 92%);
   min-height: 100vh;
+  padding: 4rem 0 8rem;
+}
+.hub-header {
+  text-align: center;
+}
+
+/* Empty state — flex centering in content area */
+.hub:not(.has-messages) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 4rem 2rem 8rem;
-  box-sizing: border-box;
+  justify-content: center;
+  padding: 2rem 1rem 6rem;
 }
-.hub-header {
-  text-align: center;
+.hub:not(.has-messages) .hub-header {
   width: 100%;
   max-width: 780px;
 }
-.hub:not(.has-messages) {
-  justify-content: center;
-  padding-top: clamp(2rem, 10vh, 8rem);
-  padding-bottom: clamp(4rem, 10vh, 8rem);
-}
+
+/* Greeting */
 .empty-greeting {
   display: none;
   text-align: center;
@@ -982,34 +992,35 @@ body::-webkit-scrollbar-button,
 .hub:not(.has-messages) .empty-greeting {
   display: block;
 }
+
+/* Composer — static in empty state, fixed when chatting */
 .composer-wrap {
-  position: static;
-  transform: none;
+  position: static !important;
+  transform: none !important;
+  bottom: auto !important;
+  left: auto !important;
   width: 100%;
   max-width: 780px;
-  align-self: center;
 }
-.hub.has-messages .composer-wrap {
-  position: fixed;
+
+/* Override: fixed to bottom when chatting */
+.hub.has-messages ~ footer.composer-wrap {
+  position: fixed !important;
   bottom: 1rem;
   left: 50%;
-  transform: translateX(calc(-50% + 110px));
-  width: min(1100px, calc(100vw - 240px));
+  transform: translateX(-50%) !important;
+  width: min(1100px, 92%);
+  max-width: none;
 }
+
+/* Site disclaimer centered in content area */
 .site-disclaimer {
-  position: fixed;
-  bottom: 0.3rem;
   left: 50%;
-  transform: translateX(calc(-50% + 110px));
-  font-size: 0.65rem;
-  color: var(--muted);
-  opacity: 0.5;
-  margin: 0;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 1;
+  transform: translateX(-50%);
 }
+
 @media (max-width: 760px) {
+  body { padding-left: 0; }
   .sidebar {
     width: 100%;
     height: auto;
@@ -1020,96 +1031,7 @@ body::-webkit-scrollbar-button,
     border-bottom: 1px solid var(--border);
     padding: 0.5rem;
   }
-  .hub {
-    margin-left: 0;
-    width: 100vw;
-  }
-  .hub.has-messages .composer-wrap {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 92vw;
-  }
-  .site-disclaimer {
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  .sidebar-bottom { display: none; }
-  .sidebar-section { display: none; }
-}
-.hub-header {
-  text-align: center;
-  width: 100%;
-  max-width: 780px;
-}
-.hub:not(.has-messages) {
-  justify-content: center;
-  padding-top: clamp(2rem, 10vh, 8rem);
-  padding-bottom: clamp(4rem, 10vh, 8rem);
-}
-.empty-greeting {
-  display: none;
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 1rem;
-  letter-spacing: -0.01em;
-  width: 100%;
-  max-width: 780px;
-}
-.hub:not(.has-messages) .empty-greeting {
-  display: block;
-}
-.composer-wrap {
-  position: static;
-  transform: none;
-  width: 100%;
-  max-width: 780px;
-}
-.hub.has-messages .composer-wrap {
-  position: fixed;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(calc(-50% + 110px));
-  width: min(1100px, calc(100vw - 240px));
-}
-.site-disclaimer {
-  position: fixed;
-  bottom: 0.3rem;
-  left: 50%;
-  transform: translateX(calc(-50% + 110px));
-  font-size: 0.75rem;
-  color: var(--muted);
-  opacity: 0.6;
-  margin: 0;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 1;
-}
-@media (max-width: 760px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    flex-direction: row;
-    flex-wrap: wrap;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 0.5rem;
-  }
-  .hub {
-    margin-left: 0;
-    width: 100vw;
-  }
-  .hub.has-messages .composer-wrap {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 92vw;
-  }
-  .site-disclaimer {
-    left: 50%;
-    transform: translateX(-50%);
-  }
+  .hub { margin-left: 0; }
   .sidebar-bottom { display: none; }
   .sidebar-section { display: none; }
 }

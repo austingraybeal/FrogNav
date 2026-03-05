@@ -950,77 +950,22 @@ body::-webkit-scrollbar-button,
   opacity: 0.7;
 }
 
-/* ── Layout with sidebar ─────────────────────────────────────────────────── */
-body {
-  padding-left: 220px;
-}
+/* ── Layout shift for sidebar ────────────────────────────────────────────── */
 .hub {
-  margin: 0 auto;
-  width: min(1100px, 92%);
-  min-height: 100vh;
-  padding: 4rem 0 8rem;
+  margin-left: 220px;
+  width: calc(min(1100px, 92vw));
+}
+.composer-wrap {
+  left: calc(220px + (100vw - 220px) / 2);
+}
+#emptyGreeting {
+  left: calc(220px + (100vw - 220px) / 2) !important;
 }
 .hub-header {
   text-align: center;
 }
 
-/* Empty state — flex centering in content area */
-.hub:not(.has-messages) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem 6rem;
-}
-.hub:not(.has-messages) .hub-header {
-  width: 100%;
-  max-width: 780px;
-}
-
-/* Greeting */
-.empty-greeting {
-  display: none;
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 1rem;
-  letter-spacing: -0.01em;
-  width: 100%;
-  max-width: 780px;
-}
-.hub:not(.has-messages) .empty-greeting {
-  display: block;
-}
-
-/* Composer — static in empty state, fixed when chatting */
-.composer-wrap {
-  position: static !important;
-  transform: none !important;
-  bottom: auto !important;
-  left: auto !important;
-  width: 100%;
-  max-width: 780px;
-}
-
-/* Override: fixed to bottom when chatting */
-.hub.has-messages ~ footer.composer-wrap {
-  position: fixed !important;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%) !important;
-  width: min(1100px, 92%);
-  max-width: none;
-}
-
-/* Site disclaimer centered in content area */
-.site-disclaimer {
-  left: 50%;
-  transform: translateX(-50%);
-}
-
 @media (max-width: 760px) {
-  body { padding-left: 0; }
   .sidebar {
     width: 100%;
     height: auto;
@@ -1032,6 +977,7 @@ body {
     padding: 0.5rem;
   }
   .hub { margin-left: 0; }
+  .composer-wrap { left: 50%; }
   .sidebar-bottom { display: none; }
   .sidebar-section { display: none; }
 }

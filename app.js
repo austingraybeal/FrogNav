@@ -378,6 +378,7 @@ function renderAssistantPlan(container, planJson) {
 
 // ── Thread renderer ───────────────────────────────────────────────────────────
 const composerWrap = document.querySelector('.composer-wrap');
+window.addEventListener('resize', () => positionComposer(!messages.length ? false : true));
 const emptyGreeting = document.createElement('p');
 emptyGreeting.id = 'emptyGreeting';
 emptyGreeting.style.cssText = 'text-align:center;font-size:1.5rem;font-weight:600;color:var(--text);margin:0 0 1.25rem;letter-spacing:-0.01em;display:none;';

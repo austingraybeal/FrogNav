@@ -959,6 +959,10 @@ body::-webkit-scrollbar-button,
   left: calc(220px + (100vw - 220px) / 2);
   transform: translateX(-50%);
 }
+.site-disclaimer {
+  left: calc(220px + (100vw - 220px) / 2);
+  transform: translateX(-50%);
+}
 @media (max-width: 760px) {
   .sidebar {
     width: 100%;

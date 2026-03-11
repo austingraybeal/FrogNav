@@ -441,6 +441,21 @@ function renderThread() {
       const text  = document.createElement('p');
       text.textContent = message.content;
       node.appendChild(text);
+
+      // Render next-step buttons for chat responses
+      if (Array.isArray(message.chatNextSteps) && message.chatNextSteps.length) {
+        const btnRow = document.createElement('div');
+        btnRow.className = 'next-steps-btns';
+        btnRow.style.marginTop = '0.75rem';
+        message.chatNextSteps.forEach(step => {
+          const btn = document.createElement('button');
+          btn.className = 'next-step-btn';
+          btn.textContent = step.label;
+          btn.addEventListener('click', () => callAssistant(step.prompt, 'chat'));
+          btnRow.appendChild(btn);
+        });
+        node.appendChild(btnRow);
+      }
     }
 
     chatThread.appendChild(node);
@@ -502,14 +517,24 @@ async function callAssistant(userContent, action = 'chat') {
       );
     }
 
-    lastPlan = payload;
-    persistLastPlan();
+    if (payload.type === 'chat') {
+      // Conversational response — don't overwrite lastPlan
+      messages.push({
+        role:    'assistant',
+        content: payload.message || 'How can I help?',
+        chatNextSteps: payload.nextSteps || [],
+      });
+    } else {
+      // Full plan response — existing behavior
+      lastPlan = payload;
+      persistLastPlan();
 
-    messages.push({
-      role:     'assistant',
-      content:  payload.planSummary || 'Plan generated.',
-      planJson: payload,
-    });
+      messages.push({
+        role:     'assistant',
+        content:  payload.planSummary || 'Plan generated.',
+        planJson: payload,
+      });
+    }
 
     setStatus('Ready.');
   } catch (error) {

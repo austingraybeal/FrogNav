@@ -239,6 +239,11 @@
       <label for="completedCourses">Completed courses</label>
       <textarea id="completedCourses" name="completedCourses" rows="3"
         placeholder="e.g. KINE 10101, BIOL 20204"></textarea>
+      <button type="button" id="profileUploadBtn" class="profile-upload-btn">
+        📄 Upload Course History
+      </button>
+      <p class="profile-section-hint">Upload a .txt or .csv file to auto-fill your courses — no need to type them all manually.</p>
+      <input type="file" id="profileTranscriptInput" accept=".txt,.csv,.pdf" hidden />
     </div>
     <div class="profile-field">
       <label for="apTransfer">AP / transfer credit</label>

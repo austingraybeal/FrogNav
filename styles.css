@@ -867,6 +867,7 @@ body::-webkit-scrollbar-button,
 }
 .profile-field-row .profile-field {
   min-width: 0;
+  margin-bottom: 0;
 }
 .profile-field input:-webkit-autofill,
 .profile-field input:-webkit-autofill:hover,
@@ -874,6 +875,23 @@ body::-webkit-scrollbar-button,
   -webkit-box-shadow: 0 0 0 1000px var(--panel-soft) inset;
   -webkit-text-fill-color: var(--text);
   transition: background-color 5000s ease-in-out 0s;
+}
+.profile-upload-btn {
+  background: var(--panel-soft);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  color: var(--purple);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+  margin-top: 0.4rem;
+}
+.profile-upload-btn:hover {
+  border-color: var(--purple);
+  background: rgba(116, 78, 205, 0.08);
 }
 .profile-field--inline label {
   display: flex;

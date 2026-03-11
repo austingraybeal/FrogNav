@@ -56,6 +56,8 @@ const sendBtn = document.getElementById('sendBtn');
 const plusBtn = document.getElementById('plusBtn');
 const toolMenuPopover = document.getElementById('toolMenuPopover');
 const transcriptFileInput = document.getElementById('transcriptFileInput');
+const profileUploadBtn = document.getElementById('profileUploadBtn');
+const profileTranscriptInput = document.getElementById('profileTranscriptInput');
 const hub = document.querySelector('.hub');
 const composerGreeting = document.getElementById('composerGreeting');
 const quickActionButtons = [...document.querySelectorAll('.quick-action')];
@@ -875,44 +877,55 @@ function handleToolAction(tool) {
 }
 
 // ── Upload Course History ────────────────────────────────────────────────────
+async function handleTranscriptFile(file) {
+  setStatus('Reading transcript...');
+  try {
+    const text = await file.text();
+    const coursePattern = /\b([A-Z]{2,5})\s*[-]?\s*(\d{4,5})\b/g;
+    const courses = new Set();
+    let match;
+    while ((match = coursePattern.exec(text)) !== null) {
+      courses.add(`${match[1]} ${match[2]}`);
+    }
+
+    if (courses.size === 0) {
+      setStatus('No course codes found in file. Expected format like KINE 10101.', true);
+      return;
+    }
+
+    const courseList = [...courses].join(', ');
+    const completedField = document.getElementById('completedCourses');
+    if (completedField) {
+      const existing = completedField.value.trim();
+      completedField.value = existing
+        ? `${existing}, ${courseList}`
+        : courseList;
+    }
+    saveProfile();
+    updateSidebarProfile();
+    setStatus(`Found ${courses.size} course(s): ${courseList}`);
+  } catch (err) {
+    setStatus('Failed to read file: ' + (err.message || 'Unknown error'), true);
+  }
+}
+
 if (transcriptFileInput) {
   transcriptFileInput.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setStatus('Reading transcript...');
-    try {
-      const text = await file.text();
-      // Extract course codes that look like SUBJ NNNNN or SUBJ-NNNNN patterns
-      const coursePattern = /\b([A-Z]{2,5})\s*[-]?\s*(\d{4,5})\b/g;
-      const courses = new Set();
-      let match;
-      while ((match = coursePattern.exec(text)) !== null) {
-        courses.add(`${match[1]} ${match[2]}`);
-      }
-
-      if (courses.size === 0) {
-        setStatus('No course codes found in file. Expected format like KINE 10101.', true);
-        return;
-      }
-
-      const courseList = [...courses].join(', ');
-      const completedField = document.getElementById('completedCourses');
-      if (completedField) {
-        // Append to existing if any
-        const existing = completedField.value.trim();
-        completedField.value = existing
-          ? `${existing}, ${courseList}`
-          : courseList;
-      }
-      saveProfile();
-      updateSidebarProfile();
-      setStatus(`Found ${courses.size} course(s): ${courseList}`);
-    } catch (err) {
-      setStatus('Failed to read file: ' + (err.message || 'Unknown error'), true);
-    }
-    // Reset so the same file can be re-selected
+    await handleTranscriptFile(file);
     transcriptFileInput.value = '';
+  });
+}
+
+// Profile upload button (inside Student Profile → Completed Work)
+if (profileUploadBtn && profileTranscriptInput) {
+  profileUploadBtn.addEventListener('click', () => profileTranscriptInput.click());
+  profileTranscriptInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleTranscriptFile(file);
+    profileTranscriptInput.value = '';
   });
 }
 

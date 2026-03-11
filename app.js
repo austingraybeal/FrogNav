@@ -7,6 +7,8 @@ const LAST_PLAN_KEY = 'frognav-last-plan';
 
 // ── Profile defaults ──────────────────────────────────────────────────────────
 const DEFAULTS = {
+  firstName:         '',
+  lastName:          '',
   level:             'undergrad',
   majorProgram:      'Movement Science',
   minorProgram:      '',
@@ -118,6 +120,8 @@ function setStatus(message, isError = false) {
 function readProfile() {
   const data = new FormData(profileForm);
   return {
+    firstName:        String(data.get('firstName')       || '').trim(),
+    lastName:         String(data.get('lastName')        || '').trim(),
     level:            String(data.get('level') || 'undergrad').trim().toLowerCase() === 'grad' ? 'grad' : 'undergrad',
     majorProgram:     String(data.get('majorProgram')    || '').trim(),
     minorProgram:     String(data.get('minorProgram')    || '').trim(),
@@ -927,6 +931,7 @@ function handleExportPDF() {
   }
 
   const profile = readProfile();
+  const studentName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
   const terms = lastPlan.terms || [];
   let termsHTML = '';
   terms.forEach(term => {
@@ -941,13 +946,14 @@ function handleExportPDF() {
       </table>`;
   });
 
-  printWin.document.write(`<!DOCTYPE html><html><head><title>FrogForward Plan</title>
+  printWin.document.write(`<!DOCTYPE html><html><head><title>FrogForward Plan${studentName ? ' — ' + safeText(studentName) : ''}</title>
     <style>body{font-family:'DM Sans',system-ui,sans-serif;padding:2rem;color:#1a1a2e;max-width:750px;margin:0 auto;}
-    h1{color:#4a2d99;margin-bottom:0;}h2{color:#333;font-size:1rem;margin-top:1.5rem;}
+    h1{color:#4a2d99;margin-bottom:0;}h2{color:#333;font-size:1.1rem;margin:0.25rem 0 0;font-weight:500;}
     table{margin-bottom:0.5rem;}td,th{border:1px solid #ddd;padding:4px 8px;}
     .meta{font-size:0.85rem;color:#666;margin-top:0.25rem;}
     @media print{body{padding:0.5rem;}}</style></head><body>
     <h1>FrogForward Degree Plan</h1>
+    ${studentName ? `<h2>${safeText(studentName)}</h2>` : ''}
     <p class="meta">${safeText(profile.majorProgram || 'Kinesiology')} · ${safeText(profile.level === 'grad' ? 'Graduate' : 'Undergraduate')}</p>
     <p class="meta">${safeText(profile.startTerm || '')} → ${safeText(profile.targetGraduation || 'TBD')} · ${safeText(profile.creditsPerTerm || '15')} credits/term</p>
     <p style="margin-top:1rem;">${safeText(lastPlan.planSummary || '')}</p>

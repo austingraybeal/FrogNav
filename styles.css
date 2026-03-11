@@ -84,6 +84,9 @@ body {
   max-height: 62vh;
   display: grid;
   gap: 1.25rem;
+  max-width: min(768px, 100%);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .empty-thread {
@@ -143,6 +146,9 @@ body {
   text-align: center;
   color: var(--purple-soft);
   margin: 0;
+  max-width: min(768px, 100%);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .status.error { color: var(--danger); }
@@ -152,7 +158,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   bottom: 1rem;
-  width: min(1100px, 92vw);
+  width: min(768px, 92vw);
   z-index: 2;
   transition: bottom 0.3s ease;
 }
@@ -958,6 +964,7 @@ body::-webkit-scrollbar-button,
 .composer-wrap {
   left: calc(220px + (100vw - 220px) / 2);
   transform: translateX(-50%);
+  width: min(768px, calc(100vw - 220px - 2rem));
 }
 .site-disclaimer {
   left: calc(220px + (100vw - 220px) / 2);

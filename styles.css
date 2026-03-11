@@ -863,6 +863,17 @@ body::-webkit-scrollbar-button,
   grid-template-columns: 1fr 1fr;
   gap: 0.65rem;
   margin-bottom: 0.65rem;
+  align-items: end;
+}
+.profile-field-row .profile-field {
+  min-width: 0;
+}
+.profile-field input:-webkit-autofill,
+.profile-field input:-webkit-autofill:hover,
+.profile-field input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--panel-soft) inset;
+  -webkit-text-fill-color: var(--text);
+  transition: background-color 5000s ease-in-out 0s;
 }
 .profile-field--inline label {
   display: flex;

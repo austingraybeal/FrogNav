@@ -482,6 +482,117 @@ body {
   border-color: var(--border);
 }
 
+/* ── Tool menu popover ──────────────────────────────────────────────────── */
+.tool-menu-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+.tool-menu-popover[hidden] { display: none; }
+
+.tool-action {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.7rem;
+}
+.tool-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 1.5rem;
+  text-align: center;
+}
+.tool-text {
+  flex: 1;
+  line-height: 1.35;
+}
+.tool-text strong {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.tool-text small {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ── Sections search modal ──────────────────────────────────────────────── */
+#sectionsModal .sections-search-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+#sectionsModal .sections-search-row input,
+#sectionsModal .sections-search-row select {
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+#sectionsModal .sections-search-row input { flex: 1; }
+#sectionsModal .sections-search-btn {
+  background: var(--purple);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#sectionsModal .sections-search-btn:hover { background: #6c3de0; }
+
+.sections-results {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.section-card {
+  background: rgba(126, 77, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+}
+.section-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.3rem;
+}
+.section-card-header strong { font-size: 0.92rem; }
+.section-card-header .section-crn {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.section-card-meta {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.section-seats {
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
+}
+.section-seats .seats-open { color: #6ee7b7; }
+.section-seats .seats-full { color: var(--danger); }
+
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 html, body, .chat-thread, .modal-panel {
   scrollbar-width: thin;

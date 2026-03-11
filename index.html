@@ -264,20 +264,58 @@
     </section>
   </div>
 
+  <!-- Sections Search Modal -->
+  <div id="sectionsModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-sections></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="sectionsTitle">
+      <div class="modal-header">
+        <h2 id="sectionsTitle">Check Live Sections</h2>
+        <button id="closeSectionsBtn" type="button" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.75rem;">Search real-time course availability from classes.tcu.edu</p>
+      <div class="sections-search-row">
+        <input id="sectionsSubject" type="text" placeholder="Subject (e.g. KINE)" maxlength="6" />
+        <input id="sectionsCourse" type="text" placeholder="Course # (optional)" maxlength="10" />
+        <button id="sectionsSearchBtn" class="sections-search-btn" type="button">Search</button>
+      </div>
+      <div id="sectionsStatus" style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;"></div>
+      <div id="sectionsResults" class="sections-results"></div>
+    </section>
+  </div>
+
     <!-- Chat composer — aria-controls links it to the chat thread -->
     <p class="site-disclaimer">This is planning assistance only and does not replace official advising or the TCU degree audit system.</p>
 <footer class="composer-wrap">
   <div class="composer" style="position:relative">
     <p id="composerGreeting" class="composer-greeting"></p>
-    <div id="quickActionPopover" class="quick-action-popover" hidden>
-      <p class="popover-label">Quick actions</p>
-      <button class="popover-action" data-action="build" type="button">Build my plan</button>
-      <button class="popover-action" data-action="add_minor" type="button">Add a minor to my plan</button>
-      <button class="popover-action" data-action="honors" type="button">Show me the Honors version</button>
-      <button class="popover-action" data-action="compare" type="button">Compare programs</button>
+    <input type="file" id="transcriptFileInput" accept=".txt,.csv,.pdf" hidden />
+    <div id="toolMenuPopover" class="tool-menu-popover" hidden>
+      <p class="popover-label">Tools</p>
+      <button class="popover-action tool-action" data-tool="upload" type="button">
+        <span class="tool-icon">📄</span>
+        <span class="tool-text"><strong>Upload Course History</strong><br><small>Parse transcript to fill completed courses</small></span>
+      </button>
+      <button class="popover-action tool-action" data-tool="pdf" type="button">
+        <span class="tool-icon">📋</span>
+        <span class="tool-text"><strong>Create Schedule PDF</strong><br><small>Export your current plan as a PDF</small></span>
+      </button>
+      <button class="popover-action tool-action" data-tool="map" type="button">
+        <span class="tool-icon">🗺️</span>
+        <span class="tool-text"><strong>Generate Visual Map</strong><br><small>Render plan as a visual flowchart</small></span>
+      </button>
+      <button class="popover-action tool-action" data-tool="research" type="button">
+        <span class="tool-icon">🔬</span>
+        <span class="tool-text"><strong>Deep Research</strong><br><small>In-depth analysis for complex questions</small></span>
+      </button>
+      <button class="popover-action tool-action" data-tool="sections" type="button">
+        <span class="tool-icon">🔍</span>
+        <span class="tool-text"><strong>Check Live Sections</strong><br><small>Real-time availability from classes.tcu.edu</small></span>
+      </button>
     </div>
     <div class="composer-input-row">
-      <button id="plusBtn" class="plus-btn" type="button" aria-label="Quick actions" aria-expanded="false" aria-controls="quickActionPopover">+</button>
+      <button id="plusBtn" class="plus-btn" type="button" aria-label="Tools menu" aria-expanded="false" aria-controls="toolMenuPopover">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
       <form id="chatComposer" autocomplete="off" style="flex:1;display:flex;gap:0.6rem">
         <input id="chatInput" type="text" placeholder="Message FrogNav..." aria-label="Message input" aria-controls="chatThread" style="flex:1" />
         <button id="sendBtn" type="submit" aria-label="Send">

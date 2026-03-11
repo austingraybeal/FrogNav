@@ -52,7 +52,8 @@ const chatComposer      = document.getElementById('chatComposer');
 const chatInput         = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 const plusBtn = document.getElementById('plusBtn');
-const quickActionPopover = document.getElementById('quickActionPopover');
+const toolMenuPopover = document.getElementById('toolMenuPopover');
+const transcriptFileInput = document.getElementById('transcriptFileInput');
 const hub = document.querySelector('.hub');
 const composerGreeting = document.getElementById('composerGreeting');
 const quickActionButtons = [...document.querySelectorAll('.quick-action')];
@@ -816,48 +817,287 @@ quickActionButtons.forEach(button => {
   });
 });
 
-// ── Plus button + popover listeners ────────────────────────────────────────
-if (plusBtn && quickActionPopover) {
+// ── Tool menu (hamburger) + popover listeners ──────────────────────────────
+if (plusBtn && toolMenuPopover) {
   plusBtn.addEventListener('click', () => {
-    const isOpen = !quickActionPopover.hidden;
-    quickActionPopover.hidden = isOpen;
+    const isOpen = !toolMenuPopover.hidden;
+    toolMenuPopover.hidden = isOpen;
     plusBtn.setAttribute('aria-expanded', String(!isOpen));
     plusBtn.classList.toggle('open', !isOpen);
   });
 
   document.addEventListener('click', event => {
-    if (!quickActionPopover.hidden &&
+    if (!toolMenuPopover.hidden &&
         !plusBtn.contains(event.target) &&
-        !quickActionPopover.contains(event.target)) {
-      quickActionPopover.hidden = true;
+        !toolMenuPopover.contains(event.target)) {
+      toolMenuPopover.hidden = true;
       plusBtn.setAttribute('aria-expanded', 'false');
       plusBtn.classList.remove('open');
     }
   });
 
-  quickActionPopover.querySelectorAll('.popover-action').forEach(button => {
+  toolMenuPopover.querySelectorAll('.tool-action').forEach(button => {
     button.addEventListener('click', () => {
-      quickActionPopover.hidden = true;
+      toolMenuPopover.hidden = true;
       plusBtn.setAttribute('aria-expanded', 'false');
       plusBtn.classList.remove('open');
 
-      const action = button.dataset.action;
-      if (!action) return;
-      if (action === 'build') ensureBuildDefaults();
-      const profile = readProfile();
-      if (action === 'add_minor' && !profile.minorProgram && profile.level !== 'grad') {
-        setStatus('Select a minor in Student Profile before using "Add a minor to my plan".', true);
-        openModal();
-        return;
-      }
-      const prompt = quickActionPrompt(action, profile);
-      if (!profile.completedCourses && profile.level === 'undergrad') {
-        openChecklistForAction(action, prompt);
-        return;
-      }
-      callAssistant(prompt, action);
+      const tool = button.dataset.tool;
+      if (!tool) return;
+      handleToolAction(tool);
     });
   });
+}
+
+// ── Tool action handlers ─────────────────────────────────────────────────────
+function handleToolAction(tool) {
+  switch (tool) {
+    case 'upload':
+      transcriptFileInput.click();
+      break;
+    case 'pdf':
+      handleExportPDF();
+      break;
+    case 'map':
+      handleVisualMap();
+      break;
+    case 'research':
+      handleDeepResearch();
+      break;
+    case 'sections':
+      openSectionsModal();
+      break;
+  }
+}
+
+// ── Upload Course History ────────────────────────────────────────────────────
+if (transcriptFileInput) {
+  transcriptFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setStatus('Reading transcript...');
+    try {
+      const text = await file.text();
+      // Extract course codes that look like SUBJ NNNNN or SUBJ-NNNNN patterns
+      const coursePattern = /\b([A-Z]{2,5})\s*[-]?\s*(\d{4,5})\b/g;
+      const courses = new Set();
+      let match;
+      while ((match = coursePattern.exec(text)) !== null) {
+        courses.add(`${match[1]} ${match[2]}`);
+      }
+
+      if (courses.size === 0) {
+        setStatus('No course codes found in file. Expected format like KINE 10101.', true);
+        return;
+      }
+
+      const courseList = [...courses].join(', ');
+      const completedField = document.getElementById('completedCourses');
+      if (completedField) {
+        // Append to existing if any
+        const existing = completedField.value.trim();
+        completedField.value = existing
+          ? `${existing}, ${courseList}`
+          : courseList;
+      }
+      saveProfile();
+      updateSidebarProfile();
+      setStatus(`Found ${courses.size} course(s): ${courseList}`);
+    } catch (err) {
+      setStatus('Failed to read file: ' + (err.message || 'Unknown error'), true);
+    }
+    // Reset so the same file can be re-selected
+    transcriptFileInput.value = '';
+  });
+}
+
+// ── Create Schedule PDF ──────────────────────────────────────────────────────
+function handleExportPDF() {
+  if (!lastPlan) {
+    setStatus('Build a plan first before exporting as PDF.', true);
+    return;
+  }
+
+  // Build a printable document in a new window
+  const printWin = window.open('', '_blank', 'width=800,height=600');
+  if (!printWin) {
+    setStatus('Pop-up blocked. Please allow pop-ups for this site.', true);
+    return;
+  }
+
+  const profile = readProfile();
+  const terms = lastPlan.terms || [];
+  let termsHTML = '';
+  terms.forEach(term => {
+    const courses = (term.courses || [])
+      .map(c => `<tr><td>${safeText(c.code || 'TBD')}</td><td>${safeText(c.title || '')}</td><td>${c.credits ?? 0}</td><td>${safeText(c.notes || '')}</td></tr>`)
+      .join('');
+    termsHTML += `
+      <h3 style="margin:1rem 0 0.3rem;color:#4a2d99;">${safeText(term.term || 'Term')} — ${term.totalCredits ?? 0} credits</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        <thead><tr style="background:#f3f0ff;"><th style="padding:4px 8px;text-align:left;border:1px solid #ddd;">Code</th><th style="padding:4px 8px;text-align:left;border:1px solid #ddd;">Title</th><th style="padding:4px 8px;border:1px solid #ddd;">Cr</th><th style="padding:4px 8px;text-align:left;border:1px solid #ddd;">Notes</th></tr></thead>
+        <tbody>${courses}</tbody>
+      </table>`;
+  });
+
+  printWin.document.write(`<!DOCTYPE html><html><head><title>FrogForward Plan</title>
+    <style>body{font-family:'DM Sans',system-ui,sans-serif;padding:2rem;color:#1a1a2e;max-width:750px;margin:0 auto;}
+    h1{color:#4a2d99;margin-bottom:0;}h2{color:#333;font-size:1rem;margin-top:1.5rem;}
+    table{margin-bottom:0.5rem;}td,th{border:1px solid #ddd;padding:4px 8px;}
+    .meta{font-size:0.85rem;color:#666;margin-top:0.25rem;}
+    @media print{body{padding:0.5rem;}}</style></head><body>
+    <h1>FrogForward Degree Plan</h1>
+    <p class="meta">${safeText(profile.majorProgram || 'Kinesiology')} · ${safeText(profile.level === 'grad' ? 'Graduate' : 'Undergraduate')}</p>
+    <p class="meta">${safeText(profile.startTerm || '')} → ${safeText(profile.targetGraduation || 'TBD')} · ${safeText(profile.creditsPerTerm || '15')} credits/term</p>
+    <p style="margin-top:1rem;">${safeText(lastPlan.planSummary || '')}</p>
+    ${termsHTML}
+    <p style="margin-top:2rem;font-size:0.75rem;color:#999;">Generated by FrogForward · ${new Date().toLocaleDateString()}</p>
+    </body></html>`);
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(() => printWin.print(), 400);
+  setStatus('PDF print dialog opened.');
+}
+
+// ── Generate Visual Map ──────────────────────────────────────────────────────
+function handleVisualMap() {
+  if (!lastPlan) {
+    setStatus('Build a plan first before generating a visual map.', true);
+    return;
+  }
+  const prompt = `Generate a visual semester-by-semester flowchart of my current degree plan. Show prerequisites as arrows between courses, highlight courses that are currently in my plan, and indicate which requirements each course fulfills.`;
+  callAssistant(prompt, 'chat');
+}
+
+// ── Deep Research ────────────────────────────────────────────────────────────
+function handleDeepResearch() {
+  const input = chatInput.value.trim();
+  if (!input) {
+    setStatus('Type a question first, then click Deep Research.', true);
+    chatInput.focus();
+    return;
+  }
+  const prompt = `[DEEP RESEARCH MODE] Provide an in-depth, comprehensive analysis: ${input}`;
+  chatInput.value = '';
+  callAssistant(prompt, 'chat');
+}
+
+// ── Check Live Sections ──────────────────────────────────────────────────────
+const sectionsModal   = document.getElementById('sectionsModal');
+const closeSectionsBtn = document.getElementById('closeSectionsBtn');
+const sectionsSearchBtn = document.getElementById('sectionsSearchBtn');
+const sectionsResults  = document.getElementById('sectionsResults');
+const sectionsStatus   = document.getElementById('sectionsStatus');
+const sectionsSubject  = document.getElementById('sectionsSubject');
+const sectionsCourse   = document.getElementById('sectionsCourse');
+
+function openSectionsModal() {
+  if (sectionsModal) sectionsModal.hidden = false;
+  if (sectionsSubject) sectionsSubject.focus();
+}
+
+function closeSectionsModal() {
+  if (sectionsModal) sectionsModal.hidden = true;
+}
+
+if (closeSectionsBtn) {
+  closeSectionsBtn.addEventListener('click', closeSectionsModal);
+}
+if (sectionsModal) {
+  sectionsModal.addEventListener('click', event => {
+    if (event.target.matches('[data-close-sections]')) closeSectionsModal();
+  });
+}
+
+if (sectionsSearchBtn) {
+  sectionsSearchBtn.addEventListener('click', searchLiveSections);
+}
+// Allow Enter key in subject/course inputs
+if (sectionsSubject) {
+  sectionsSubject.addEventListener('keydown', e => { if (e.key === 'Enter') searchLiveSections(); });
+}
+if (sectionsCourse) {
+  sectionsCourse.addEventListener('keydown', e => { if (e.key === 'Enter') searchLiveSections(); });
+}
+
+async function searchLiveSections() {
+  const subject = (sectionsSubject?.value || '').trim().toUpperCase();
+  if (!subject) {
+    if (sectionsStatus) sectionsStatus.textContent = 'Enter a subject code (e.g. KINE).';
+    return;
+  }
+
+  const courseNum = (sectionsCourse?.value || '').trim();
+  if (sectionsStatus) sectionsStatus.textContent = 'Searching classes.tcu.edu...';
+  if (sectionsResults) sectionsResults.innerHTML = '';
+
+  try {
+    const params = new URLSearchParams({ subject });
+    if (courseNum) params.set('course', courseNum);
+
+    const response = await fetch(`/api/tcu-sections?${params}`);
+    const payload = await response.json();
+
+    if (!response.ok) {
+      if (sectionsStatus) sectionsStatus.textContent = payload.detail || 'Search failed.';
+      return;
+    }
+
+    const sections = payload.sections || [];
+    if (sectionsStatus) {
+      sectionsStatus.textContent = sections.length
+        ? `Found ${sections.length} section(s)`
+        : 'No sections found for this search.';
+    }
+
+    sections.forEach(sec => {
+      const card = document.createElement('div');
+      card.className = 'section-card';
+
+      const seatsAvail = (sec.maximumEnrollment || 0) - (sec.enrollment || 0);
+      const seatsClass = seatsAvail > 0 ? 'seats-open' : 'seats-full';
+
+      card.innerHTML = `
+        <div class="section-card-header">
+          <strong>${safeText(sec.subject)} ${safeText(sec.courseNumber)}-${safeText(sec.sequenceNumber)} · ${safeText(sec.courseTitle)}</strong>
+          <span class="section-crn">CRN ${safeText(sec.courseReferenceNumber)}</span>
+        </div>
+        <div class="section-card-meta">
+          ${sec.faculty?.length ? safeText(sec.faculty.map(f => f.displayName).join(', ')) : 'TBA'}
+          ${sec.meetingsFaculty?.length ? ' · ' + safeText(formatMeetingTimes(sec.meetingsFaculty)) : ''}
+        </div>
+        <div class="section-seats">
+          <span class="${seatsClass}">${seatsAvail > 0 ? seatsAvail + ' seats open' : 'Full'}</span>
+          · ${sec.enrollment || 0}/${sec.maximumEnrollment || 0} enrolled
+          ${sec.waitCount > 0 ? ` · ${sec.waitCount} waitlisted` : ''}
+        </div>
+      `;
+      sectionsResults.appendChild(card);
+    });
+  } catch (err) {
+    if (sectionsStatus) sectionsStatus.textContent = 'Network error: ' + (err.message || 'Could not reach server.');
+  }
+}
+
+function formatMeetingTimes(meetingsFaculty) {
+  return meetingsFaculty
+    .map(mf => {
+      const mt = mf.meetingTime;
+      if (!mt) return '';
+      const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+        .filter(d => mt[d])
+        .map(d => d.charAt(0).toUpperCase() + d.charAt(1))
+        .join('');
+      const start = mt.beginTime ? `${mt.beginTime.slice(0,2)}:${mt.beginTime.slice(2)}` : '';
+      const end = mt.endTime ? `${mt.endTime.slice(0,2)}:${mt.endTime.slice(2)}` : '';
+      const building = mt.building || '';
+      const room = mt.room || '';
+      const loc = (building || room) ? ` (${building} ${room})`.trim() : '';
+      return `${days} ${start}–${end}${loc}`;
+    })
+    .filter(Boolean)
+    .join(', ');
 }
 
 // ── Chat composer listener ────────────────────────────────────────────────────

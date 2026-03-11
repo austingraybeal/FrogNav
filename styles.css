@@ -102,12 +102,20 @@ body {
 }
 .msg.user {
   margin-left: auto;
-  width: min(88%, 620px);
-  color: var(--muted);
-  font-size: 0.92rem;
+  margin-right: 0;
+  width: fit-content;
+  max-width: min(80%, 560px);
+  background: rgba(126, 77, 255, 0.15);
+  border: 1px solid rgba(126, 77, 255, 0.25);
+  border-radius: 18px 18px 4px 18px;
+  padding: 0.55rem 1rem;
+  color: var(--text);
+  font-size: 0.93rem;
+  text-align: right;
 }
 .msg.assistant {
   margin-right: auto;
+  margin-left: 0;
   width: 100%;
 }
 

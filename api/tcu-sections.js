@@ -371,6 +371,13 @@ module.exports = async function handler(req, res) {
     const termOptions = debug ? getSelectOptions(pageHtml, termFieldName) : null;
     const subjectOptions = debug ? getSelectOptions(pageHtml, subjectFieldName) : null;
 
+    // Extract HTML snippet around rbStatus to see actual values
+    const rbIdx = pageHtml.indexOf('rbStatus');
+    const rbSnippet = rbIdx >= 0 ? pageHtml.slice(Math.max(0, rbIdx - 100), rbIdx + 500) : 'NOT FOUND';
+
+    // Extract cookies being sent
+    const cookiesSent = cookieStr(jar);
+
     const debugInfo = debug
       ? {
           _debug: {
@@ -380,9 +387,13 @@ module.exports = async function handler(req, res) {
             viewStateLen: viewState.length,
             eventValidationFound: !!eventValidation,
             cookieCount: jar.size,
+            cookiesSent: cookiesSent.replace(/=([^;]{10})[^;]*/g, '=$1...'), // truncate values
             formAction,
             postUrl,
             allFields,
+            rbStatusValues,
+            rbStatusDefault,
+            rbSnippet,
             termFieldName,
             subjectFieldName,
             searchBtnName,

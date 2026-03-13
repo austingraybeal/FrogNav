@@ -335,33 +335,62 @@ module.exports = async function handler(req, res) {
     }
 
     // Build form data using the exact field names found on the page
-    // First, find the actual field names for term and subject
     const termFieldName = allFields.find(f => /term/i.test(f) && !f.startsWith('__')) || 'ddlTerm';
     const subjectFieldName = allFields.find(f => /subj/i.test(f) && !f.startsWith('__')) || 'ddlSubject';
     const searchBtnName = allFields.find(f => /search|submit/i.test(f) && !f.startsWith('__')) || 'btnSearch';
 
+    // Extract default values for ALL form fields from the page HTML
+    function getSelectDefault(html, name) {
+      const selRe = new RegExp(`<select[^>]+name="${name}"[^>]*>([\\s\\S]*?)</select>`, 'i');
+      const selMatch = html.match(selRe);
+      if (!selMatch) return '';
+      // Look for selected option
+      const selOptRe = /<option[^>]+selected[^>]+value="([^"]*)"/i;
+      const selOpt = selMatch[1].match(selOptRe)
+        || selMatch[1].match(/<option[^>]+value="([^"]*)"[^>]+selected/i);
+      if (selOpt) return selOpt[1];
+      // Fall back to first option value
+      const firstOpt = selMatch[1].match(/<option[^>]+value="([^"]*)"/i);
+      return firstOpt ? firstOpt[1] : '';
+    }
+
+    function getInputDefault(html, name) {
+      const re = new RegExp(`<input[^>]+name="${name}"[^>]+value="([^"]*)"`, 'i');
+      const m = html.match(re) || html.match(new RegExp(`<input[^>]+value="([^"]*)"[^>]+name="${name}"`, 'i'));
+      return m ? m[1] : '';
+    }
+
     // Step 2: POST the search form
-    // ASP.NET requires __EVENTTARGET and __EVENTARGUMENT even if empty
+    // Build form body with page defaults, then override what we need
     const formBody = new URLSearchParams();
     formBody.set('__EVENTTARGET', '');
     formBody.set('__EVENTARGUMENT', '');
     formBody.set('__VIEWSTATE', viewState);
     formBody.set('__VIEWSTATEGENERATOR', viewStateGen);
     formBody.set('__EVENTVALIDATION', eventValidation);
+
+    // Set all select dropdowns to their page defaults
+    const selectFields = ['ddlTerm', 'ddlSession', 'ddlLocation', 'ddlSubject',
+      'ddlAttribute', 'ddlLevel', 'ddlDay', 'ddlStartTime', 'ddlEndtime'];
+    for (const f of selectFields) {
+      formBody.set(f, getSelectDefault(pageHtml, f));
+    }
+
+    // Set text inputs to their defaults (usually empty)
+    formBody.set('txtCrsNumber', getInputDefault(pageHtml, 'txtCrsNumber'));
+    formBody.set('txtSection', getInputDefault(pageHtml, 'txtSection'));
+
+    // Set radio button to its default
+    formBody.set('rbStatus', rbStatusDefault);
+
+    // Set hidden field defaults
+    formBody.set('hdnShowBldg', getInputDefault(pageHtml, 'hdnShowBldg') || '');
+
+    // Now override with our search parameters
     formBody.set('ddlTerm', tcuTerm);
-    formBody.set('ddlSession', 'ANY');
-    formBody.set('ddlLocation', 'ANY');
     formBody.set('ddlSubject', subject);
-    formBody.set('txtCrsNumber', courseNumber);
-    formBody.set('txtSection', '');
-    formBody.set('ddlAttribute', 'ANY');
-    formBody.set('ddlLevel', 'ANY');
-    formBody.set('rbStatus', rbStatusDefault); // use actual value from page
-    formBody.set('ddlDay', 'ANY');
-    formBody.set('ddlStartTime', 'ANY');
-    formBody.set('ddlEndtime', 'ANY');
-    formBody.set('btnSearch', 'Search');
-    formBody.set('hdnShowBldg', 'Y');
+    if (courseNumber) formBody.set('txtCrsNumber', courseNumber);
+    formBody.set(searchBtnName, 'Search');
 
     const formData = formBody;
 
@@ -429,6 +458,7 @@ module.exports = async function handler(req, res) {
             subjectFieldName,
             searchBtnName,
             postedFields: [...formBody.keys()],
+            postedValues: Object.fromEntries([...formBody.entries()].filter(([k]) => !k.startsWith('__'))),
             tcuTerm,
             formSubject: subject,
             termOptions,

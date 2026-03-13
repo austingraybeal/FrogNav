@@ -12,6 +12,150 @@ const VALID_ACTIONS = new Set(['build', 'add_minor', 'honors', 'compare', 'chat'
 const REQUIRED_DISCLAIMER =
   'This is planning assistance only and does not replace official advising or the TCU degree audit system.';
 
+const MAX_SECTION_LOOKUPS = 3;       // cap to stay under Vercel timeout
+const SECTION_FETCH_TIMEOUT = 12_000; // 12s per lookup
+
+// ── Live sections integration ─────────────────────────────────────────────────
+
+const tcuSectionsHandler = require('./tcu-sections');
+
+/** Call tcu-sections handler internally (no HTTP round-trip). */
+async function fetchSectionsInternal(subject, courseNumber, termCode) {
+  return new Promise(resolve => {
+    const mockReq = {
+      method: 'GET',
+      query: { subject, course: courseNumber, term: termCode || '' },
+    };
+    const result = { statusCode: 200, body: null };
+    const mockRes = {
+      setHeader() {},
+      status(code) {
+        result.statusCode = code;
+        return {
+          json(data) { result.body = data; resolve(result.body); },
+          end()      { resolve(null); },
+        };
+      },
+    };
+    const timer = setTimeout(() => resolve(null), SECTION_FETCH_TIMEOUT);
+    tcuSectionsHandler(mockReq, mockRes)
+      .then(() => clearTimeout(timer))
+      .catch(() => { clearTimeout(timer); resolve(null); });
+  });
+}
+
+/** Extract course codes (e.g. "KINE 20413") from text. */
+function extractCourseCodes(text) {
+  if (!text) return [];
+  const re = /\b([A-Z]{2,4})\s+(\d{4,5})\b/g;
+  const codes = [];
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    codes.push({ subject: m[1], courseNumber: m[2] });
+  }
+  return codes;
+}
+
+/** Pull course codes from lastPlan's nearest upcoming term. */
+function extractPlanCourses(lastPlan) {
+  if (!lastPlan?.terms?.length) return [];
+  const courses = [];
+  for (const term of lastPlan.terms) {
+    for (const c of (term.courses || [])) {
+      const code = String(c.code || '').trim();
+      const parts = code.split(/\s+/);
+      if (parts.length === 2 && /^[A-Z]{2,4}$/.test(parts[0]) && /^\d{4,5}$/.test(parts[1])) {
+        courses.push({ subject: parts[0], courseNumber: parts[1] });
+      }
+    }
+  }
+  return courses;
+}
+
+/** Convert "Fall 2026" → "202690", "Spring 2026" → "202630". */
+function humanTermToCode(termStr) {
+  const m = String(termStr || '').match(/^(Fall|Spring|Summer)\s+(\d{4})$/i);
+  if (!m) return '';
+  const year = m[2];
+  const season = m[1].toLowerCase();
+  const suffixMap = { spring: '30', summer: '50', fall: '90' };
+  return `${year}${suffixMap[season] || '30'}`;
+}
+
+/** Deduplicate course lookups by subject+courseNumber. */
+function dedup(courses) {
+  const seen = new Set();
+  return courses.filter(c => {
+    const key = `${c.subject} ${c.courseNumber}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** Format sections data into a human-readable block for Claude. */
+function formatSectionsForPrompt(allResults) {
+  if (!allResults.length) return '';
+  const lines = ['LIVE SECTION AVAILABILITY (from TCU Class Search — real-time data):'];
+  for (const { subject, courseNumber, sections } of allResults) {
+    lines.push(`\n${subject} ${courseNumber}:`);
+    if (!sections || sections.length === 0) {
+      lines.push('  No sections found for this term.');
+      continue;
+    }
+    for (const s of sections) {
+      const mt = s.meetingsFaculty?.[0]?.meetingTime;
+      const dayLetters = [];
+      if (mt?.monday)    dayLetters.push('M');
+      if (mt?.tuesday)   dayLetters.push('T');
+      if (mt?.wednesday) dayLetters.push('W');
+      if (mt?.thursday)  dayLetters.push('R');
+      if (mt?.friday)    dayLetters.push('F');
+      if (mt?.saturday)  dayLetters.push('S');
+      const dayStr = dayLetters.length ? dayLetters.join('') : 'TBA';
+
+      const timeStr = (mt?.beginTime && mt?.endTime)
+        ? `${mt.beginTime.replace(/(\d{2})(\d{2})/, '$1:$2')}-${mt.endTime.replace(/(\d{2})(\d{2})/, '$1:$2')}`
+        : 'TBA';
+      const instructor = s.faculty?.[0]?.displayName || 'TBA';
+      const status = s.seatsAvailable > 0 ? `${s.seatsAvailable} seats open` : 'FULL';
+      const waitInfo = s.waitCount > 0 ? ` (waitlist: ${s.waitCount}/${s.waitCapacity})` : '';
+      lines.push(`  Section ${s.sequenceNumber || '?'} | ${dayStr} ${timeStr} | ${instructor} | ${status}${waitInfo} | CRN: ${s.courseReferenceNumber}`);
+    }
+  }
+  lines.push('\nUse this data to give the student accurate scheduling advice. Reference specific sections, times, and seat availability.');
+  return lines.join('\n');
+}
+
+/** Fetch live sections for courses mentioned in the message or plan. */
+async function fetchRelevantSections(message, lastPlan, profile) {
+  // Gather course codes from message and plan
+  const fromMessage = extractCourseCodes((message || '').toUpperCase());
+  const fromPlan = lastPlan ? extractPlanCourses(lastPlan) : [];
+
+  // Prioritize message mentions, then plan courses
+  const all = dedup([...fromMessage, ...fromPlan]);
+  if (all.length === 0) return '';
+
+  // Determine term code
+  const termCode = humanTermToCode(profile.startTerm);
+
+  // Fetch up to MAX_SECTION_LOOKUPS courses in parallel
+  const toFetch = all.slice(0, MAX_SECTION_LOOKUPS);
+  const results = await Promise.all(
+    toFetch.map(async ({ subject, courseNumber }) => {
+      const data = await fetchSectionsInternal(subject, courseNumber, termCode);
+      return {
+        subject,
+        courseNumber,
+        sections: data?.sections || [],
+      };
+    })
+  );
+
+  return formatSectionsForPrompt(results.filter(r => r.sections.length > 0));
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function readBody(req) {
@@ -160,6 +304,12 @@ ${careerAdvisingNote}
 
 KEY POLICIES:
 ${policyText}
+
+LIVE SECTIONS:
+You may receive real-time section availability data from TCU Class Search in the user message.
+When present, use it to give specific scheduling advice — reference section numbers, days/times, instructors, and seat counts.
+If a student asks about switching sections or scheduling conflicts, check the live data for open sections that fit.
+If no live data is included, advise the student to check TCU Class Search for current availability.
 
 REQUIRED DISCLAIMER (end the disclaimer field with this exactly):
 ${REQUIRED_DISCLAIMER}
@@ -372,9 +522,21 @@ module.exports = async function handler(req, res) {
   // Build prompt
   const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules, careerDefaults);
 
+  // Fetch live section data for any courses mentioned in message or plan
+  let sectionsBlock = '';
+  try {
+    sectionsBlock = await fetchRelevantSections(message, lastPlan, profile);
+  } catch (e) {
+    console.error('[plan] sections fetch failed (non-fatal):', e.message);
+  }
+
+  const sectionsAppend = sectionsBlock
+    ? `\n\n${sectionsBlock}`
+    : '';
+
   const userMessage = lastPlan
-    ? `The student has an existing degree plan. Update or build on it based on their message — do NOT start from scratch. Preserve all existing terms and courses unless the student explicitly asks to change them.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}`
-    : JSON.stringify({ action, profile, message });
+    ? `The student has an existing degree plan. Update or build on it based on their message — do NOT start from scratch. Preserve all existing terms and courses unless the student explicitly asks to change them.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}${sectionsAppend}`
+    : JSON.stringify({ action, profile, message }) + sectionsAppend;
 
   // Call Claude with timeout
   const controller  = new AbortController();

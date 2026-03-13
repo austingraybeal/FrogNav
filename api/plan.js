@@ -237,9 +237,14 @@ function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
   const genedList = (genedRules.buckets || []).map(b => {
     const recommended = career?.genedRecommendations?.[b.id];
     if (recommended && recommended.length) {
-      return `- ${b.name}: PREFER ${recommended.join(' or ')} (fits career goal: ${profile.careerGoal})`;
+      return `- ${b.name} (${b.minCourses || 1} course${(b.minCourses || 1) > 1 ? 's' : ''}): PREFER ${recommended.join(' or ')} (fits career goal: ${profile.careerGoal})`;
     }
-    return `- ${b.name}: use placeholder code "${b.placeholder}"`;
+    // Fall back to commonCourses from the gen-ed data
+    const common = b.commonCourses;
+    if (common && common.length) {
+      return `- ${b.name} (${b.minCourses || 1} course${(b.minCourses || 1) > 1 ? 's' : ''}): choose from ${common.join(', ')}`;
+    }
+    return `- ${b.name} (${b.minCourses || 1} course${(b.minCourses || 1) > 1 ? 's' : ''}): pick a real TCU course — NEVER use placeholder codes like "10XX3"`;
   }).join('\n') || '(none)';
 
   const careerElectivesBlock = career?.freeElectiveRecommendations?.length
@@ -302,14 +307,21 @@ ${careerElectivesBlock}
 
 ${careerAdvisingNote}
 
+COURSE CODE RULES:
+- NEVER invent placeholder codes like "10XX3", "ELEC 3XXX", "CORE 2XX3", etc.
+- Every course code in the plan MUST be a real TCU course code (e.g. "KINE 20413", "ENGL 10803", "MATH 10043").
+- Use the gen-ed course options listed above to fill core requirement slots.
+- Use the career elective recommendations to fill free elective slots.
+- If you genuinely don't know a specific course to fill a slot, use "FREE-ELECTIVE" as the code with a note explaining what kind of course should go there — but limit these to 2-3 maximum.
+
 KEY POLICIES:
 ${policyText}
 
 LIVE SECTIONS:
-You may receive real-time section availability data from TCU Class Search in the user message.
-When present, use it to give specific scheduling advice — reference section numbers, days/times, instructors, and seat counts.
-If a student asks about switching sections or scheduling conflicts, check the live data for open sections that fit.
-If no live data is included, advise the student to check TCU Class Search for current availability.
+You have access to real-time section availability from TCU Class Search. When the student's message mentions a course code (like KINE 20313), live section data will be appended to their message.
+CRITICAL: When you see a "LIVE SECTION AVAILABILITY" block in the student's message, you MUST use that data. Reference specific section numbers, days/times, instructors, and open seat counts. NEVER say "I don't have access to real-time data" when live data is present.
+If a student asks about course availability, sections, scheduling, or seat counts, give them a direct answer using the live data — include section numbers, meeting times, instructor names, and how many seats are open or if it's full.
+If no live section data appears in the message, tell the student you can look it up — ask them to mention the specific course code (e.g. "KINE 20313") and you'll check availability.
 
 REQUIRED DISCLAIMER (end the disclaimer field with this exactly):
 ${REQUIRED_DISCLAIMER}
@@ -349,7 +361,7 @@ OUTPUT SCHEMA (return this exact structure, no extra keys):
 }
 
 CONVERSATIONAL RESPONSES:
-If the student's message is casual conversation (greetings, thank-yous, general questions about kinesiology or TCU, clarifying questions NOT requesting a plan change), return this simpler JSON instead:
+If the student's message is casual conversation, questions about course availability/sections/scheduling, general questions about kinesiology or TCU, or clarifying questions NOT requesting a plan change, return this simpler JSON instead:
 {
   "type": "chat",
   "message": "string — your friendly, helpful conversational reply",

@@ -247,6 +247,29 @@ module.exports = async function handler(req, res) {
     const eventValidation = extractHidden(pageHtml, '__EVENTVALIDATION');
     const viewStateGen = extractHidden(pageHtml, '__VIEWSTATEGENERATOR');
 
+    // Extract form action and all field names from step1
+    const formActionMatch = pageHtml.match(/<form[^>]+action="([^"]+)"/i);
+    const formAction = formActionMatch ? formActionMatch[1] : './';
+    const postUrl = new URL(formAction, TCU_URL).href;
+
+    // Extract ALL select/input field names (non-hidden)
+    const allFields = [];
+    const fieldRe = /<(?:input|select|textarea)[^>]+name="([^"]+)"[^>]*/gi;
+    let _fm;
+    while ((_fm = fieldRe.exec(pageHtml)) !== null) allFields.push(_fm[1]);
+
+    // Extract select options for key dropdowns (term, subject)
+    function getSelectOptions(html, selectName) {
+      const selRe = new RegExp(`<select[^>]+name="${selectName}"[^>]*>([\\s\\S]*?)</select>`, 'i');
+      const selMatch = html.match(selRe);
+      if (!selMatch) return null;
+      const opts = [];
+      const optRe = /<option[^>]+value="([^"]*)"[^>]*>([\s\S]*?)<\/option>/gi;
+      let om;
+      while ((om = optRe.exec(selMatch[1])) !== null) opts.push({ value: om[1], text: stripTags(om[2]) });
+      return opts.slice(0, 15); // limit for debug
+    }
+
     if (!viewState) {
       return res.status(502).json({
         detail:
@@ -255,33 +278,43 @@ module.exports = async function handler(req, res) {
           _debug: {
             step1_status: getRes.status,
             step1_html_length: pageHtml.length,
-            step1_snippet: pageHtml.slice(0, 1000),
+            formAction,
+            allFields,
+            step1_snippet: pageHtml.slice(0, 2000),
           },
         }),
       });
     }
 
+    // Build form data using the exact field names found on the page
+    // First, find the actual field names for term and subject
+    const termFieldName = allFields.find(f => /term/i.test(f) && !f.startsWith('__')) || 'ddlTerm';
+    const subjectFieldName = allFields.find(f => /subj/i.test(f) && !f.startsWith('__')) || 'ddlSubject';
+    const searchBtnName = allFields.find(f => /search|submit/i.test(f) && !f.startsWith('__')) || 'btnSearch';
+
     // Step 2: POST the search form
-    const formData = new URLSearchParams({
-      ddlTerm: tcuTerm,
-      ddlSession: 'ANY',
-      ddlLocation: 'ANY',
-      ddlSubject: subject,
-      txtCrsNumber: courseNumber,
-      txtSection: '',
-      ddlAttribute: 'ANY',
-      ddlLevel: 'ANY',
-      ddlDay: 'ANY',
-      ddlStartTime: 'ANY',
-      ddlEndtime: 'ANY',
-      btnSearch: 'Search',
-      hdnShowBldg: 'Y',
+    const formFields = {
       __VIEWSTATE: viewState,
       __VIEWSTATEGENERATOR: viewStateGen,
       __EVENTVALIDATION: eventValidation,
-    });
+    };
+    // Add all non-hidden fields with sensible defaults
+    for (const fname of allFields) {
+      if (fname.startsWith('__')) continue; // skip ASP.NET hidden fields
+      if (formFields[fname] !== undefined) continue;
+      if (/term/i.test(fname)) formFields[fname] = tcuTerm;
+      else if (/subj/i.test(fname)) formFields[fname] = subject;
+      else if (/crs|course/i.test(fname) && /num/i.test(fname)) formFields[fname] = courseNumber;
+      else if (/section/i.test(fname) && /txt/i.test(fname)) formFields[fname] = '';
+      else if (/search|submit/i.test(fname)) formFields[fname] = 'Search';
+      else if (/bldg|building/i.test(fname)) formFields[fname] = 'Y';
+      else if (/ddl|select/i.test(fname)) formFields[fname] = 'ANY';
+      else if (/txt/i.test(fname)) formFields[fname] = '';
+    }
 
-    const postRes = await fetch(TCU_URL, {
+    const formData = new URLSearchParams(formFields);
+
+    const postRes = await fetch(postUrl, {
       method: 'POST',
       headers: {
         ...BROWSER_HEADERS,
@@ -299,6 +332,9 @@ module.exports = async function handler(req, res) {
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
 
+    const termOptions = debug ? getSelectOptions(pageHtml, termFieldName) : null;
+    const subjectOptions = debug ? getSelectOptions(pageHtml, subjectFieldName) : null;
+
     const debugInfo = debug
       ? {
           _debug: {
@@ -308,12 +344,20 @@ module.exports = async function handler(req, res) {
             viewStateLen: viewState.length,
             eventValidationFound: !!eventValidation,
             cookieCount: jar.size,
+            formAction,
+            postUrl,
+            allFields,
+            termFieldName,
+            subjectFieldName,
+            searchBtnName,
+            postedFields: Object.keys(formFields),
+            tcuTerm,
+            formSubject: subject,
+            termOptions,
+            subjectOptions,
             step2_status: postRes.status,
             step2_html_length: resultHtml.length,
             hasResultsTable: /<TABLE[^>]*class="results"/i.test(resultHtml),
-            tcuTerm,
-            formSubject: subject,
-            formCourse: courseNumber,
             step2_snippet: resultHtml.slice(0, 2000),
           },
         }

@@ -1,188 +1,322 @@
 'use strict';
 
 /**
- * Vercel serverless proxy for classes.tcu.edu (Ellucian Banner XE).
+ * Vercel serverless proxy for classes.tcu.edu (ASP.NET WebForms).
  *
- * GET /api/tcu-sections?subject=KINE&course=10101&term=202630
+ * GET /api/tcu-sections?subject=KINE&course=30403&term=202630
  *
- * Flow (all 4 steps required by Banner XE):
- *  1. GET  classSearch/getTerms        → establish session cookies
- *  2. POST term/search                 → authorize session for a term
- *  3. POST classSearch/resetDataForm   → clear prior search state
- *  4. GET  searchResults/searchResults  → query sections
+ * Flow:
+ *  1. GET  https://classes.tcu.edu/ → extract __VIEWSTATE, __EVENTVALIDATION, cookies
+ *  2. POST https://classes.tcu.edu/ → submit search form with ASP.NET tokens
+ *  3. Parse HTML <TABLE class="results"> into JSON matching front-end format
  */
 
-const BANNER_BASE = 'https://classes.tcu.edu/StudentRegistrationSsb/ssb';
+const TCU_URL = 'https://classes.tcu.edu/';
 
 const BROWSER_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Referer': 'https://classes.tcu.edu/StudentRegistrationSsb/ssb/classSearch/classSearch',
-  'Accept': 'application/json',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  Accept:
+    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.5',
 };
 
-// Default to current term if not supplied — Fall 2026 = 202690, Spring 2026 = 202630
+// ── Term-code conversion ────────────────────────────────────────────────────
+// Our app uses YYYYSS (e.g. 202630 = Spring 2026).
+// TCU uses 4 + 2-digit year + semester digit:
+//   1 = Winter/Interim, 3 = Spring, 5 = Summer, 7 = Fall
+// Example: Spring 2026 → "4263"
+function toTcuTerm(appTerm) {
+  if (!appTerm || appTerm.length !== 6) return appTerm; // pass through if weird
+  const year2 = appTerm.slice(2, 4); // "26" from "202630"
+  const suffixMap = { '10': '1', '30': '3', '50': '5', '90': '7' };
+  const sem = suffixMap[appTerm.slice(4, 6)] || '3';
+  return `4${year2}${sem}`;
+}
+
+// Default term code in our YYYYSS format
 function defaultTermCode() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  // Spring: Jan-May → 30, Summer: Jun-Jul → 50, Fall: Aug-Dec → 90
   const suffix = month <= 5 ? '30' : month <= 7 ? '50' : '90';
   return `${year}${suffix}`;
 }
 
+// ── Cookie helpers ──────────────────────────────────────────────────────────
+function collectCookies(response, jar) {
+  let raw = [];
+  if (typeof response.headers.getSetCookie === 'function') {
+    raw = response.headers.getSetCookie();
+  } else {
+    const hdr = response.headers.get('set-cookie') || '';
+    if (hdr) raw = hdr.split(/,(?=\s*\w+=)/).filter(Boolean);
+  }
+  for (const c of raw) {
+    const pair = c.split(';')[0];
+    const eqIdx = pair.indexOf('=');
+    if (eqIdx > 0) jar.set(pair.slice(0, eqIdx).trim(), pair);
+  }
+}
+function cookieStr(jar) {
+  return [...jar.values()].join('; ');
+}
+
+// ── HTML parsing helpers ────────────────────────────────────────────────────
+function extractHidden(html, name) {
+  // Match: <input type="hidden" name="__VIEWSTATE" ... value="..." />
+  const re = new RegExp(
+    `<input[^>]+name="${name}"[^>]+value="([^"]*)"`,
+    'i',
+  );
+  const m = html.match(re);
+  return m ? m[1] : '';
+}
+
+function stripTags(s) {
+  return (s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Parse the <TABLE class="results"> rows into section objects.
+ * Each <TR> after the header has ~15 <TD> columns.
+ *
+ * Column layout (from HAR analysis):
+ *  0  CRN (link)
+ *  1  Subject + Course (e.g. "KINE 30403")
+ *  2  (empty or attribute)
+ *  3  Section + registration link
+ *  4  Type (LEC, LAB, etc.)
+ *  5  (credit hours or empty)
+ *  6  Course Title
+ *  7  Start Date
+ *  8  Instruction Mode
+ *  9  Days + Time (e.g. "MWF<BR>11:00-11:50")
+ * 10  Status (Open / Closed)
+ * 11  Enrollment / Max (e.g. "46<BR>40")
+ * 12  (reserved or empty)
+ * 13  Wait / WaitCap (e.g. "0<BR>20")
+ * 14  Instructor(s)
+ */
+function parseResultsTable(html) {
+  // Find the results table
+  const tableMatch = html.match(/<TABLE[^>]*class="results"[^>]*>([\s\S]*?)<\/TABLE>/i);
+  if (!tableMatch) return [];
+
+  const tableHtml = tableMatch[1];
+
+  // Split into rows
+  const rows = tableHtml.split(/<TR\b/i).slice(1); // skip first empty split
+
+  const sections = [];
+
+  for (const row of rows) {
+    // Skip header row (has <TH> or no bgcolor)
+    if (/<TH\b/i.test(row)) continue;
+
+    // Extract all <TD> contents
+    const tds = [];
+    const tdRegex = /<TD[^>]*>([\s\S]*?)<\/TD>/gi;
+    let tdMatch;
+    while ((tdMatch = tdRegex.exec(row)) !== null) {
+      tds.push(tdMatch[1]);
+    }
+
+    if (tds.length < 10) continue; // not a data row
+
+    // Column 0: CRN
+    const crnMatch = tds[0].match(/(\d{4,6})/);
+    const crn = crnMatch ? crnMatch[1] : stripTags(tds[0]);
+
+    // Column 1: Subject + CourseNumber (e.g. "KINE 30403")
+    const subjCourse = stripTags(tds[1]);
+    const scParts = subjCourse.split(/\s+/);
+    const subject = scParts[0] || '';
+    const courseNumber = scParts[1] || '';
+
+    // Column 3: Section number
+    const seqRaw = stripTags(tds[3]);
+    const seqMatch = seqRaw.match(/(\d{2,4})/);
+    const sequenceNumber = seqMatch ? seqMatch[1] : seqRaw.split(/\s/)[0] || '';
+
+    // Column 6: Course Title
+    const courseTitle = stripTags(tds[6]);
+
+    // Column 5: Credit hours
+    const creditRaw = stripTags(tds[5]);
+    const creditHours = parseFloat(creditRaw) || null;
+
+    // Column 9: Days + Time
+    const dayTimeRaw = tds[9] || '';
+    const dayTimeParts = dayTimeRaw.split(/<BR\s*\/?>/i);
+    const daysStr = stripTags(dayTimeParts[0] || '');
+    const timeStr = stripTags(dayTimeParts[1] || '');
+    const timeParts = timeStr.split('-');
+    const beginTime = (timeParts[0] || '').replace(':', '').trim();
+    const endTime = (timeParts[1] || '').replace(':', '').trim();
+
+    // Parse day letters into booleans
+    const dayMap = {
+      M: 'monday', T: 'tuesday', W: 'wednesday',
+      R: 'thursday', F: 'friday', S: 'saturday', U: 'sunday',
+    };
+    const meetingTime = {
+      beginTime: beginTime || null,
+      endTime: endTime || null,
+      monday: false, tuesday: false, wednesday: false,
+      thursday: false, friday: false, saturday: false, sunday: false,
+      building: null, room: null,
+    };
+    for (const ch of daysStr) {
+      if (dayMap[ch]) meetingTime[dayMap[ch]] = true;
+    }
+
+    // Column 10: Status
+    const statusText = stripTags(tds[10] || '');
+
+    // Column 11: Enrollment / Max
+    const enrollRaw = (tds[11] || '').split(/<BR\s*\/?>/i);
+    const enrollment = parseInt(stripTags(enrollRaw[0]), 10) || 0;
+    const maximumEnrollment = parseInt(stripTags(enrollRaw[1] || enrollRaw[0]), 10) || 0;
+    const seatsAvailable = Math.max(0, maximumEnrollment - enrollment);
+
+    // Column 13: Wait / WaitCap
+    const waitRaw = (tds[13] || '').split(/<BR\s*\/?>/i);
+    const waitCount = parseInt(stripTags(waitRaw[0]), 10) || 0;
+    const waitCapacity = parseInt(stripTags(waitRaw[1] || '0'), 10) || 0;
+
+    // Column 14: Instructor
+    const instructorRaw = tds.length > 14 ? stripTags(tds[14]) : '';
+    const faculty = instructorRaw
+      ? [{ displayName: instructorRaw, emailAddress: null }]
+      : [];
+
+    sections.push({
+      courseReferenceNumber: crn,
+      subject,
+      courseNumber,
+      sequenceNumber,
+      courseTitle,
+      creditHours,
+      maximumEnrollment,
+      enrollment,
+      seatsAvailable,
+      waitCapacity,
+      waitCount,
+      faculty,
+      meetingsFaculty: [{
+        meetingTime: (beginTime || daysStr) ? meetingTime : null,
+      }],
+    });
+  }
+
+  return sections;
+}
+
+// ── Main handler ────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
-  // CORS headers
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const subject = (req.query.subject || '').trim().toUpperCase();
   if (!subject) {
-    return res.status(400).json({ detail: 'Missing required "subject" query parameter (e.g. KINE).' });
+    return res
+      .status(400)
+      .json({ detail: 'Missing required "subject" query parameter (e.g. KINE).' });
   }
 
   const courseNumber = (req.query.course || '').trim();
-  const termCode = (req.query.term || '').trim() || defaultTermCode();
+  const appTerm = (req.query.term || '').trim() || defaultTermCode();
+  const tcuTerm = toTcuTerm(appTerm);
 
   try {
-    // Cookie jar — accumulates Set-Cookie headers across all requests
-    const allCookies = new Map();
+    const jar = new Map();
 
-    function collectCookies(response) {
-      let raw = [];
-      if (typeof response.headers.getSetCookie === 'function') {
-        raw = response.headers.getSetCookie();
-      } else {
-        const hdr = response.headers.get('set-cookie') || '';
-        if (hdr) raw = hdr.split(/,(?=\s*\w+=)/).filter(Boolean);
-      }
-      for (const c of raw) {
-        const pair = c.split(';')[0];
-        const eqIdx = pair.indexOf('=');
-        if (eqIdx > 0) allCookies.set(pair.slice(0, eqIdx).trim(), pair);
-      }
+    // Step 1: GET the search page to obtain __VIEWSTATE, __EVENTVALIDATION, and cookies
+    const getRes = await fetch(TCU_URL, {
+      headers: BROWSER_HEADERS,
+      redirect: 'follow',
+    });
+    collectCookies(getRes, jar);
+
+    const pageHtml = await getRes.text();
+    const viewState = extractHidden(pageHtml, '__VIEWSTATE');
+    const eventValidation = extractHidden(pageHtml, '__EVENTVALIDATION');
+    const viewStateGen = extractHidden(pageHtml, '__VIEWSTATEGENERATOR');
+
+    if (!viewState) {
+      return res.status(502).json({
+        detail:
+          'Could not extract form tokens from classes.tcu.edu. The site may be down or blocking requests.',
+      });
     }
 
-    function cookieStr() {
-      return [...allCookies.values()].join('; ');
-    }
+    // Step 2: POST the search form
+    const formData = new URLSearchParams({
+      ddlTerm: tcuTerm,
+      ddlSession: 'ANY',
+      ddlLocation: 'ANY',
+      ddlSubject: subject,
+      txtCrsNumber: courseNumber,
+      txtSection: '',
+      ddlAttribute: 'ANY',
+      ddlLevel: 'ANY',
+      ddlDay: 'ANY',
+      ddlStartTime: 'ANY',
+      ddlEndtime: 'ANY',
+      btnSearch: 'Search',
+      hdnShowBldg: 'Y',
+      __VIEWSTATE: viewState,
+      __VIEWSTATEGENERATOR: viewStateGen,
+      __EVENTVALIDATION: eventValidation,
+    });
 
-    // Step 1: GET getTerms to establish JSESSIONID + site cookies
-    const termsRes = await fetch(
-      `${BANNER_BASE}/classSearch/getTerms?offset=1&max=20&searchTerm=`,
-      { headers: BROWSER_HEADERS, redirect: 'manual' },
-    );
-    collectCookies(termsRes);
-
-    // Step 2: POST term/search to authorize the session for this term
-    const termRes = await fetch(`${BANNER_BASE}/term/search`, {
+    const postRes = await fetch(TCU_URL, {
       method: 'POST',
       headers: {
         ...BROWSER_HEADERS,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': cookieStr(),
+        Cookie: cookieStr(jar),
+        Referer: TCU_URL,
       },
-      body: `term=${termCode}&studyPath=&studyPathText=&startDatepicker=&endDatepicker=`,
-      redirect: 'manual',
+      body: formData.toString(),
+      redirect: 'follow',
     });
-    collectCookies(termRes);
+    collectCookies(postRes, jar);
 
-    // Follow redirect if Banner sends one after term selection
-    const location = termRes.headers.get('location');
-    if (location && termRes.status >= 300 && termRes.status < 400) {
-      const redirectUrl = location.startsWith('http')
-        ? location
-        : `https://classes.tcu.edu${location}`;
-      const followRes = await fetch(redirectUrl, {
-        headers: { ...BROWSER_HEADERS, 'Cookie': cookieStr() },
-        redirect: 'manual',
-      });
-      collectCookies(followRes);
-    }
+    const resultHtml = await postRes.text();
 
-    if (!cookieStr()) {
-      return res.status(502).json({
-        detail: 'Could not establish session with classes.tcu.edu. The site may be down.',
-      });
-    }
+    // Step 3: Parse the HTML results table
+    const sections = parseResultsTable(resultHtml);
 
-    // Step 3: POST resetDataForm to clear any prior search state
-    await fetch(`${BANNER_BASE}/classSearch/resetDataForm`, {
-      method: 'POST',
-      headers: { ...BROWSER_HEADERS, 'Cookie': cookieStr() },
-    });
+    if (sections.length === 0) {
+      // Check if there's an error message in the page
+      const msgMatch = resultHtml.match(
+        /class="error[^"]*"[^>]*>([\s\S]*?)<\//i,
+      );
+      const noResultsMatch = resultHtml.match(
+        /No classes were found/i,
+      );
 
-    // Step 4: GET searchResults with query params
-    const params = new URLSearchParams({
-      txt_subject: subject,
-      txt_term: termCode,
-      startDatepicker: '',
-      endDatepicker: '',
-      pageOffset: '0',
-      pageMaxSize: '50',
-      sortColumn: 'subjectDescription',
-      sortDirection: 'asc',
-    });
-    if (courseNumber) params.set('txt_courseNumber', courseNumber);
-
-    const searchRes = await fetch(`${BANNER_BASE}/searchResults/searchResults?${params}`, {
-      method: 'GET',
-      headers: {
-        ...BROWSER_HEADERS,
-        'Cookie': cookieStr(),
-      },
-    });
-
-    const searchData = await searchRes.json().catch(() => ({}));
-
-    if (!searchData.success) {
       return res.status(200).json({
         sections: [],
         totalCount: 0,
-        term: termCode,
-        detail: searchData.message || `Search returned success=false (HTTP ${searchRes.status}).`,
+        term: appTerm,
+        detail: noResultsMatch
+          ? 'No classes were found matching your search criteria.'
+          : msgMatch
+            ? stripTags(msgMatch[1])
+            : `No results found (HTTP ${postRes.status}).`,
       });
     }
 
-    const sections = (searchData.data || []).map(sec => ({
-      courseReferenceNumber: sec.courseReferenceNumber,
-      subject: sec.subject,
-      courseNumber: sec.courseNumber,
-      sequenceNumber: sec.sequenceNumber,
-      courseTitle: sec.courseTitle,
-      creditHours: sec.creditHours,
-      maximumEnrollment: sec.maximumEnrollment,
-      enrollment: sec.enrollment,
-      seatsAvailable: sec.seatsAvailable,
-      waitCapacity: sec.waitCapacity,
-      waitCount: sec.waitCount,
-      faculty: (sec.faculty || []).map(f => ({
-        displayName: f.displayName,
-        emailAddress: f.emailAddress,
-      })),
-      meetingsFaculty: (sec.meetingsFaculty || []).map(mf => ({
-        meetingTime: mf.meetingTime ? {
-          beginTime: mf.meetingTime.beginTime,
-          endTime: mf.meetingTime.endTime,
-          monday: mf.meetingTime.monday,
-          tuesday: mf.meetingTime.tuesday,
-          wednesday: mf.meetingTime.wednesday,
-          thursday: mf.meetingTime.thursday,
-          friday: mf.meetingTime.friday,
-          saturday: mf.meetingTime.saturday,
-          sunday: mf.meetingTime.sunday,
-          building: mf.meetingTime.building,
-          room: mf.meetingTime.room,
-        } : null,
-      })),
-    }));
-
     return res.status(200).json({
       sections,
-      totalCount: searchData.totalCount || sections.length,
-      term: termCode,
+      totalCount: sections.length,
+      term: appTerm,
     });
-
   } catch (err) {
     return res.status(502).json({
       detail: `Failed to reach classes.tcu.edu: ${err.message || 'Unknown error'}`,

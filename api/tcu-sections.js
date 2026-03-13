@@ -56,16 +56,40 @@ module.exports = async function handler(req, res) {
     });
 
     // Extract session cookies (with fallback for runtimes lacking getSetCookie)
-    let setCookies = [];
-    if (typeof termRes.headers.getSetCookie === 'function') {
-      setCookies = termRes.headers.getSetCookie();
-    } else {
-      const raw = termRes.headers.get('set-cookie') || '';
-      if (raw) setCookies = raw.split(/,(?=\s*\w+=)/).filter(Boolean);
+    const allCookies = new Map();
+
+    function collectCookies(response) {
+      let raw = [];
+      if (typeof response.headers.getSetCookie === 'function') {
+        raw = response.headers.getSetCookie();
+      } else {
+        const hdr = response.headers.get('set-cookie') || '';
+        if (hdr) raw = hdr.split(/,(?=\s*\w+=)/).filter(Boolean);
+      }
+      for (const c of raw) {
+        const pair = c.split(';')[0];
+        const eqIdx = pair.indexOf('=');
+        if (eqIdx > 0) allCookies.set(pair.slice(0, eqIdx).trim(), pair);
+      }
     }
-    const cookieStr = setCookies
-      .map(c => c.split(';')[0])
-      .join('; ');
+
+    collectCookies(termRes);
+
+    // If Banner redirected, follow manually to complete session setup
+    const location = termRes.headers.get('location');
+    if (location && termRes.status >= 300 && termRes.status < 400) {
+      const redirectUrl = location.startsWith('http')
+        ? location
+        : `https://classes.tcu.edu${location}`;
+      const cookieSoFar = [...allCookies.values()].join('; ');
+      const followRes = await fetch(redirectUrl, {
+        headers: { ...BROWSER_HEADERS, 'Cookie': cookieSoFar },
+        redirect: 'manual',
+      });
+      collectCookies(followRes);
+    }
+
+    const cookieStr = [...allCookies.values()].join('; ');
 
     if (!cookieStr) {
       return res.status(502).json({

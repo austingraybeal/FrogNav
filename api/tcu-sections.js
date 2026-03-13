@@ -270,6 +270,20 @@ module.exports = async function handler(req, res) {
       return opts.slice(0, 15); // limit for debug
     }
 
+    // Extract radio button values
+    function getRadioValues(html, radioName) {
+      const vals = [];
+      const rbRe = new RegExp(`<input[^>]+name="${radioName}"[^>]+value="([^"]*)"[^>]*`, 'gi');
+      let rm;
+      while ((rm = rbRe.exec(html)) !== null) vals.push(rm[1]);
+      return vals;
+    }
+    const rbStatusValues = getRadioValues(pageHtml, 'rbStatus');
+    // Find which radio is checked (default)
+    const rbCheckedMatch = pageHtml.match(/<input[^>]+name="rbStatus"[^>]+checked[^>]+value="([^"]*)"/i)
+      || pageHtml.match(/<input[^>]+name="rbStatus"[^>]+value="([^"]*)"[^>]+checked/i);
+    const rbStatusDefault = rbCheckedMatch ? rbCheckedMatch[1] : rbStatusValues[0] || 'ANY';
+
     if (!viewState) {
       return res.status(502).json({
         detail:
@@ -308,7 +322,7 @@ module.exports = async function handler(req, res) {
     formBody.set('txtSection', '');
     formBody.set('ddlAttribute', 'ANY');
     formBody.set('ddlLevel', 'ANY');
-    formBody.set('rbStatus', 'ANY');       // radio: Open / Closed / ANY
+    formBody.set('rbStatus', rbStatusDefault); // use actual value from page
     formBody.set('ddlDay', 'ANY');
     formBody.set('ddlStartTime', 'ANY');
     formBody.set('ddlEndtime', 'ANY');
@@ -317,18 +331,37 @@ module.exports = async function handler(req, res) {
 
     const formData = formBody;
 
-    const postRes = await fetch(postUrl, {
+    // Use manual redirect to preserve cookies across redirects
+    let postRes = await fetch(postUrl, {
       method: 'POST',
       headers: {
         ...BROWSER_HEADERS,
         'Content-Type': 'application/x-www-form-urlencoded',
         Cookie: cookieStr(jar),
         Referer: TCU_URL,
+        Origin: 'https://classes.tcu.edu',
       },
       body: formData.toString(),
-      redirect: 'follow',
+      redirect: 'manual',
     });
     collectCookies(postRes, jar);
+
+    const postStatus = postRes.status;
+    const postLocation = postRes.headers.get('location') || null;
+
+    // Follow redirect if needed (preserving cookies)
+    if (postRes.status >= 300 && postRes.status < 400 && postLocation) {
+      const redirectUrl = new URL(postLocation, postUrl).href;
+      postRes = await fetch(redirectUrl, {
+        headers: {
+          ...BROWSER_HEADERS,
+          Cookie: cookieStr(jar),
+          Referer: postUrl,
+        },
+        redirect: 'follow',
+      });
+      collectCookies(postRes, jar);
+    }
 
     const resultHtml = await postRes.text();
 
@@ -358,6 +391,10 @@ module.exports = async function handler(req, res) {
             formSubject: subject,
             termOptions,
             subjectOptions,
+            rbStatusValues,
+            rbStatusDefault,
+            step2_rawStatus: postStatus,
+            step2_redirectTo: postLocation,
             step2_status: postRes.status,
             step2_html_length: resultHtml.length,
             hasResultsTable: /<TABLE[^>]*class="results"/i.test(resultHtml),

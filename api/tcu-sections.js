@@ -13,6 +13,12 @@
 
 const BANNER_BASE = 'https://classes.tcu.edu/StudentRegistrationSsb/ssb';
 
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Referer': 'https://classes.tcu.edu/StudentRegistrationSsb/ssb/classSearch/classSearch',
+  'Accept': 'application/json',
+};
+
 // Default to current term if not supplied — Fall 2026 = 202690, Spring 2026 = 202630
 function defaultTermCode() {
   const now = new Date();
@@ -42,15 +48,21 @@ module.exports = async function handler(req, res) {
     const termRes = await fetch(`${BANNER_BASE}/term/search?mode=search`, {
       method: 'POST',
       headers: {
+        ...BROWSER_HEADERS,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
       },
       body: `term=${termCode}`,
-      redirect: 'manual',
+      redirect: 'follow',
     });
 
-    // Extract session cookies
-    const setCookies = termRes.headers.getSetCookie?.() || [];
+    // Extract session cookies (with fallback for runtimes lacking getSetCookie)
+    let setCookies = [];
+    if (typeof termRes.headers.getSetCookie === 'function') {
+      setCookies = termRes.headers.getSetCookie();
+    } else {
+      const raw = termRes.headers.get('set-cookie') || '';
+      if (raw) setCookies = raw.split(/,(?=\s*\w+=)/).filter(Boolean);
+    }
     const cookieStr = setCookies
       .map(c => c.split(';')[0])
       .join('; ');
@@ -75,8 +87,8 @@ module.exports = async function handler(req, res) {
     const searchRes = await fetch(`${BANNER_BASE}/searchResults/searchResults?${params}`, {
       method: 'GET',
       headers: {
+        ...BROWSER_HEADERS,
         'Cookie': cookieStr,
-        'Accept': 'application/json',
       },
     });
 
@@ -87,7 +99,7 @@ module.exports = async function handler(req, res) {
         sections: [],
         totalCount: 0,
         term: termCode,
-        detail: 'No results found or session expired.',
+        detail: searchData.message || `Search returned success=false (HTTP ${searchRes.status}).`,
       });
     }
 

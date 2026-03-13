@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: `term=${termCode}`,
-      redirect: 'follow',
+      redirect: 'manual',
     });
 
     // Extract session cookies (with fallback for runtimes lacking getSetCookie)

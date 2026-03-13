@@ -5,10 +5,11 @@
  *
  * GET /api/tcu-sections?subject=KINE&course=10101&term=202630
  *
- * Flow:
- *  1. POST /StudentRegistrationSsb/ssb/term/search  → establish session
- *  2. GET  /StudentRegistrationSsb/ssb/searchResults/searchResults → query sections
- *  3. Return JSON to client
+ * Flow (all 4 steps required by Banner XE):
+ *  1. GET  classSearch/getTerms        → establish session cookies
+ *  2. POST term/search                 → authorize session for a term
+ *  3. POST classSearch/resetDataForm   → clear prior search state
+ *  4. GET  searchResults/searchResults  → query sections
  */
 
 const BANNER_BASE = 'https://classes.tcu.edu/StudentRegistrationSsb/ssb';
@@ -44,18 +45,7 @@ module.exports = async function handler(req, res) {
   const termCode = (req.query.term || '').trim() || defaultTermCode();
 
   try {
-    // Step 1: Establish session by POSTing to term/search
-    const termRes = await fetch(`${BANNER_BASE}/term/search?mode=search`, {
-      method: 'POST',
-      headers: {
-        ...BROWSER_HEADERS,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `term=${termCode}`,
-      redirect: 'manual',
-    });
-
-    // Extract session cookies (with fallback for runtimes lacking getSetCookie)
+    // Cookie jar — accumulates Set-Cookie headers across all requests
     const allCookies = new Map();
 
     function collectCookies(response) {
@@ -73,34 +63,61 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    function cookieStr() {
+      return [...allCookies.values()].join('; ');
+    }
+
+    // Step 1: GET getTerms to establish JSESSIONID + site cookies
+    const termsRes = await fetch(
+      `${BANNER_BASE}/classSearch/getTerms?offset=1&max=20&searchTerm=`,
+      { headers: BROWSER_HEADERS, redirect: 'manual' },
+    );
+    collectCookies(termsRes);
+
+    // Step 2: POST term/search to authorize the session for this term
+    const termRes = await fetch(`${BANNER_BASE}/term/search`, {
+      method: 'POST',
+      headers: {
+        ...BROWSER_HEADERS,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': cookieStr(),
+      },
+      body: `term=${termCode}&studyPath=&studyPathText=&startDatepicker=&endDatepicker=`,
+      redirect: 'manual',
+    });
     collectCookies(termRes);
 
-    // If Banner redirected, follow manually to complete session setup
+    // Follow redirect if Banner sends one after term selection
     const location = termRes.headers.get('location');
     if (location && termRes.status >= 300 && termRes.status < 400) {
       const redirectUrl = location.startsWith('http')
         ? location
         : `https://classes.tcu.edu${location}`;
-      const cookieSoFar = [...allCookies.values()].join('; ');
       const followRes = await fetch(redirectUrl, {
-        headers: { ...BROWSER_HEADERS, 'Cookie': cookieSoFar },
+        headers: { ...BROWSER_HEADERS, 'Cookie': cookieStr() },
         redirect: 'manual',
       });
       collectCookies(followRes);
     }
 
-    const cookieStr = [...allCookies.values()].join('; ');
-
-    if (!cookieStr) {
+    if (!cookieStr()) {
       return res.status(502).json({
         detail: 'Could not establish session with classes.tcu.edu. The site may be down.',
       });
     }
 
-    // Step 2: Search for sections
+    // Step 3: POST resetDataForm to clear any prior search state
+    await fetch(`${BANNER_BASE}/classSearch/resetDataForm`, {
+      method: 'POST',
+      headers: { ...BROWSER_HEADERS, 'Cookie': cookieStr() },
+    });
+
+    // Step 4: GET searchResults with query params
     const params = new URLSearchParams({
       txt_subject: subject,
       txt_term: termCode,
+      startDatepicker: '',
+      endDatepicker: '',
       pageOffset: '0',
       pageMaxSize: '50',
       sortColumn: 'subjectDescription',
@@ -112,7 +129,7 @@ module.exports = async function handler(req, res) {
       method: 'GET',
       headers: {
         ...BROWSER_HEADERS,
-        'Cookie': cookieStr,
+        'Cookie': cookieStr(),
       },
     });
 

@@ -196,7 +196,18 @@ OUTPUT SCHEMA (return this exact structure, no extra keys):
     { "label": "string — short button label (max 5 words)", "prompt": "string — full prompt to send" }
   ],
   "disclaimer": "string"
-}`;
+}
+
+CONVERSATIONAL RESPONSES:
+If the student's message is casual conversation (greetings, thank-yous, general questions about kinesiology or TCU, clarifying questions NOT requesting a plan change), return this simpler JSON instead:
+{
+  "type": "chat",
+  "message": "string — your friendly, helpful conversational reply",
+  "nextSteps": [
+    { "label": "string — short button label (max 5 words)", "prompt": "string — full prompt to send" }
+  ]
+}
+IMPORTANT: Only use the chat format for messages that clearly do NOT require building, modifying, or comparing a degree plan. If the action is "build", "add_minor", "honors", or "compare", ALWAYS return the full plan schema above — never return chat format for those. If in doubt, return the full plan schema.`;
 }
 
 // ── Term ordering (for filtering stale terms) ─────────────────────────────────
@@ -421,6 +432,20 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(
       fallbackPlan(profile, `AI returned invalid JSON: ${parseError.message}`)
     );
+  }
+
+  // Conversational (non-plan) response
+  if (rawPlan && rawPlan.type === 'chat' && typeof rawPlan.message === 'string') {
+    return res.status(200).json({
+      type: 'chat',
+      message: rawPlan.message,
+      nextSteps: Array.isArray(rawPlan.nextSteps)
+        ? rawPlan.nextSteps.slice(0, 3).map(s => ({
+            label: String(s.label || '').trim(),
+            prompt: String(s.prompt || '').trim(),
+          }))
+        : [],
+    });
   }
 
   return res.status(200).json(normalizePlan(rawPlan, profile));

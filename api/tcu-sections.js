@@ -293,26 +293,29 @@ module.exports = async function handler(req, res) {
     const searchBtnName = allFields.find(f => /search|submit/i.test(f) && !f.startsWith('__')) || 'btnSearch';
 
     // Step 2: POST the search form
-    const formFields = {
-      __VIEWSTATE: viewState,
-      __VIEWSTATEGENERATOR: viewStateGen,
-      __EVENTVALIDATION: eventValidation,
-    };
-    // Add all non-hidden fields with sensible defaults
-    for (const fname of allFields) {
-      if (fname.startsWith('__')) continue; // skip ASP.NET hidden fields
-      if (formFields[fname] !== undefined) continue;
-      if (/term/i.test(fname)) formFields[fname] = tcuTerm;
-      else if (/subj/i.test(fname)) formFields[fname] = subject;
-      else if (/crs|course/i.test(fname) && /num/i.test(fname)) formFields[fname] = courseNumber;
-      else if (/section/i.test(fname) && /txt/i.test(fname)) formFields[fname] = '';
-      else if (/search|submit/i.test(fname)) formFields[fname] = 'Search';
-      else if (/bldg|building/i.test(fname)) formFields[fname] = 'Y';
-      else if (/ddl|select/i.test(fname)) formFields[fname] = 'ANY';
-      else if (/txt/i.test(fname)) formFields[fname] = '';
-    }
+    // ASP.NET requires __EVENTTARGET and __EVENTARGUMENT even if empty
+    const formBody = new URLSearchParams();
+    formBody.set('__EVENTTARGET', '');
+    formBody.set('__EVENTARGUMENT', '');
+    formBody.set('__VIEWSTATE', viewState);
+    formBody.set('__VIEWSTATEGENERATOR', viewStateGen);
+    formBody.set('__EVENTVALIDATION', eventValidation);
+    formBody.set('ddlTerm', tcuTerm);
+    formBody.set('ddlSession', 'ANY');
+    formBody.set('ddlLocation', 'ANY');
+    formBody.set('ddlSubject', subject);
+    formBody.set('txtCrsNumber', courseNumber);
+    formBody.set('txtSection', '');
+    formBody.set('ddlAttribute', 'ANY');
+    formBody.set('ddlLevel', 'ANY');
+    formBody.set('rbStatus', 'ANY');       // radio: Open / Closed / ANY
+    formBody.set('ddlDay', 'ANY');
+    formBody.set('ddlStartTime', 'ANY');
+    formBody.set('ddlEndtime', 'ANY');
+    formBody.set('btnSearch', 'Search');
+    formBody.set('hdnShowBldg', 'Y');
 
-    const formData = new URLSearchParams(formFields);
+    const formData = formBody;
 
     const postRes = await fetch(postUrl, {
       method: 'POST',
@@ -350,7 +353,7 @@ module.exports = async function handler(req, res) {
             termFieldName,
             subjectFieldName,
             searchBtnName,
-            postedFields: Object.keys(formFields),
+            postedFields: [...formBody.keys()],
             tcuTerm,
             formSubject: subject,
             termOptions,

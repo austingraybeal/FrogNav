@@ -231,8 +231,18 @@ function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
   }
 
   // Gen-ed placeholders
-   // Career-based course defaults
-  const career = careerDefaults?.careerTracks?.[profile.careerGoal] || null;
+   // Career-based course defaults — fall back to major-specific defaults when no career goal set
+  const MAJOR_DEFAULT_CAREER = {
+    'Movement Science': 'Pre-PT/OT/DPT',
+    'Health and Fitness': 'Clinical/Allied Health',
+    'Physical Education': 'Teaching/Physical Education',
+    'Physical Education with Strength and Conditioning': 'Coaching/Strength and Conditioning',
+    'Movement Science/MS Athletic Training (MOSC 3+2)': 'Athletic Trainer/Sports Medicine'
+  };
+  const careerKey = profile.careerGoal
+    || MAJOR_DEFAULT_CAREER[profile.majorProgram]
+    || 'Undecided';
+  const career = careerDefaults?.careerTracks?.[careerKey] || null;
 
   const genedList = (genedRules.buckets || []).map(b => {
     const recommended = career?.genedRecommendations?.[b.id];
@@ -522,7 +532,7 @@ module.exports = async function handler(req, res) {
   // Load rules
   const kineFile  = path.join(process.cwd(), 'data',
     profile.level === 'grad' ? 'kine_rules_grad.json' : 'kine_rules_undergrad.json');
-  const genedFile = path.join(process.cwd(), 'data', 'undergrad', 'gened_rules.json');
+  const genedFile = path.join(process.cwd(), 'data', 'gened_rules_undergrad.json');
 
   const kineRules = loadJson(kineFile) || { majors: {}, minors: {}, policies: {} };
   const genedRules = profile.level === 'undergrad'

@@ -205,9 +205,6 @@ function parseResultsTable(html) {
       if (dayMap[ch]) meetingTime[dayMap[ch]] = true;
     }
 
-    // Column 10: Status
-    const statusText = stripTags(tds[10] || '');
-
     // Column 11: Enrollment / Max
     const enrollRaw = (tds[11] || '').split(/<BR\s*\/?>/i);
     const enrollment = parseInt(stripTags(enrollRaw[0]), 10) || 0;
@@ -286,58 +283,23 @@ module.exports = async function handler(req, res) {
     const formAction = formActionMatch ? formActionMatch[1] : './';
     const postUrl = new URL(formAction, TCU_URL).href;
 
-    // Extract ALL select/input field names (non-hidden)
-    const allFields = [];
-    const fieldRe = /<(?:input|select|textarea)[^>]+name="([^"]+)"[^>]*/gi;
-    let _fm;
-    while ((_fm = fieldRe.exec(pageHtml)) !== null) allFields.push(_fm[1]);
-
-    // Extract select options for key dropdowns (term, subject)
-    function getSelectOptions(html, selectName) {
-      const selRe = new RegExp(`<select[^>]+name="${selectName}"[^>]*>([\\s\\S]*?)</select>`, 'i');
-      const selMatch = html.match(selRe);
-      if (!selMatch) return null;
-      const opts = [];
-      const optRe = /<option[^>]+value="([^"]*)"[^>]*>([\s\S]*?)<\/option>/gi;
-      let om;
-      while ((om = optRe.exec(selMatch[1])) !== null) opts.push({ value: om[1], text: stripTags(om[2]) });
-      return opts.slice(0, 15); // limit for debug
+    // Extract radio button default for rbStatus
+    function getRadioDefault(html, radioName) {
+      const checked = html.match(new RegExp(`<input[^>]+name="${radioName}"[^>]+checked[^>]+value="([^"]*)"`, 'i'))
+        || html.match(new RegExp(`<input[^>]+name="${radioName}"[^>]+value="([^"]*)"[^>]+checked`, 'i'));
+      if (checked) return checked[1];
+      // Fall back to first radio value
+      const first = html.match(new RegExp(`<input[^>]+name="${radioName}"[^>]+value="([^"]*)"`, 'i'));
+      return first ? first[1] : '';
     }
-
-    // Extract radio button values
-    function getRadioValues(html, radioName) {
-      const vals = [];
-      const rbRe = new RegExp(`<input[^>]+name="${radioName}"[^>]+value="([^"]*)"[^>]*`, 'gi');
-      let rm;
-      while ((rm = rbRe.exec(html)) !== null) vals.push(rm[1]);
-      return vals;
-    }
-    const rbStatusValues = getRadioValues(pageHtml, 'rbStatus');
-    // Find which radio is checked (default)
-    const rbCheckedMatch = pageHtml.match(/<input[^>]+name="rbStatus"[^>]+checked[^>]+value="([^"]*)"/i)
-      || pageHtml.match(/<input[^>]+name="rbStatus"[^>]+value="([^"]*)"[^>]+checked/i);
-    const rbStatusDefault = rbCheckedMatch ? rbCheckedMatch[1] : rbStatusValues[0] || 'ANY';
+    const rbStatusDefault = getRadioDefault(pageHtml, 'rbStatus');
 
     if (!viewState) {
       return res.status(502).json({
         detail:
           'Could not extract form tokens from classes.tcu.edu. The site may be down or blocking requests.',
-        ...(debug && {
-          _debug: {
-            step1_status: getRes.status,
-            step1_html_length: pageHtml.length,
-            formAction,
-            allFields,
-            step1_snippet: pageHtml.slice(0, 2000),
-          },
-        }),
       });
     }
-
-    // Build form data using the exact field names found on the page
-    const termFieldName = allFields.find(f => /term/i.test(f) && !f.startsWith('__')) || 'ddlTerm';
-    const subjectFieldName = allFields.find(f => /subj/i.test(f) && !f.startsWith('__')) || 'ddlSubject';
-    const searchBtnName = allFields.find(f => /search|submit/i.test(f) && !f.startsWith('__')) || 'btnSearch';
 
     // Extract default values for ALL form fields from the page HTML
     function getSelectDefault(html, name) {
@@ -386,13 +348,11 @@ module.exports = async function handler(req, res) {
     // Set hidden field defaults
     formBody.set('hdnShowBldg', getInputDefault(pageHtml, 'hdnShowBldg') || '');
 
-    // Now override with our search parameters
+    // Override with our search parameters
     formBody.set('ddlTerm', tcuTerm);
     formBody.set('ddlSubject', subject);
     if (courseNumber) formBody.set('txtCrsNumber', courseNumber);
-    formBody.set(searchBtnName, 'Search');
-
-    const formData = formBody;
+    formBody.set('btnSearch', 'Search');
 
     // Use manual redirect to preserve cookies across redirects
     let postRes = await fetch(postUrl, {
@@ -401,7 +361,7 @@ module.exports = async function handler(req, res) {
         ...POST_HEADERS,
         Cookie: cookieStr(jar),
       },
-      body: formData.toString(),
+      body: formBody.toString(),
       redirect: 'manual',
     });
     collectCookies(postRes, jar);
@@ -428,49 +388,13 @@ module.exports = async function handler(req, res) {
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
 
-    const termOptions = debug ? getSelectOptions(pageHtml, termFieldName) : null;
-    const subjectOptions = debug ? getSelectOptions(pageHtml, subjectFieldName) : null;
-
-    // Extract HTML snippet around rbStatus to see actual values
-    const rbIdx = pageHtml.indexOf('rbStatus');
-    const rbSnippet = rbIdx >= 0 ? pageHtml.slice(Math.max(0, rbIdx - 100), rbIdx + 500) : 'NOT FOUND';
-
-    // Extract cookies being sent
-    const cookiesSent = cookieStr(jar);
-
     const debugInfo = debug
       ? {
           _debug: {
-            step1_status: getRes.status,
-            step1_html_length: pageHtml.length,
-            viewStateFound: !!viewState,
-            viewStateLen: viewState.length,
-            eventValidationFound: !!eventValidation,
-            cookieCount: jar.size,
-            cookiesSent: cookiesSent.replace(/=([^;]{10})[^;]*/g, '=$1...'), // truncate values
-            formAction,
-            postUrl,
-            allFields,
-            rbStatusValues,
-            rbStatusDefault,
-            rbSnippet,
-            termFieldName,
-            subjectFieldName,
-            searchBtnName,
-            postedFields: [...formBody.keys()],
-            postedValues: Object.fromEntries([...formBody.entries()].filter(([k]) => !k.startsWith('__'))),
             tcuTerm,
-            formSubject: subject,
-            termOptions,
-            subjectOptions,
-            rbStatusValues,
-            rbStatusDefault,
-            step2_rawStatus: postStatus,
-            step2_redirectTo: postLocation,
-            step2_status: postRes.status,
-            step2_html_length: resultHtml.length,
+            postStatus,
+            resultLength: resultHtml.length,
             hasResultsTable: /<TABLE[^>]*class="results"/i.test(resultHtml),
-            step2_snippet: resultHtml.slice(0, 2000),
           },
         }
       : {};

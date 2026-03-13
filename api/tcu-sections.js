@@ -299,6 +299,16 @@ module.exports = async function handler(req, res) {
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
 
+    // Extract all form field names from step1 for debugging
+    const formFields = [];
+    if (debug) {
+      const fieldRegex = /<(?:input|select|textarea)[^>]+name="([^"]+)"/gi;
+      let fm;
+      while ((fm = fieldRegex.exec(pageHtml)) !== null) {
+        if (!fm[1].startsWith('__')) formFields.push(fm[1]);
+      }
+    }
+
     const debugInfo = debug
       ? {
           _debug: {
@@ -314,6 +324,7 @@ module.exports = async function handler(req, res) {
             tcuTerm,
             formSubject: subject,
             formCourse: courseNumber,
+            step1_formFields: formFields,
             step2_snippet: resultHtml.slice(0, 2000),
           },
         }

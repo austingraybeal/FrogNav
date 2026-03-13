@@ -230,6 +230,7 @@ module.exports = async function handler(req, res) {
   const courseNumber = (req.query.course || '').trim();
   const appTerm = (req.query.term || '').trim() || defaultTermCode();
   const tcuTerm = toTcuTerm(appTerm);
+  const debug = req.query.debug === '1';
 
   try {
     const jar = new Map();
@@ -250,6 +251,13 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({
         detail:
           'Could not extract form tokens from classes.tcu.edu. The site may be down or blocking requests.',
+        ...(debug && {
+          _debug: {
+            step1_status: getRes.status,
+            step1_html_length: pageHtml.length,
+            step1_snippet: pageHtml.slice(0, 1000),
+          },
+        }),
       });
     }
 
@@ -291,6 +299,26 @@ module.exports = async function handler(req, res) {
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
 
+    const debugInfo = debug
+      ? {
+          _debug: {
+            step1_status: getRes.status,
+            step1_html_length: pageHtml.length,
+            viewStateFound: !!viewState,
+            viewStateLen: viewState.length,
+            eventValidationFound: !!eventValidation,
+            cookieCount: jar.size,
+            step2_status: postRes.status,
+            step2_html_length: resultHtml.length,
+            hasResultsTable: /<TABLE[^>]*class="results"/i.test(resultHtml),
+            tcuTerm,
+            formSubject: subject,
+            formCourse: courseNumber,
+            step2_snippet: resultHtml.slice(0, 2000),
+          },
+        }
+      : {};
+
     if (sections.length === 0) {
       // Check if there's an error message in the page
       const msgMatch = resultHtml.match(
@@ -309,6 +337,7 @@ module.exports = async function handler(req, res) {
           : msgMatch
             ? stripTags(msgMatch[1])
             : `No results found (HTTP ${postRes.status}).`,
+        ...debugInfo,
       });
     }
 
@@ -316,6 +345,7 @@ module.exports = async function handler(req, res) {
       sections,
       totalCount: sections.length,
       term: appTerm,
+      ...debugInfo,
     });
   } catch (err) {
     return res.status(502).json({

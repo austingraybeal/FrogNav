@@ -1,76 +1,86 @@
 {
   "source": "data/tcu_undergrad_catalog.pdf",
-  "extractionStatus": "Curated extraction of TCU Core requirement buckets.",
+  "extractionStatus": "Curated extraction of TCU Core requirement buckets with default course recommendations.",
   "buckets": [
     {
       "id": "GENED-ENGLISH",
       "name": "English Composition",
       "type": "course_count",
       "minCourses": 2,
-      "placeholder": "TCU Core: English Composition — choose approved course"
+      "placeholder": "TCU Core: English Composition — choose approved course",
+      "commonCourses": ["ENGL 10803 Composition & Rhetoric", "ENGL 20803 Writing as Argument"]
     },
     {
       "id": "GENED-MATH",
       "name": "Mathematics",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Mathematics — choose approved course"
+      "placeholder": "TCU Core: Mathematics — choose approved course",
+      "commonCourses": ["MATH 10043 Elementary Statistics", "MATH 10044 Elementary Statistics (Lab)"]
     },
     {
       "id": "GENED-SCI-NAT",
       "name": "Natural Science",
       "type": "course_count",
       "minCourses": 2,
-      "placeholder": "TCU Core: Natural Science — choose approved course"
+      "placeholder": "TCU Core: Natural Science — choose approved course",
+      "commonCourses": ["BIOL 20204 Anatomy & Physiology I", "BIOL 20214 Anatomy & Physiology II", "CHEM 10113 General Chemistry I", "PHYS 10154 General Physics I with Lab"]
     },
     {
       "id": "GENED-HIST",
       "name": "History",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: History — choose approved course"
+      "placeholder": "TCU Core: History — choose approved course",
+      "commonCourses": ["HIST 10953 United States History"]
     },
     {
       "id": "GENED-GOV",
       "name": "Government",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Government — choose approved course"
+      "placeholder": "TCU Core: Government — choose approved course",
+      "commonCourses": ["POLS 10040 American Government"]
     },
     {
       "id": "GENED-SOCIAL",
       "name": "Social Sciences",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Social Sciences — choose approved course"
+      "placeholder": "TCU Core: Social Sciences — choose approved course",
+      "commonCourses": ["PSYC 10213 Introduction to Psychology", "SOCL 10213 Introduction to Sociology"]
     },
     {
       "id": "GENED-HUM",
       "name": "Humanities",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Humanities — choose approved course"
+      "placeholder": "TCU Core: Humanities — choose approved course",
+      "commonCourses": ["PHIL 10003 Introduction to Philosophy", "ENGL 20503 Intro to Literary Studies"]
     },
     {
       "id": "GENED-RELIGION",
       "name": "Religion",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Religion — choose approved course"
+      "placeholder": "TCU Core: Religion — choose approved course",
+      "commonCourses": ["RELI 10003 Understanding Religion"]
     },
     {
       "id": "GENED-CULTURE",
       "name": "Cultural Awareness",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Cultural Awareness — choose approved course"
+      "placeholder": "TCU Core: Cultural Awareness — choose approved course",
+      "commonCourses": ["ANTH 10013 Cultural Anthropology", "SOCL 30413 Race & Ethnicity"]
     },
     {
       "id": "GENED-COMM",
       "name": "Oral Communication",
       "type": "course_count",
       "minCourses": 1,
-      "placeholder": "TCU Core: Oral Communication — choose approved course"
+      "placeholder": "TCU Core: Oral Communication — choose approved course",
+      "commonCourses": ["COMM 10003 Public Speaking"]
     }
   ]
 }

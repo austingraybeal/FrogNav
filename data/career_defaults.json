@@ -171,6 +171,34 @@
       "advisingNote": "Consider pursuing the ACSM-EP (Exercise Physiologist) certification or CEP (Clinical Exercise Physiologist) after graduation. ACE and NSCA certifications are also widely recognized in wellness and fitness settings."
     },
 
+    "Athletic Trainer/Sports Medicine": {
+      "label": "Athletic Trainer / Sports Medicine Specialist",
+      "applicableMajors": ["Movement Science/MS Athletic Training (MOSC 3+2)", "Movement Science"],
+      "description": "Optimizes plan for athletic training certification (MSAT) and sports medicine careers. Prioritizes clinical sciences, rehabilitation, and injury prevention.",
+      "genedRecommendations": {
+        "GENED-ENGLISH": ["ENGL 10803", "ENGL 20803"],
+        "GENED-MATH": ["MATH 10044"],
+        "GENED-SCI-NAT": ["BIOL 10003", "BIOL 10403"],
+        "GENED-HIST": ["HIST 10953"],
+        "GENED-GOV": ["POLS 10040"],
+        "GENED-SOCIAL": ["PSYC 10213"],
+        "GENED-HUM": ["PHIL 10003"],
+        "GENED-RELIGION": ["RELI 10003"],
+        "GENED-CULTURE": ["ANTH 10013"],
+        "GENED-COMM": ["COMM 10003"]
+      },
+      "freeElectiveRecommendations": [
+        { "code": "KINE 30523", "title": "Exercise Assessment and Prescription", "credits": 3, "notes": "Clinical assessment skills directly applicable to AT practice" },
+        { "code": "KINE 30343", "title": "Theory and Practice of Strength Training", "credits": 3, "notes": "Rehabilitation and return-to-play protocols" },
+        { "code": "PSYC 30213", "title": "Abnormal Psychology", "credits": 3, "notes": "Mental health awareness for athlete populations" },
+        { "code": "KINE 30713", "title": "Psychology of Sport", "credits": 3, "notes": "Athlete mental health and injury psychology" },
+        { "code": "HLTH 30423", "title": "Nutrition and Physical Activity", "credits": 3, "notes": "Sports nutrition for athlete care" },
+        { "code": "CHEM 20123", "title": "Organic Chemistry I", "credits": 3, "notes": "Strengthens science background for MSAT program" },
+        { "code": "HLTH 30233", "title": "Health Promotion", "credits": 3, "notes": "Injury prevention and wellness promotion" }
+      ],
+      "advisingNote": "The MOSC 3+2 program requires a secondary application to enter the MSAT professional program after 110 pre-professional hours. Maintain a 3.0 GPA minimum. Clinical observation hours with a certified AT are highly recommended before applying. BOC certification exam eligibility requires completion of the full MSAT program."
+    },
+
     "Undecided": {
       "label": "Undecided / Exploring Options",
       "applicableMajors": ["Movement Science", "Health and Fitness", "Physical Education", "Physical Education with Strength and Conditioning", "Movement Science/MS Athletic Training (MOSC 3+2)"],

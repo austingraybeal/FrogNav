@@ -751,6 +751,15 @@ body::-webkit-scrollbar-button,
   font-size: 0.85rem;
   padding: 0.3rem 0;
   user-select: none;
+  list-style: none;
+}
+.plan-details-toggle summary::-webkit-details-marker { display: none; }
+.plan-details-toggle summary::before {
+  content: '▸ ';
+  display: inline;
+}
+.plan-details-toggle[open] summary::before {
+  content: '▾ ';
 }
 .plan-details-toggle summary:hover { color: var(--text); }
 .plan-details-toggle[open] summary { color: var(--text); }

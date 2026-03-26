@@ -350,7 +350,7 @@ function renderAssistantPlan(container, planJson) {
     const details = document.createElement('details');
     details.className = 'plan-details-toggle';
     const summary = document.createElement('summary');
-    summary.textContent = 'ℹ️ Policies & Assumptions';
+    summary.textContent = 'Policies & Assumptions';
     details.appendChild(summary);
     if (planJson.policyWarnings?.length) {
       details.appendChild(listSection('Policy Warnings', planJson.policyWarnings));

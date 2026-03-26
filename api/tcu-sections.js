@@ -328,40 +328,105 @@ module.exports = async function handler(req, res) {
       return m ? m[1] : fallback;
     }
 
-    // Step 2: POST the search form with values extracted from page HTML
-    const formBody = new URLSearchParams();
-    formBody.set('__EVENTTARGET', '');
-    formBody.set('__EVENTARGUMENT', '');
-    formBody.set('__VIEWSTATE', viewState);
-    formBody.set('__VIEWSTATEGENERATOR', viewStateGen);
-    formBody.set('__EVENTVALIDATION', eventValidation);
-    // Check if requested term exists in TCU's dropdown; if not, use page default
-    const termSelectRe = /<select[^>]+name="ddlTerm"[^>]*>([\s\S]*?)<\/select>/i;
-    const termSelectMatch = pageHtml.match(termSelectRe);
+    // Check if requested term differs from the page's default selected term
+    const pageDefaultTerm = getSelectedValue(pageHtml, 'ddlTerm', '');
     let effectiveTcuTerm = tcuTerm;
     let termAvailable = true;
+
+    // Check if requested term exists in TCU's dropdown
+    const termSelectRe = /<select[^>]+name="ddlTerm"[^>]*>([\s\S]*?)<\/select>/i;
+    const termSelectMatch = pageHtml.match(termSelectRe);
     if (termSelectMatch) {
       const hasOpt = new RegExp(`value="${tcuTerm}"`, 'i').test(termSelectMatch[1]);
       if (!hasOpt) {
-        // Requested term not in TCU's dropdown — fall back to page default
-        effectiveTcuTerm = getSelectedValue(pageHtml, 'ddlTerm', tcuTerm);
+        effectiveTcuTerm = pageDefaultTerm || tcuTerm;
         termAvailable = false;
       }
     }
+
+    // Use working HTML state — if term differs from page default, do a postback first
+    let activeHtml = pageHtml;
+    let activeVS = viewState;
+    let activeEV = eventValidation;
+    let activeVSG = viewStateGen;
+
+    if (termAvailable && effectiveTcuTerm !== pageDefaultTerm) {
+      // Step 2a: ASP.NET postback to change the term dropdown
+      // This mimics the browser's __doPostBack('ddlTerm','') when user selects a different term
+      const termPostBody = new URLSearchParams();
+      termPostBody.set('__EVENTTARGET', 'ddlTerm');
+      termPostBody.set('__EVENTARGUMENT', '');
+      termPostBody.set('__VIEWSTATE', activeVS);
+      termPostBody.set('__VIEWSTATEGENERATOR', activeVSG);
+      termPostBody.set('__EVENTVALIDATION', activeEV);
+      termPostBody.set('ddlTerm', effectiveTcuTerm);
+      termPostBody.set('ddlSession', getSelectedValue(activeHtml, 'ddlSession', 'ANY'));
+      termPostBody.set('ddlLocation', getSelectedValue(activeHtml, 'ddlLocation', 'ANY'));
+      termPostBody.set('ddlSubject', 'ANY');
+      termPostBody.set('txtCrsNumber', '');
+      termPostBody.set('txtSection', '');
+      termPostBody.set('ddlAttribute', getSelectedValue(activeHtml, 'ddlAttribute', 'ANY'));
+      termPostBody.set('ddlLevel', getSelectedValue(activeHtml, 'ddlLevel', 'ANY'));
+      termPostBody.set('rbStatus', getRadioValue(activeHtml, 'rbStatus'));
+      termPostBody.set('ddlDay', getSelectedValue(activeHtml, 'ddlDay', 'ANY'));
+      termPostBody.set('ddlStartTime', getSelectedValue(activeHtml, 'ddlStartTime', 'ANY'));
+      termPostBody.set('ddlEndtime', getSelectedValue(activeHtml, 'ddlEndtime', 'ANY'));
+      termPostBody.set('hdnShowBldg', getHiddenValue(activeHtml, 'hdnShowBldg', 'Y'));
+
+      let termRes = await fetch(postUrl, {
+        method: 'POST',
+        headers: {
+          ...BROWSER_HEADERS,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Cookie: cookieStr(jar),
+          Referer: TCU_URL,
+          Origin: 'https://classes.tcu.edu',
+        },
+        body: termPostBody.toString(),
+        redirect: 'manual',
+      });
+      collectCookies(termRes, jar);
+
+      // Follow redirects
+      let rc = 0;
+      while ([301, 302, 303, 307, 308].includes(termRes.status) && rc < 5) {
+        const loc = termRes.headers.get('location');
+        if (!loc) break;
+        termRes = await fetch(new URL(loc, postUrl).href, {
+          headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar), Referer: TCU_URL },
+          redirect: 'manual',
+        });
+        collectCookies(termRes, jar);
+        rc++;
+      }
+
+      activeHtml = await termRes.text();
+      activeVS = extractHidden(activeHtml, '__VIEWSTATE');
+      activeEV = extractHidden(activeHtml, '__EVENTVALIDATION');
+      activeVSG = extractHidden(activeHtml, '__VIEWSTATEGENERATOR');
+    }
+
+    // Step 2b: POST the actual search form
+    const formBody = new URLSearchParams();
+    formBody.set('__EVENTTARGET', '');
+    formBody.set('__EVENTARGUMENT', '');
+    formBody.set('__VIEWSTATE', activeVS);
+    formBody.set('__VIEWSTATEGENERATOR', activeVSG);
+    formBody.set('__EVENTVALIDATION', activeEV);
     formBody.set('ddlTerm', effectiveTcuTerm);
-    formBody.set('ddlSession', getSelectedValue(pageHtml, 'ddlSession', 'ANY'));
-    formBody.set('ddlLocation', getSelectedValue(pageHtml, 'ddlLocation', 'ANY'));
+    formBody.set('ddlSession', getSelectedValue(activeHtml, 'ddlSession', 'ANY'));
+    formBody.set('ddlLocation', getSelectedValue(activeHtml, 'ddlLocation', 'ANY'));
     formBody.set('ddlSubject', subject);
     formBody.set('txtCrsNumber', courseNumber);
     formBody.set('txtSection', '');
-    formBody.set('ddlAttribute', getSelectedValue(pageHtml, 'ddlAttribute', 'ANY'));
-    formBody.set('ddlLevel', getSelectedValue(pageHtml, 'ddlLevel', 'ANY'));
-    formBody.set('rbStatus', getRadioValue(pageHtml, 'rbStatus'));
-    formBody.set('ddlDay', getSelectedValue(pageHtml, 'ddlDay', 'ANY'));
-    formBody.set('ddlStartTime', getSelectedValue(pageHtml, 'ddlStartTime', 'ANY'));
-    formBody.set('ddlEndtime', getSelectedValue(pageHtml, 'ddlEndtime', 'ANY'));
+    formBody.set('ddlAttribute', getSelectedValue(activeHtml, 'ddlAttribute', 'ANY'));
+    formBody.set('ddlLevel', getSelectedValue(activeHtml, 'ddlLevel', 'ANY'));
+    formBody.set('rbStatus', getRadioValue(activeHtml, 'rbStatus'));
+    formBody.set('ddlDay', getSelectedValue(activeHtml, 'ddlDay', 'ANY'));
+    formBody.set('ddlStartTime', getSelectedValue(activeHtml, 'ddlStartTime', 'ANY'));
+    formBody.set('ddlEndtime', getSelectedValue(activeHtml, 'ddlEndtime', 'ANY'));
     formBody.set(searchBtnName, 'Search');
-    formBody.set('hdnShowBldg', getHiddenValue(pageHtml, 'hdnShowBldg', 'Y'));
+    formBody.set('hdnShowBldg', getHiddenValue(activeHtml, 'hdnShowBldg', 'Y'));
 
     const formData = formBody;
 

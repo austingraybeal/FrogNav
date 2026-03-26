@@ -415,60 +415,79 @@ module.exports = async function handler(req, res) {
       postbackHasVS = !!activeVS;
     }
 
-    // Step 2b: POST the actual search form
-    const formBody = new URLSearchParams();
-    formBody.set('__EVENTTARGET', '');
-    formBody.set('__EVENTARGUMENT', '');
-    formBody.set('__VIEWSTATE', activeVS);
-    formBody.set('__VIEWSTATEGENERATOR', activeVSG);
-    formBody.set('__EVENTVALIDATION', activeEV);
-    formBody.set('ddlTerm', effectiveTcuTerm);
-    formBody.set('ddlSession', getSelectedValue(activeHtml, 'ddlSession', 'ANY'));
-    formBody.set('ddlLocation', getSelectedValue(activeHtml, 'ddlLocation', 'ANY'));
-    formBody.set('ddlSubject', subject);
-    formBody.set('txtCrsNumber', courseNumber);
-    formBody.set('txtSection', '');
-    formBody.set('ddlAttribute', getSelectedValue(activeHtml, 'ddlAttribute', 'ANY'));
-    formBody.set('ddlLevel', getSelectedValue(activeHtml, 'ddlLevel', 'ANY'));
-    formBody.set('rbStatus', getRadioValue(activeHtml, 'rbStatus'));
-    formBody.set('ddlDay', getSelectedValue(activeHtml, 'ddlDay', 'ANY'));
-    formBody.set('ddlStartTime', getSelectedValue(activeHtml, 'ddlStartTime', 'ANY'));
-    formBody.set('ddlEndtime', getSelectedValue(activeHtml, 'ddlEndtime', 'ANY'));
-    formBody.set(searchBtnName, 'Search');
-    formBody.set('hdnShowBldg', getHiddenValue(activeHtml, 'hdnShowBldg', 'Y'));
-
-    const formData = formBody;
-
-    // Use manual redirect to preserve cookies across hops
-    let postRes = await fetch(postUrl, {
-      method: 'POST',
-      headers: {
-        ...BROWSER_HEADERS,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Cookie: cookieStr(jar),
-        Referer: TCU_URL,
-        Origin: 'https://classes.tcu.edu',
-      },
-      body: formData.toString(),
-      redirect: 'manual',
-    });
-    collectCookies(postRes, jar);
-
-    // Follow redirects manually, preserving cookies
-    let redirectCount = 0;
-    while ([301, 302, 303, 307, 308].includes(postRes.status) && redirectCount < 5) {
-      const location = postRes.headers.get('location');
-      if (!location) break;
-      const nextUrl = new URL(location, postUrl).href;
-      postRes = await fetch(nextUrl, {
-        headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar), Referer: TCU_URL },
-        redirect: 'manual',
-      });
-      collectCookies(postRes, jar);
-      redirectCount++;
+    // Step 2b: Build and POST the search form
+    function buildSearchBody(vs, vsg, ev, html, termVal) {
+      const body = new URLSearchParams();
+      body.set('__EVENTTARGET', '');
+      body.set('__EVENTARGUMENT', '');
+      body.set('__VIEWSTATE', vs);
+      body.set('__VIEWSTATEGENERATOR', vsg);
+      body.set('__EVENTVALIDATION', ev);
+      body.set('ddlTerm', termVal);
+      body.set('ddlSession', getSelectedValue(html, 'ddlSession', 'ANY'));
+      body.set('ddlLocation', getSelectedValue(html, 'ddlLocation', 'ANY'));
+      body.set('ddlSubject', subject);
+      body.set('txtCrsNumber', courseNumber);
+      body.set('txtSection', '');
+      body.set('ddlAttribute', getSelectedValue(html, 'ddlAttribute', 'ANY'));
+      body.set('ddlLevel', getSelectedValue(html, 'ddlLevel', 'ANY'));
+      body.set('rbStatus', getRadioValue(html, 'rbStatus'));
+      body.set('ddlDay', getSelectedValue(html, 'ddlDay', 'ANY'));
+      body.set('ddlStartTime', getSelectedValue(html, 'ddlStartTime', 'ANY'));
+      body.set('ddlEndtime', getSelectedValue(html, 'ddlEndtime', 'ANY'));
+      body.set(searchBtnName, 'Search');
+      body.set('hdnShowBldg', getHiddenValue(html, 'hdnShowBldg', 'Y'));
+      return body;
     }
 
-    const resultHtml = await postRes.text();
+    async function doPost(body) {
+      let r = await fetch(postUrl, {
+        method: 'POST',
+        headers: {
+          ...BROWSER_HEADERS,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Cookie: cookieStr(jar),
+          Referer: TCU_URL,
+          Origin: 'https://classes.tcu.edu',
+        },
+        body: body.toString(),
+        redirect: 'manual',
+      });
+      collectCookies(r, jar);
+      let rc = 0;
+      while ([301, 302, 303, 307, 308].includes(r.status) && rc < 5) {
+        const loc = r.headers.get('location');
+        if (!loc) break;
+        r = await fetch(new URL(loc, postUrl).href, {
+          headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar), Referer: TCU_URL },
+          redirect: 'manual',
+        });
+        collectCookies(r, jar);
+        rc++;
+      }
+      return r;
+    }
+
+    const formBody = buildSearchBody(activeVS, activeVSG, activeEV, activeHtml, effectiveTcuTerm);
+    let postRes = await doPost(formBody);
+    let resultHtml = await postRes.text();
+
+    // If the term differs from the page default and we got no results,
+    // ASP.NET may have processed the term change but not the search.
+    // Re-submit the search using the new page's ViewState (double-search).
+    let didDoubleSearch = false;
+    if (termAvailable && effectiveTcuTerm !== pageDefaultTerm && !/<TABLE[^>]*class="results"/i.test(resultHtml)) {
+      const vs2 = extractHidden(resultHtml, '__VIEWSTATE');
+      const ev2 = extractHidden(resultHtml, '__EVENTVALIDATION');
+      const vsg2 = extractHidden(resultHtml, '__VIEWSTATEGENERATOR');
+      if (vs2) {
+        const formBody2 = buildSearchBody(vs2, vsg2, ev2, resultHtml, effectiveTcuTerm);
+        const postRes2 = await doPost(formBody2);
+        resultHtml = await postRes2.text();
+        postRes = postRes2;
+        didDoubleSearch = true;
+      }
+    }
 
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
@@ -500,6 +519,7 @@ module.exports = async function handler(req, res) {
             postbackHtmlLen,
             postbackHasVS,
             postbackSelectedTerm: didTermPostback ? getSelectedValue(activeHtml, 'ddlTerm', 'unknown') : 'N/A',
+            didDoubleSearch,
             formSubject: subject,
             termOptions,
             subjectOptions,

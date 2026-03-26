@@ -324,8 +324,11 @@ module.exports = async function handler(req, res) {
       // Return checked radio's value
       const checked = radios.find(r => r.checked);
       if (checked) return checked.value;
-      // Fall back to last radio value (usually "all/any")
-      return radios.length > 0 ? radios[radios.length - 1].value : 'A';
+      // No checked attribute found — prefer the "All" or "Open" value (show all sections)
+      const allOrOpen = radios.find(r => /all|open/i.test(r.value));
+      if (allOrOpen) return allOrOpen.value;
+      // Fall back to first radio value
+      return radios.length > 0 ? radios[0].value : 'A';
     }
 
     function getHiddenValue(html, name, fallback) {

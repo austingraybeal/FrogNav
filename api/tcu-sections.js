@@ -406,13 +406,23 @@ module.exports = async function handler(req, res) {
         rc++;
       }
 
-      activeHtml = await termRes.text();
+      const postbackHtml = await termRes.text();
+      didTermPostback = true;
+      postbackHtmlLen = postbackHtml.length;
+      postbackHasVS = !!extractHidden(postbackHtml, '__VIEWSTATE');
+
+      // After the postback, do a fresh GET with session cookies.
+      // The server-side session now remembers the selected term,
+      // so the fresh page will have Fall pre-selected with matching EventValidation.
+      const freshRes = await fetch(TCU_URL, {
+        headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar) },
+        redirect: 'follow',
+      });
+      collectCookies(freshRes, jar);
+      activeHtml = await freshRes.text();
       activeVS = extractHidden(activeHtml, '__VIEWSTATE');
       activeEV = extractHidden(activeHtml, '__EVENTVALIDATION');
       activeVSG = extractHidden(activeHtml, '__VIEWSTATEGENERATOR');
-      didTermPostback = true;
-      postbackHtmlLen = activeHtml.length;
-      postbackHasVS = !!activeVS;
     }
 
     // Step 2b: POST the actual search form
@@ -499,6 +509,7 @@ module.exports = async function handler(req, res) {
             didTermPostback,
             postbackHtmlLen,
             postbackHasVS,
+            activePageSelectedTerm: didTermPostback ? getSelectedValue(activeHtml, 'ddlTerm', 'unknown') : pageDefaultTerm,
             formSubject: subject,
             termOptions,
             subjectOptions,

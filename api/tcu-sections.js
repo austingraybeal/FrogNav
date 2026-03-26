@@ -296,10 +296,13 @@ module.exports = async function handler(req, res) {
       const selRe = new RegExp(`<select[^>]+name="${selectName}"[^>]*>([\\s\\S]*?)</select>`, 'i');
       const selMatch = html.match(selRe);
       if (!selMatch) return fallback;
-      // Look for selected option first
-      const selectedRe = /<option[^>]+selected[^>]+value="([^"]*)"/i;
-      const sm = selMatch[1].match(selectedRe);
-      if (sm) return sm[1];
+      // Look for selected option — handle both `selected ... value` and `value ... selected` orders
+      const selectedRe1 = /<option[^>]+selected[^>]+value="([^"]*)"/i;
+      const sm1 = selMatch[1].match(selectedRe1);
+      if (sm1) return sm1[1];
+      const selectedRe2 = /<option[^>]+value="([^"]*)"[^>]+selected/i;
+      const sm2 = selMatch[1].match(selectedRe2);
+      if (sm2) return sm2[1];
       // Fall back to first option value
       const firstRe = /<option[^>]+value="([^"]*)"/i;
       const fm = selMatch[1].match(firstRe);
@@ -349,6 +352,9 @@ module.exports = async function handler(req, res) {
     let activeVS = viewState;
     let activeEV = eventValidation;
     let activeVSG = viewStateGen;
+    let didTermPostback = false;
+    let postbackHtmlLen = 0;
+    let postbackHasVS = false;
 
     if (termAvailable && effectiveTcuTerm !== pageDefaultTerm) {
       // Step 2a: ASP.NET postback to change the term dropdown
@@ -404,6 +410,9 @@ module.exports = async function handler(req, res) {
       activeVS = extractHidden(activeHtml, '__VIEWSTATE');
       activeEV = extractHidden(activeHtml, '__EVENTVALIDATION');
       activeVSG = extractHidden(activeHtml, '__VIEWSTATEGENERATOR');
+      didTermPostback = true;
+      postbackHtmlLen = activeHtml.length;
+      postbackHasVS = !!activeVS;
     }
 
     // Step 2b: POST the actual search form
@@ -485,7 +494,11 @@ module.exports = async function handler(req, res) {
             postedFields: [...formBody.keys()],
             tcuTermRequested: tcuTerm,
             tcuTermUsed: effectiveTcuTerm,
+            pageDefaultTerm,
             termAvailable,
+            didTermPostback,
+            postbackHtmlLen,
+            postbackHasVS,
             formSubject: subject,
             termOptions,
             subjectOptions,

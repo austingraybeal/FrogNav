@@ -226,6 +226,52 @@ function safeText(str) {
   return el.textContent; // returns escaped string for use in textContent assignments
 }
 
+// ── Lightweight markdown renderer for chat messages ──────────────────────────
+function renderMarkdown(src) {
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  const lines = String(src || '').split('\n');
+  let html = '';
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+
+    // Headings
+    const hMatch = raw.match(/^(#{1,3})\s+(.+)$/);
+    if (hMatch) {
+      if (inList) { html += '</ul>'; inList = false; }
+      const lvl = hMatch[1].length + 1; // ## → h3, ### → h4
+      html += `<h${lvl}>${inline(hMatch[2])}</h${lvl}>`;
+      continue;
+    }
+
+    // Bullet list items (-, *, or numbered)
+    const liMatch = raw.match(/^\s*(?:[-*]|\d+[.)]) (.+)$/);
+    if (liMatch) {
+      if (!inList) { html += '<ul>'; inList = true; }
+      html += `<li>${inline(liMatch[1])}</li>`;
+      continue;
+    }
+
+    // Empty line → close list, add break
+    if (!raw.trim()) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<br>';
+      continue;
+    }
+
+    // Regular paragraph line
+    if (inList) { html += '</ul>'; inList = false; }
+    html += `<p>${inline(raw)}</p>`;
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
 // ── Plan rendering helpers ────────────────────────────────────────────────────
 function listSection(title, items) {
   const section   = document.createElement('section');
@@ -464,9 +510,10 @@ function renderThread() {
     if (message.role === 'assistant' && message.planJson) {
       renderAssistantPlan(node, message.planJson);
     } else {
-      const text  = document.createElement('p');
-      text.textContent = message.content;
-      node.appendChild(text);
+      const prose = document.createElement('div');
+      prose.className = 'msg-prose';
+      prose.innerHTML = renderMarkdown(message.content);
+      node.appendChild(prose);
 
       // Render next-step buttons for chat responses
       if (Array.isArray(message.chatNextSteps) && message.chatNextSteps.length) {

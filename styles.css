@@ -121,6 +121,26 @@ body {
 
 .msg p { margin: 0; white-space: pre-wrap; }
 
+/* ── Rich markdown rendering for assistant chat messages ───────────────────── */
+.msg-prose { line-height: 1.6; }
+.msg-prose p { margin: 0.35rem 0; white-space: normal; }
+.msg-prose h2 { font-size: 1.15rem; font-weight: 700; margin: 1rem 0 0.3rem; color: #d4bfff; }
+.msg-prose h3 { font-size: 1.05rem; font-weight: 600; margin: 0.8rem 0 0.25rem; color: #c9b0ff; }
+.msg-prose h4 { font-size: 0.97rem; font-weight: 600; margin: 0.6rem 0 0.2rem; color: #bfa6f5; }
+.msg-prose strong { font-weight: 700; color: #e0d4ff; }
+.msg-prose em { font-style: italic; opacity: 0.9; }
+.msg-prose ul {
+  margin: 0.4rem 0 0.4rem 0.25rem;
+  padding-left: 1.2rem;
+  list-style: disc;
+}
+.msg-prose li {
+  margin: 0.2rem 0;
+  line-height: 1.5;
+}
+.msg-prose li::marker { color: rgba(126, 77, 255, 0.6); }
+.msg-prose br { display: block; content: ''; margin: 0.3rem 0; }
+
 .plan-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

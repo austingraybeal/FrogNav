@@ -108,7 +108,8 @@ const minorSelect    = document.getElementById('minorProgram');
 
 function syncEmphasisAndMinor() {
   const isHF = majorSelect.value === 'Health and Fitness';
-  emphasisField.hidden = !isHF;
+  emphasisField.hidden   = !isHF;
+  emphasisSelect.disabled = !isHF;
   if (!isHF) emphasisSelect.value = '';
   minorSelect.disabled = isHF;
   if (isHF) minorSelect.value = '';

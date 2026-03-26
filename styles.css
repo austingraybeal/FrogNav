@@ -768,6 +768,7 @@ body::-webkit-scrollbar-button,
 .next-steps { margin-top: 1.25rem; }
 .next-steps-label {
   font-size: 0.9rem;
+  font-weight: 600;
   color: var(--muted);
   margin: 0 0 0.6rem;
 }

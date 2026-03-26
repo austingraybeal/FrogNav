@@ -35,12 +35,14 @@ function toTcuTerm(appTerm) {
 }
 
 // Default term code in our YYYYSS format
+// Jan–Feb → current Spring; Mar–Jul → current Fall; Aug–Dec → next Spring
 function defaultTermCode() {
   const now = new Date();
-  const year = now.getFullYear();
+  let year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const suffix = month <= 5 ? '30' : month <= 7 ? '50' : '90';
-  return `${year}${suffix}`;
+  if (month <= 2) return `${year}30`;
+  if (month <= 7) return `${year}90`;
+  return `${year + 1}30`;
 }
 
 // ── Cookie helpers ──────────────────────────────────────────────────────────

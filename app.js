@@ -1213,6 +1213,7 @@ if (saveProfileBtn) {
     profileSaveStatus.textContent = '✓ Saved';
     profileSaveStatus.classList.add('visible');
     setTimeout(() => profileSaveStatus.classList.remove('visible'), 2000);
+    profileModal.hidden = true;
   });
 }
 

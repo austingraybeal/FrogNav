@@ -1276,4 +1276,7 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
   updateQuickActionLabels();
   updateSidebarProfile();
   renderThread();
+
+  // Auto-open profile modal so students know to fill it out
+  profileModal.hidden = false;
 })();

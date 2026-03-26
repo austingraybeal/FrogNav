@@ -1262,28 +1262,15 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 (function bootstrap() {
-  // Restore saved profile or apply defaults
-  const savedProfile = localStorage.getItem(PROFILE_KEY);
-  if (savedProfile) {
-    try   { applyProfile(JSON.parse(savedProfile)); }
-    catch { applyProfile(DEFAULTS); }
-  } else {
-    applyProfile(DEFAULTS);
-  }
+  // Clear stale data so every page visit starts fresh
+  localStorage.removeItem(PROFILE_KEY);
+  localStorage.removeItem(THREAD_KEY);
+  localStorage.removeItem(LAST_PLAN_KEY);
 
-  // Restore conversation history
-  const savedMessages = localStorage.getItem(THREAD_KEY);
-  if (savedMessages) {
-    try   { messages = JSON.parse(savedMessages); }
-    catch { messages = []; }
-  }
-
-  // Restore last plan
-  const savedPlan = localStorage.getItem(LAST_PLAN_KEY);
-  if (savedPlan) {
-    try   { lastPlan = JSON.parse(savedPlan); }
-    catch { lastPlan = null; }
-  }
+  // Start with defaults
+  applyProfile(DEFAULTS);
+  messages = [];
+  lastPlan = null;
 
   updateQuickActionLabels();
   updateSidebarProfile();

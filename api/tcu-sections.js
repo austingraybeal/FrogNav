@@ -289,13 +289,48 @@ module.exports = async function handler(req, res) {
     }
 
     // Build form data using the exact field names found on the page
-    // First, find the actual field names for term and subject
     const termFieldName = allFields.find(f => /term/i.test(f) && !f.startsWith('__')) || 'ddlTerm';
     const subjectFieldName = allFields.find(f => /subj/i.test(f) && !f.startsWith('__')) || 'ddlSubject';
     const searchBtnName = allFields.find(f => /search|submit/i.test(f) && !f.startsWith('__')) || 'btnSearch';
 
-    // Step 2: POST the search form
-    // ASP.NET requires __EVENTTARGET and __EVENTARGUMENT even if empty
+    // Extract actual default values from the page HTML so __EVENTVALIDATION accepts them
+    function getSelectedValue(html, selectName, fallback) {
+      const selRe = new RegExp(`<select[^>]+name="${selectName}"[^>]*>([\\s\\S]*?)</select>`, 'i');
+      const selMatch = html.match(selRe);
+      if (!selMatch) return fallback;
+      // Look for selected option first
+      const selectedRe = /<option[^>]+selected[^>]+value="([^"]*)"/i;
+      const sm = selMatch[1].match(selectedRe);
+      if (sm) return sm[1];
+      // Fall back to first option value
+      const firstRe = /<option[^>]+value="([^"]*)"/i;
+      const fm = selMatch[1].match(firstRe);
+      return fm ? fm[1] : fallback;
+    }
+
+    function getRadioValue(html, radioName) {
+      // Find checked radio, or fall back to last radio value (usually "all")
+      const checkedRe = new RegExp(`<input[^>]+name="${radioName}"[^>]+checked[^>]+value="([^"]*)"`, 'i');
+      const cm = html.match(checkedRe);
+      if (cm) return cm[1];
+      // Also try checked before value
+      const checkedRe2 = new RegExp(`<input[^>]+checked[^>]+name="${radioName}"[^>]+value="([^"]*)"`, 'i');
+      const cm2 = html.match(checkedRe2);
+      if (cm2) return cm2[1];
+      // Fall back: extract all radio values, return last one (usually "all/any")
+      const allRe = new RegExp(`<input[^>]+name="${radioName}"[^>]+value="([^"]*)"`, 'gi');
+      let last = null, m;
+      while ((m = allRe.exec(html)) !== null) last = m[1];
+      return last || 'A';
+    }
+
+    function getHiddenValue(html, name, fallback) {
+      const re = new RegExp(`<input[^>]+name="${name}"[^>]+value="([^"]*)"`, 'i');
+      const m = html.match(re);
+      return m ? m[1] : fallback;
+    }
+
+    // Step 2: POST the search form with values extracted from page HTML
     const formBody = new URLSearchParams();
     formBody.set('__EVENTTARGET', '');
     formBody.set('__EVENTARGUMENT', '');
@@ -303,19 +338,19 @@ module.exports = async function handler(req, res) {
     formBody.set('__VIEWSTATEGENERATOR', viewStateGen);
     formBody.set('__EVENTVALIDATION', eventValidation);
     formBody.set('ddlTerm', tcuTerm);
-    formBody.set('ddlSession', 'ANY');
-    formBody.set('ddlLocation', 'ANY');
+    formBody.set('ddlSession', getSelectedValue(pageHtml, 'ddlSession', 'ANY'));
+    formBody.set('ddlLocation', getSelectedValue(pageHtml, 'ddlLocation', 'ANY'));
     formBody.set('ddlSubject', subject);
     formBody.set('txtCrsNumber', courseNumber);
     formBody.set('txtSection', '');
-    formBody.set('ddlAttribute', 'ANY');
-    formBody.set('ddlLevel', 'ANY');
-    formBody.set('rbStatus', 'ANY');       // radio: Open / Closed / ANY
-    formBody.set('ddlDay', 'ANY');
-    formBody.set('ddlStartTime', 'ANY');
-    formBody.set('ddlEndtime', 'ANY');
-    formBody.set('btnSearch', 'Search');
-    formBody.set('hdnShowBldg', 'Y');
+    formBody.set('ddlAttribute', getSelectedValue(pageHtml, 'ddlAttribute', 'ANY'));
+    formBody.set('ddlLevel', getSelectedValue(pageHtml, 'ddlLevel', 'ANY'));
+    formBody.set('rbStatus', getRadioValue(pageHtml, 'rbStatus'));
+    formBody.set('ddlDay', getSelectedValue(pageHtml, 'ddlDay', 'ANY'));
+    formBody.set('ddlStartTime', getSelectedValue(pageHtml, 'ddlStartTime', 'ANY'));
+    formBody.set('ddlEndtime', getSelectedValue(pageHtml, 'ddlEndtime', 'ANY'));
+    formBody.set(searchBtnName, 'Search');
+    formBody.set('hdnShowBldg', getHiddenValue(pageHtml, 'hdnShowBldg', 'Y'));
 
     const formData = formBody;
 

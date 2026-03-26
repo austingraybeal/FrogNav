@@ -1124,9 +1124,11 @@ async function searchLiveSections() {
 
     const sections = payload.sections || [];
     if (sectionsStatus) {
-      sectionsStatus.textContent = sections.length
+      let statusMsg = sections.length
         ? `Found ${sections.length} section(s)`
-        : 'No sections found for this search.';
+        : (payload.detail || 'No sections found for this search.');
+      if (payload.termNote) statusMsg = payload.termNote + ' ' + statusMsg;
+      sectionsStatus.textContent = statusMsg;
     }
 
     sections.forEach(sec => {

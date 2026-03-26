@@ -335,7 +335,20 @@ module.exports = async function handler(req, res) {
     formBody.set('__VIEWSTATE', viewState);
     formBody.set('__VIEWSTATEGENERATOR', viewStateGen);
     formBody.set('__EVENTVALIDATION', eventValidation);
-    formBody.set('ddlTerm', tcuTerm);
+    // Check if requested term exists in TCU's dropdown; if not, use page default
+    const termSelectRe = /<select[^>]+name="ddlTerm"[^>]*>([\s\S]*?)<\/select>/i;
+    const termSelectMatch = pageHtml.match(termSelectRe);
+    let effectiveTcuTerm = tcuTerm;
+    let termAvailable = true;
+    if (termSelectMatch) {
+      const hasOpt = new RegExp(`value="${tcuTerm}"`, 'i').test(termSelectMatch[1]);
+      if (!hasOpt) {
+        // Requested term not in TCU's dropdown — fall back to page default
+        effectiveTcuTerm = getSelectedValue(pageHtml, 'ddlTerm', tcuTerm);
+        termAvailable = false;
+      }
+    }
+    formBody.set('ddlTerm', effectiveTcuTerm);
     formBody.set('ddlSession', getSelectedValue(pageHtml, 'ddlSession', 'ANY'));
     formBody.set('ddlLocation', getSelectedValue(pageHtml, 'ddlLocation', 'ANY'));
     formBody.set('ddlSubject', subject);
@@ -405,7 +418,9 @@ module.exports = async function handler(req, res) {
             subjectFieldName,
             searchBtnName,
             postedFields: [...formBody.keys()],
-            tcuTerm,
+            tcuTermRequested: tcuTerm,
+            tcuTermUsed: effectiveTcuTerm,
+            termAvailable,
             formSubject: subject,
             termOptions,
             subjectOptions,
@@ -417,6 +432,10 @@ module.exports = async function handler(req, res) {
         }
       : {};
 
+    const termNote = !termAvailable
+      ? `Note: ${appTerm.slice(4,6)==='90'?'Fall':appTerm.slice(4,6)==='50'?'Summer':'Spring'} ${appTerm.slice(0,4)} is not yet available on classes.tcu.edu. Showing results for the closest available term.`
+      : null;
+
     if (sections.length === 0) {
       // Check if there's an error message in the page
       const msgMatch = resultHtml.match(
@@ -426,15 +445,19 @@ module.exports = async function handler(req, res) {
         /No classes were found/i,
       );
 
+      let detail = noResultsMatch
+        ? 'No classes were found matching your search criteria.'
+        : msgMatch
+          ? stripTags(msgMatch[1])
+          : `No results found (HTTP ${postRes.status}).`;
+      if (termNote) detail = termNote;
+
       return res.status(200).json({
         sections: [],
         totalCount: 0,
         term: appTerm,
-        detail: noResultsMatch
-          ? 'No classes were found matching your search criteria.'
-          : msgMatch
-            ? stripTags(msgMatch[1])
-            : `No results found (HTTP ${postRes.status}).`,
+        termAvailable,
+        detail,
         ...debugInfo,
       });
     }
@@ -443,6 +466,8 @@ module.exports = async function handler(req, res) {
       sections,
       totalCount: sections.length,
       term: appTerm,
+      termAvailable,
+      ...(termNote && { termNote }),
       ...debugInfo,
     });
   } catch (err) {

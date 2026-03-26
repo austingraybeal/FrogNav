@@ -11,6 +11,7 @@ const DEFAULTS = {
   lastName:          '',
   level:             'undergrad',
   majorProgram:      'Movement Science',
+  emphasis:          '',
   minorProgram:      '',
   honorsCollege:     false,
   startTerm:         'Fall 2026',
@@ -99,6 +100,22 @@ function syncMajorOptions() {
 
 levelSelect?.addEventListener('change', syncMajorOptions);
 syncMajorOptions(); // run once on page load
+
+// ── Health & Fitness emphasis / minor sync ────────────────────────────────────
+const emphasisField  = document.getElementById('emphasisField');
+const emphasisSelect = document.getElementById('emphasis');
+const minorSelect    = document.getElementById('minorProgram');
+
+function syncEmphasisAndMinor() {
+  const isHF = majorSelect.value === 'Health and Fitness';
+  emphasisField.hidden = !isHF;
+  if (!isHF) emphasisSelect.value = '';
+  minorSelect.disabled = isHF;
+  if (isHF) minorSelect.value = '';
+}
+
+majorSelect.addEventListener('change', syncEmphasisAndMinor);
+syncEmphasisAndMinor();
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── App state ─────────────────────────────────────────────────────────────────
@@ -126,6 +143,7 @@ function readProfile() {
     lastName:         String(data.get('lastName')        || '').trim(),
     level:            String(data.get('level') || 'undergrad').trim().toLowerCase() === 'grad' ? 'grad' : 'undergrad',
     majorProgram:     String(data.get('majorProgram')    || '').trim(),
+    emphasis:         String(data.get('emphasis')         || '').trim(),
     minorProgram:     String(data.get('minorProgram')    || '').trim(),
     honorsCollege:    Boolean(data.get('honorsCollege')),
     startTerm:        String(data.get('startTerm')        || '').trim(),

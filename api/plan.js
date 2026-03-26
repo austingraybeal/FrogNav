@@ -158,6 +158,11 @@ ${careerElectivesBlock}
 
 ${careerAdvisingNote}
 
+SCHEDULING CONFLICT RULES (MUST follow when assigning courses to terms):
+- NEVER schedule Exercise Physiology (KINE 30634) + Biomechanics (KINE 30623) + Physics (PHYS 10154) in the SAME semester. Spread these across different terms — at most two of these three may share a semester.
+- NEVER schedule any Chemistry course (CHEM 10113, CHEM 10125) in the SAME semester as Physics (PHYS 10154). These heavy lab-science courses must be in separate terms.
+If a conflict is unavoidable due to student constraints, add a policyWarning explaining it.
+
 KEY POLICIES:
 ${policyText}
 
@@ -269,6 +274,29 @@ function normalizePlan(raw, profile) {
    'Prerequisite sequencing assumed based on standard progression.']
     .forEach(line => { if (!assumptions.includes(line)) assumptions.push(line); });
 
+  // ── Scheduling conflict detection ──────────────────────────────────────────
+  const policyWarnings = (raw.policyWarnings || []).map(String);
+
+  const EXERCISE_PHYS = 'KINE 30634';
+  const BIOMECHANICS  = 'KINE 30623';
+  const PHYSICS       = 'PHYS 10154';
+  const CHEM_COURSES  = ['CHEM 10113', 'CHEM 10125'];
+
+  terms.forEach(t => {
+    const codes = (t.courses || []).map(c => String(c.code || '').toUpperCase().trim());
+    // Rule 1: Exercise Physiology + Biomechanics + Physics all in same term
+    if (codes.includes(EXERCISE_PHYS) && codes.includes(BIOMECHANICS) && codes.includes(PHYSICS)) {
+      const msg = `Scheduling conflict in ${t.term}: Exercise Physiology (KINE 30634), Biomechanics (KINE 30623), and Physics (PHYS 10154) are all in the same semester. Spread these across different terms.`;
+      if (!policyWarnings.includes(msg)) policyWarnings.push(msg);
+    }
+    // Rule 2: Chemistry + Physics in same term
+    const hasChem = CHEM_COURSES.some(ch => codes.includes(ch));
+    if (hasChem && codes.includes(PHYSICS)) {
+      const msg = `Scheduling conflict in ${t.term}: Chemistry and Physics (PHYS 10154) are in the same semester. These heavy lab-science courses should be in separate terms.`;
+      if (!policyWarnings.includes(msg)) policyWarnings.push(msg);
+    }
+  });
+
   return {
     planSummary: String(raw.planSummary || '').trim(),
     profileEcho: {
@@ -287,7 +315,7 @@ function normalizePlan(raw, profile) {
                ? item.status : 'Needs Review',
       notes:  String(item.notes  || '').trim(),
     })),
-    policyWarnings:    (raw.policyWarnings    || []).map(String),
+    policyWarnings,
     adjustmentOptions: (raw.adjustmentOptions || []).map(String),
     assumptions,
     questions: (raw.questions || []).map(String),

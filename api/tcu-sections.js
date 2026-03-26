@@ -356,78 +356,19 @@ module.exports = async function handler(req, res) {
     let postbackHtmlLen = 0;
     let postbackHasVS = false;
 
-    if (termAvailable && effectiveTcuTerm !== pageDefaultTerm) {
-      // Step 2a: ASP.NET postback to change the term dropdown
-      // This mimics the browser's __doPostBack('ddlTerm','') when user selects a different term
-      const termPostBody = new URLSearchParams();
-      termPostBody.set('__EVENTTARGET', 'ddlTerm');
-      termPostBody.set('__EVENTARGUMENT', '');
-      termPostBody.set('__VIEWSTATE', activeVS);
-      termPostBody.set('__VIEWSTATEGENERATOR', activeVSG);
-      termPostBody.set('__EVENTVALIDATION', activeEV);
-      termPostBody.set('ddlTerm', effectiveTcuTerm);
-      termPostBody.set('ddlSession', getSelectedValue(activeHtml, 'ddlSession', 'ANY'));
-      termPostBody.set('ddlLocation', getSelectedValue(activeHtml, 'ddlLocation', 'ANY'));
-      termPostBody.set('ddlSubject', 'ANY');
-      termPostBody.set('txtCrsNumber', '');
-      termPostBody.set('txtSection', '');
-      termPostBody.set('ddlAttribute', getSelectedValue(activeHtml, 'ddlAttribute', 'ANY'));
-      termPostBody.set('ddlLevel', getSelectedValue(activeHtml, 'ddlLevel', 'ANY'));
-      termPostBody.set('rbStatus', getRadioValue(activeHtml, 'rbStatus'));
-      termPostBody.set('ddlDay', getSelectedValue(activeHtml, 'ddlDay', 'ANY'));
-      termPostBody.set('ddlStartTime', getSelectedValue(activeHtml, 'ddlStartTime', 'ANY'));
-      termPostBody.set('ddlEndtime', getSelectedValue(activeHtml, 'ddlEndtime', 'ANY'));
-      termPostBody.set('hdnShowBldg', getHiddenValue(activeHtml, 'hdnShowBldg', 'Y'));
-
-      let termRes = await fetch(postUrl, {
-        method: 'POST',
-        headers: {
-          ...BROWSER_HEADERS,
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Cookie: cookieStr(jar),
-          Referer: TCU_URL,
-          Origin: 'https://classes.tcu.edu',
-        },
-        body: termPostBody.toString(),
-        redirect: 'manual',
-      });
-      collectCookies(termRes, jar);
-
-      // Follow redirects
-      let rc = 0;
-      while ([301, 302, 303, 307, 308].includes(termRes.status) && rc < 5) {
-        const loc = termRes.headers.get('location');
-        if (!loc) break;
-        termRes = await fetch(new URL(loc, postUrl).href, {
-          headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar), Referer: TCU_URL },
-          redirect: 'manual',
-        });
-        collectCookies(termRes, jar);
-        rc++;
-      }
-
-      activeHtml = await termRes.text();
-      activeVS = extractHidden(activeHtml, '__VIEWSTATE');
-      activeEV = extractHidden(activeHtml, '__EVENTVALIDATION');
-      activeVSG = extractHidden(activeHtml, '__VIEWSTATEGENERATOR');
-      didTermPostback = true;
-      postbackHtmlLen = activeHtml.length;
-      postbackHasVS = !!activeVS;
-    }
-
-    // Step 2b: Build and POST the search form
-    function buildSearchBody(vs, vsg, ev, html, termVal) {
+    // Helper: build a postback body (like __doPostBack)
+    function buildPostbackBody(vs, vsg, ev, html, eventTarget, overrides) {
       const body = new URLSearchParams();
-      body.set('__EVENTTARGET', '');
+      body.set('__EVENTTARGET', eventTarget);
       body.set('__EVENTARGUMENT', '');
       body.set('__VIEWSTATE', vs);
       body.set('__VIEWSTATEGENERATOR', vsg);
       body.set('__EVENTVALIDATION', ev);
-      body.set('ddlTerm', termVal);
-      body.set('ddlSession', getSelectedValue(html, 'ddlSession', 'ANY'));
+      body.set('ddlTerm', overrides.ddlTerm || getSelectedValue(html, 'ddlTerm', ''));
+      body.set('ddlSession', overrides.ddlSession || getSelectedValue(html, 'ddlSession', 'ANY'));
       body.set('ddlLocation', getSelectedValue(html, 'ddlLocation', 'ANY'));
-      body.set('ddlSubject', subject);
-      body.set('txtCrsNumber', courseNumber);
+      body.set('ddlSubject', overrides.ddlSubject || getSelectedValue(html, 'ddlSubject', 'ANY'));
+      body.set('txtCrsNumber', overrides.txtCrsNumber || '');
       body.set('txtSection', '');
       body.set('ddlAttribute', getSelectedValue(html, 'ddlAttribute', 'ANY'));
       body.set('ddlLevel', getSelectedValue(html, 'ddlLevel', 'ANY'));
@@ -435,11 +376,20 @@ module.exports = async function handler(req, res) {
       body.set('ddlDay', getSelectedValue(html, 'ddlDay', 'ANY'));
       body.set('ddlStartTime', getSelectedValue(html, 'ddlStartTime', 'ANY'));
       body.set('ddlEndtime', getSelectedValue(html, 'ddlEndtime', 'ANY'));
-      body.set(searchBtnName, 'Search');
       body.set('hdnShowBldg', getHiddenValue(html, 'hdnShowBldg', 'Y'));
       return body;
     }
 
+    // Check which dropdowns have AutoPostBack (onchange="__doPostBack(...)")
+    function hasAutoPostBack(html, fieldName) {
+      const re = new RegExp(`<select[^>]+name="${fieldName}"[^>]*onchange[^>]*__doPostBack`, 'i');
+      return re.test(html);
+    }
+
+    const termHasAutoPostBack = hasAutoPostBack(pageHtml, 'ddlTerm');
+    const subjectHasAutoPostBack = hasAutoPostBack(pageHtml, 'ddlSubject');
+
+    // Shared POST helper with redirect following and cookie preservation
     async function doPost(body) {
       let r = await fetch(postUrl, {
         method: 'POST',
@@ -466,6 +416,68 @@ module.exports = async function handler(req, res) {
         rc++;
       }
       return r;
+    }
+
+    if (termAvailable && effectiveTcuTerm !== pageDefaultTerm) {
+      // Step 2a: Postback to change the term dropdown
+      const termPostBody = buildPostbackBody(activeVS, activeVSG, activeEV, activeHtml, 'ddlTerm', {
+        ddlTerm: effectiveTcuTerm,
+      });
+
+      const termRes = await doPost(termPostBody);
+      activeHtml = await termRes.text();
+      activeVS = extractHidden(activeHtml, '__VIEWSTATE');
+      activeEV = extractHidden(activeHtml, '__EVENTVALIDATION');
+      activeVSG = extractHidden(activeHtml, '__VIEWSTATEGENERATOR');
+      didTermPostback = true;
+      postbackHtmlLen = activeHtml.length;
+      postbackHasVS = !!activeVS;
+    }
+
+    // Step 2a.5: If subject also has AutoPostBack, do a subject postback too
+    let didSubjectPostback = false;
+    if (subject !== 'ANY' && subject) {
+      const currentSubject = getSelectedValue(activeHtml, 'ddlSubject', 'ANY');
+      if (currentSubject !== subject) {
+        // Do a subject postback to set the subject before searching
+        const subjPostBody = buildPostbackBody(activeVS, activeVSG, activeEV, activeHtml, 'ddlSubject', {
+          ddlTerm: effectiveTcuTerm,
+          ddlSubject: subject,
+          txtCrsNumber: courseNumber,
+        });
+
+        const subjRes = await doPost(subjPostBody);
+        activeHtml = await subjRes.text();
+        activeVS = extractHidden(activeHtml, '__VIEWSTATE');
+        activeEV = extractHidden(activeHtml, '__EVENTVALIDATION');
+        activeVSG = extractHidden(activeHtml, '__VIEWSTATEGENERATOR');
+        didSubjectPostback = true;
+      }
+    }
+
+    // Step 2b: Build and POST the search form
+    function buildSearchBody(vs, vsg, ev, html, termVal) {
+      const body = new URLSearchParams();
+      body.set('__EVENTTARGET', '');
+      body.set('__EVENTARGUMENT', '');
+      body.set('__VIEWSTATE', vs);
+      body.set('__VIEWSTATEGENERATOR', vsg);
+      body.set('__EVENTVALIDATION', ev);
+      body.set('ddlTerm', termVal);
+      body.set('ddlSession', getSelectedValue(html, 'ddlSession', 'ANY'));
+      body.set('ddlLocation', getSelectedValue(html, 'ddlLocation', 'ANY'));
+      body.set('ddlSubject', subject);
+      body.set('txtCrsNumber', courseNumber);
+      body.set('txtSection', '');
+      body.set('ddlAttribute', getSelectedValue(html, 'ddlAttribute', 'ANY'));
+      body.set('ddlLevel', getSelectedValue(html, 'ddlLevel', 'ANY'));
+      body.set('rbStatus', getRadioValue(html, 'rbStatus'));
+      body.set('ddlDay', getSelectedValue(html, 'ddlDay', 'ANY'));
+      body.set('ddlStartTime', getSelectedValue(html, 'ddlStartTime', 'ANY'));
+      body.set('ddlEndtime', getSelectedValue(html, 'ddlEndtime', 'ANY'));
+      body.set(searchBtnName, 'Search');
+      body.set('hdnShowBldg', getHiddenValue(html, 'hdnShowBldg', 'Y'));
+      return body;
     }
 
     const formBody = buildSearchBody(activeVS, activeVSG, activeEV, activeHtml, effectiveTcuTerm);
@@ -519,6 +531,9 @@ module.exports = async function handler(req, res) {
             postbackHtmlLen,
             postbackHasVS,
             postbackSelectedTerm: didTermPostback ? getSelectedValue(activeHtml, 'ddlTerm', 'unknown') : 'N/A',
+            termHasAutoPostBack,
+            subjectHasAutoPostBack,
+            didSubjectPostback,
             didDoubleSearch,
             formSubject: subject,
             termOptions,

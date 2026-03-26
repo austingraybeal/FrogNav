@@ -332,6 +332,13 @@ module.exports = async function handler(req, res) {
 
     const resultHtml = await postRes.text();
 
+    // Check if TCU redirected to the error page
+    if (/err\.aspx/i.test(resultHtml) && /temporarily down/i.test(resultHtml)) {
+      return res.status(503).json({
+        detail: 'TCU Class Search is temporarily down. Please try again in a few minutes.',
+      });
+    }
+
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
 

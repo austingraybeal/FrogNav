@@ -88,12 +88,21 @@ function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
 
   // Gen-ed placeholders
    // Career-based course defaults
+  // When no career goal is set, default to Pre-PT/OT/PA track — the most common
+  // professional path for Kinesiology majors — so students get real course codes
+  // instead of generic placeholders.
   const career = careerDefaults?.careerTracks?.[profile.careerGoal] || null;
+  const defaultProTrack = careerDefaults?.careerTracks?.['Pre-PT/OT/DPT'] || null;
+  const effectiveCareer = career || defaultProTrack;
+  const careerGoalLabel = career ? profile.careerGoal : null;
 
   const genedList = (genedRules.buckets || []).map(b => {
-    const recommended = career?.genedRecommendations?.[b.id];
+    const recommended = effectiveCareer?.genedRecommendations?.[b.id];
     if (recommended && recommended.length) {
-      return `- ${b.name}: PREFER ${recommended.join(' or ')} (fits career goal: ${profile.careerGoal})`;
+      const reason = careerGoalLabel
+        ? `(fits career goal: ${careerGoalLabel})`
+        : '(default: professional-track-appropriate for PT/OT/PA)';
+      return `- ${b.name}: PREFER ${recommended.join(' or ')} ${reason}`;
     }
     return `- ${b.name}: use placeholder code "${b.placeholder}"`;
   }).join('\n') || '(none)';
@@ -109,6 +118,20 @@ function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
       `3. After exhausting career electives, fill remaining slots with TCU Core gen-ed courses (English, History, Government, Religion, Oral Communication, Cultural Awareness, Humanities, Social Sciences) — these are REQUIRED for graduation and must appear somewhere in the plan.\n` +
       `4. Only use FREE-ELECTIVE placeholders as a last resort when ALL career electives AND all TCU Core slots are filled.\n` +
       `5. A realistic 4-year plan should have NO MORE than 2-3 free elective placeholders total.`
+    : defaultProTrack?.freeElectiveRecommendations?.length
+    ? `No career goal selected — defaulting to professional-track (PT/OT/PA) electives.\n` +
+      `DEFAULT FREE ELECTIVE RECOMMENDATIONS (Pre-PT/OT/PA track):\n` +
+      defaultProTrack.freeElectiveRecommendations
+        .map(c => `- ${c.code} — ${c.title} (${c.credits} cr): ${c.notes}`)
+        .join('\n') +
+      `\n\nCRITICAL ELECTIVE RULES:\n` +
+      `1. Use the default elective recommendations above before using any generic FREE-ELECTIVE placeholder.\n` +
+      `2. Sequence electives strategically — prerequisites first, advanced courses later.\n` +
+      `3. After exhausting default electives, fill remaining slots with TCU Core gen-ed courses (English, History, Government, Religion, Oral Communication, Cultural Awareness, Humanities, Social Sciences) — these are REQUIRED for graduation and must appear somewhere in the plan.\n` +
+      `4. Only use FREE-ELECTIVE placeholders as a last resort when ALL default electives AND all TCU Core slots are filled.\n` +
+      `5. A realistic 4-year plan should have NO MORE than 2-3 free elective placeholders total.\n` +
+      `6. Ask the student about their career interests in the questions field.\n` +
+      `7. Add a nextStep button labeled "Set my career goal" with prompt "I'd like to set my career goal to get a more personalized plan. What are my options?"`
     : `No career goal selected.\n` +
       `CRITICAL: Fill free elective slots with TCU Core gen-ed courses (English, History, Government, Religion, Oral Communication, Cultural Awareness, Humanities, Social Sciences) — these are REQUIRED for graduation.\n` +
       `Ask the student about their career interests in the questions field.\n` +

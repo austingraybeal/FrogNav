@@ -319,18 +319,34 @@ module.exports = async function handler(req, res) {
 
     const formData = formBody;
 
-    const postRes = await fetch(postUrl, {
+    // Use manual redirect to preserve cookies across hops
+    let postRes = await fetch(postUrl, {
       method: 'POST',
       headers: {
         ...BROWSER_HEADERS,
         'Content-Type': 'application/x-www-form-urlencoded',
         Cookie: cookieStr(jar),
         Referer: TCU_URL,
+        Origin: 'https://classes.tcu.edu',
       },
       body: formData.toString(),
-      redirect: 'follow',
+      redirect: 'manual',
     });
     collectCookies(postRes, jar);
+
+    // Follow redirects manually, preserving cookies
+    let redirectCount = 0;
+    while ([301, 302, 303, 307, 308].includes(postRes.status) && redirectCount < 5) {
+      const location = postRes.headers.get('location');
+      if (!location) break;
+      const nextUrl = new URL(location, postUrl).href;
+      postRes = await fetch(nextUrl, {
+        headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar), Referer: TCU_URL },
+        redirect: 'manual',
+      });
+      collectCookies(postRes, jar);
+      redirectCount++;
+    }
 
     const resultHtml = await postRes.text();
 

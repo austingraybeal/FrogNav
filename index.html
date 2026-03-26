@@ -25,6 +25,10 @@
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         New Chat
       </button>
+      <button id="sidebarSectionsBtn" class="sidebar-action" type="button">
+        <span class="sidebar-action-icon">🔍</span>
+        <span class="sidebar-action-text">Check Live Sections</span>
+      </button>
     </div>
 
     <div class="sidebar-section">
@@ -151,12 +155,20 @@
           <option value="Movement Science">Movement Science</option>
           <option value="Health and Fitness">Health and Fitness</option>
           <option value="Physical Education">Physical Education</option>
-          <option value="Physical Education with Strength and Conditioning">PE with Strength & Conditioning</option>
+          <option value="Physical Education with Strength and Conditioning">PE with Strength & Conditioning (Coaching)</option>
           <option value="Movement Science/MS Athletic Training (MOSC 3+2)">Movement Science / AT (3+2)</option>
         </optgroup>
         <optgroup id="gradMajors" label="Graduate">
           <option value="Kinesiology, MS">Kinesiology, MS</option>
         </optgroup>
+      </select>
+    </div>
+    <div class="profile-field" id="emphasisField" hidden>
+      <label for="emphasis">Emphasis</label>
+      <select id="emphasis" name="emphasis">
+        <option value="">Select an emphasis</option>
+        <option value="Clinical">Clinical</option>
+        <option value="Advanced Strength and Conditioning">Advanced Strength and Conditioning</option>
       </select>
     </div>
     <div class="profile-field">
@@ -192,7 +204,7 @@
         <option value="Coaching/Strength and Conditioning">Coaching or Strength & Conditioning</option>
         <option value="Teaching/Physical Education">Teaching — Physical Education (K-12)</option>
         <option value="Sport and Exercise Psychology">Sport & Exercise Psychology (Grad School)</option>
-        <option value="Clinical/Allied Health">Clinical or Allied Health (non-MD)</option>
+        <option value="Clinical/Allied Health">Clinical or Health and Wellness Professional (non-MD)</option>
         <option value="Undecided">Undecided / Exploring Options</option>
       </select>
     </div>
@@ -294,8 +306,9 @@
       </div>
       <p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.75rem;">Search real-time course availability from classes.tcu.edu</p>
       <div class="sections-search-row">
+        <select id="sectionsTerm" style="min-width:155px;"></select>
         <input id="sectionsSubject" type="text" placeholder="Subject (e.g. KINE)" maxlength="6" />
-        <input id="sectionsCourse" type="text" placeholder="Course # (optional)" maxlength="10" />
+        <input id="sectionsCourse" type="text" placeholder="Course #" maxlength="10" />
         <button id="sectionsSearchBtn" class="sections-search-btn" type="button">Search</button>
       </div>
       <div id="sectionsStatus" style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;"></div>

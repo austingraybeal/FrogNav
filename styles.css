@@ -530,6 +530,7 @@ body {
 /* ── Sections search modal ──────────────────────────────────────────────── */
 #sectionsModal .sections-search-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -751,6 +752,15 @@ body::-webkit-scrollbar-button,
   font-size: 0.85rem;
   padding: 0.3rem 0;
   user-select: none;
+  list-style: none;
+}
+.plan-details-toggle summary::-webkit-details-marker { display: none; }
+.plan-details-toggle summary::before {
+  content: '▸ ';
+  display: inline;
+}
+.plan-details-toggle[open] summary::before {
+  content: '▾ ';
 }
 .plan-details-toggle summary:hover { color: var(--text); }
 .plan-details-toggle[open] summary { color: var(--text); }
@@ -759,6 +769,7 @@ body::-webkit-scrollbar-button,
 .next-steps { margin-top: 1.25rem; }
 .next-steps-label {
   font-size: 0.9rem;
+  font-weight: 600;
   color: var(--muted);
   margin: 0 0 0.6rem;
 }

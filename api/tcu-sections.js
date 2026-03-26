@@ -287,50 +287,202 @@ module.exports = async function handler(req, res) {
     }
 
     // Build form data using the exact field names found on the page
-    // First, find the actual field names for term and subject
     const termFieldName = allFields.find(f => /term/i.test(f) && !f.startsWith('__')) || 'ddlTerm';
     const subjectFieldName = allFields.find(f => /subj/i.test(f) && !f.startsWith('__')) || 'ddlSubject';
     const searchBtnName = allFields.find(f => /search|submit/i.test(f) && !f.startsWith('__')) || 'btnSearch';
 
-    // Step 2: POST the search form
-    // ASP.NET requires __EVENTTARGET and __EVENTARGUMENT even if empty
+    // Extract actual default values from the page HTML so __EVENTVALIDATION accepts them
+    function getSelectedValue(html, selectName, fallback) {
+      const selRe = new RegExp(`<select[^>]+name="${selectName}"[^>]*>([\\s\\S]*?)</select>`, 'i');
+      const selMatch = html.match(selRe);
+      if (!selMatch) return fallback;
+      // Look for selected option — handle both `selected ... value` and `value ... selected` orders
+      const selectedRe1 = /<option[^>]+selected[^>]+value="([^"]*)"/i;
+      const sm1 = selMatch[1].match(selectedRe1);
+      if (sm1) return sm1[1];
+      const selectedRe2 = /<option[^>]+value="([^"]*)"[^>]+selected/i;
+      const sm2 = selMatch[1].match(selectedRe2);
+      if (sm2) return sm2[1];
+      // Fall back to first option value
+      const firstRe = /<option[^>]+value="([^"]*)"/i;
+      const fm = selMatch[1].match(firstRe);
+      return fm ? fm[1] : fallback;
+    }
+
+    function getRadioValue(html, radioName) {
+      // Find all radio inputs with this name, then check which one has "checked"
+      const allRe = new RegExp(`<input[^>]+name="${radioName}"[^>]*>`, 'gi');
+      const radios = [];
+      let m;
+      while ((m = allRe.exec(html)) !== null) {
+        const tag = m[0];
+        const valMatch = tag.match(/value="([^"]*)"/i);
+        if (valMatch) {
+          radios.push({ value: valMatch[1], checked: /checked/i.test(tag) });
+        }
+      }
+      // Return checked radio's value
+      const checked = radios.find(r => r.checked);
+      if (checked) return checked.value;
+      // No checked attribute found — prefer the "All" or "Open" value (show all sections)
+      const allOrOpen = radios.find(r => /all|open/i.test(r.value));
+      if (allOrOpen) return allOrOpen.value;
+      // Fall back to first radio value
+      return radios.length > 0 ? radios[0].value : 'A';
+    }
+
+    function getHiddenValue(html, name, fallback) {
+      const re = new RegExp(`<input[^>]+name="${name}"[^>]+value="([^"]*)"`, 'i');
+      const m = html.match(re);
+      return m ? m[1] : fallback;
+    }
+
+    // Check if requested term differs from the page's default selected term
+    const pageDefaultTerm = getSelectedValue(pageHtml, 'ddlTerm', '');
+    let effectiveTcuTerm = tcuTerm;
+    let termAvailable = true;
+
+    // Check if requested term exists in TCU's dropdown
+    const termSelectRe = /<select[^>]+name="ddlTerm"[^>]*>([\s\S]*?)<\/select>/i;
+    const termSelectMatch = pageHtml.match(termSelectRe);
+    if (termSelectMatch) {
+      const hasOpt = new RegExp(`value="${tcuTerm}"`, 'i').test(termSelectMatch[1]);
+      if (!hasOpt) {
+        effectiveTcuTerm = pageDefaultTerm || tcuTerm;
+        termAvailable = false;
+      }
+    }
+
+    // Use working HTML state — if term differs from page default, do a postback first
+    let activeHtml = pageHtml;
+    let activeVS = viewState;
+    let activeEV = eventValidation;
+    let activeVSG = viewStateGen;
+    let didTermPostback = false;
+    let postbackHtmlLen = 0;
+    let postbackHasVS = false;
+
+    // Shared POST helper with redirect following and cookie preservation
+    async function doPost(body) {
+      let r = await fetch(postUrl, {
+        method: 'POST',
+        headers: {
+          ...BROWSER_HEADERS,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Cookie: cookieStr(jar),
+          Referer: TCU_URL,
+          Origin: 'https://classes.tcu.edu',
+        },
+        body: body.toString(),
+        redirect: 'manual',
+      });
+      collectCookies(r, jar);
+      let rc = 0;
+      while ([301, 302, 303, 307, 308].includes(r.status) && rc < 5) {
+        const loc = r.headers.get('location');
+        if (!loc) break;
+        r = await fetch(new URL(loc, postUrl).href, {
+          headers: { ...BROWSER_HEADERS, Cookie: cookieStr(jar), Referer: TCU_URL },
+          redirect: 'manual',
+        });
+        collectCookies(r, jar);
+        rc++;
+      }
+      return r;
+    }
+
+    // Extract raw select tag for debug
+    function getSelectTag(html, name) {
+      const re = new RegExp(`<select[^>]+name="${name}"[^>]*>`, 'i');
+      const m = html.match(re);
+      return m ? m[0] : 'not found';
+    }
+
+    // Extract all onchange handlers from the page
+    function getOnchangeHandlers(html) {
+      const handlers = [];
+      const re = /<select[^>]+name="([^"]+)"[^>]*onchange="([^"]+)"/gi;
+      let m;
+      while ((m = re.exec(html)) !== null) handlers.push({ name: m[1], onchange: m[2] });
+      return handlers;
+    }
+
+    // Step 2: Simple direct POST — like a browser: just change ddlTerm and click Search
+    // No postbacks needed since neither dropdown has AutoPostBack
     const formBody = new URLSearchParams();
     formBody.set('__EVENTTARGET', '');
     formBody.set('__EVENTARGUMENT', '');
     formBody.set('__VIEWSTATE', viewState);
     formBody.set('__VIEWSTATEGENERATOR', viewStateGen);
     formBody.set('__EVENTVALIDATION', eventValidation);
-    formBody.set('ddlTerm', tcuTerm);
-    formBody.set('ddlSession', 'ANY');
-    formBody.set('ddlLocation', 'ANY');
+    formBody.set('ddlTerm', effectiveTcuTerm);
+    formBody.set('ddlSession', getSelectedValue(pageHtml, 'ddlSession', 'ANY'));
+    formBody.set('ddlLocation', getSelectedValue(pageHtml, 'ddlLocation', 'ANY'));
     formBody.set('ddlSubject', subject);
     formBody.set('txtCrsNumber', courseNumber);
     formBody.set('txtSection', '');
-    formBody.set('ddlAttribute', 'ANY');
-    formBody.set('ddlLevel', 'ANY');
-    formBody.set('rbStatus', 'ANY');       // radio: Open / Closed / ANY
-    formBody.set('ddlDay', 'ANY');
-    formBody.set('ddlStartTime', 'ANY');
-    formBody.set('ddlEndtime', 'ANY');
-    formBody.set('btnSearch', 'Search');
-    formBody.set('hdnShowBldg', 'Y');
+    formBody.set('ddlAttribute', getSelectedValue(pageHtml, 'ddlAttribute', 'ANY'));
+    formBody.set('ddlLevel', getSelectedValue(pageHtml, 'ddlLevel', 'ANY'));
+    formBody.set('rbStatus', getRadioValue(pageHtml, 'rbStatus'));
+    formBody.set('ddlDay', getSelectedValue(pageHtml, 'ddlDay', 'ANY'));
+    formBody.set('ddlStartTime', getSelectedValue(pageHtml, 'ddlStartTime', 'ANY'));
+    formBody.set('ddlEndtime', getSelectedValue(pageHtml, 'ddlEndtime', 'ANY'));
+    formBody.set(searchBtnName, 'Search');
+    formBody.set('hdnShowBldg', getHiddenValue(pageHtml, 'hdnShowBldg', 'Y'));
 
-    const formData = formBody;
+    // Capture sent values for debug
+    const sentValues = debug ? {
+      ddlTerm: formBody.get('ddlTerm'),
+      ddlSession: formBody.get('ddlSession'),
+      ddlLocation: formBody.get('ddlLocation'),
+      ddlSubject: formBody.get('ddlSubject'),
+      txtCrsNumber: formBody.get('txtCrsNumber'),
+      ddlAttribute: formBody.get('ddlAttribute'),
+      ddlLevel: formBody.get('ddlLevel'),
+      rbStatus: formBody.get('rbStatus'),
+      btnSearch: formBody.get(searchBtnName),
+    } : null;
 
-    const postRes = await fetch(postUrl, {
-      method: 'POST',
-      headers: {
-        ...BROWSER_HEADERS,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Cookie: cookieStr(jar),
-        Referer: TCU_URL,
-      },
-      body: formData.toString(),
-      redirect: 'follow',
-    });
-    collectCookies(postRes, jar);
+    let postRes = await doPost(formBody);
+    let resultHtml = await postRes.text();
 
-    const resultHtml = await postRes.text();
+    // If no results table and term differs, try once more with response's VS
+    let didRetry = false;
+    if (termAvailable && effectiveTcuTerm !== pageDefaultTerm && !/<TABLE[^>]*class="results"/i.test(resultHtml)) {
+      const vs2 = extractHidden(resultHtml, '__VIEWSTATE');
+      const ev2 = extractHidden(resultHtml, '__EVENTVALIDATION');
+      const vsg2 = extractHidden(resultHtml, '__VIEWSTATEGENERATOR');
+      if (vs2) {
+        // Check what term is now selected in the response
+        const retryTermSelected = getSelectedValue(resultHtml, 'ddlTerm', '');
+
+        const retryBody = new URLSearchParams();
+        retryBody.set('__EVENTTARGET', '');
+        retryBody.set('__EVENTARGUMENT', '');
+        retryBody.set('__VIEWSTATE', vs2);
+        retryBody.set('__VIEWSTATEGENERATOR', vsg2);
+        retryBody.set('__EVENTVALIDATION', ev2);
+        retryBody.set('ddlTerm', effectiveTcuTerm);
+        retryBody.set('ddlSession', getSelectedValue(resultHtml, 'ddlSession', 'ANY'));
+        retryBody.set('ddlLocation', getSelectedValue(resultHtml, 'ddlLocation', 'ANY'));
+        retryBody.set('ddlSubject', subject);
+        retryBody.set('txtCrsNumber', courseNumber);
+        retryBody.set('txtSection', '');
+        retryBody.set('ddlAttribute', getSelectedValue(resultHtml, 'ddlAttribute', 'ANY'));
+        retryBody.set('ddlLevel', getSelectedValue(resultHtml, 'ddlLevel', 'ANY'));
+        retryBody.set('rbStatus', getRadioValue(resultHtml, 'rbStatus'));
+        retryBody.set('ddlDay', getSelectedValue(resultHtml, 'ddlDay', 'ANY'));
+        retryBody.set('ddlStartTime', getSelectedValue(resultHtml, 'ddlStartTime', 'ANY'));
+        retryBody.set('ddlEndtime', getSelectedValue(resultHtml, 'ddlEndtime', 'ANY'));
+        retryBody.set(searchBtnName, 'Search');
+        retryBody.set('hdnShowBldg', getHiddenValue(resultHtml, 'hdnShowBldg', 'Y'));
+
+        const postRes2 = await doPost(retryBody);
+        resultHtml = await postRes2.text();
+        postRes = postRes2;
+        didRetry = true;
+      }
+    }
 
     // Step 3: Parse the HTML results table
     const sections = parseResultsTable(resultHtml);
@@ -354,7 +506,16 @@ module.exports = async function handler(req, res) {
             subjectFieldName,
             searchBtnName,
             postedFields: [...formBody.keys()],
-            tcuTerm,
+            tcuTermRequested: tcuTerm,
+            tcuTermUsed: effectiveTcuTerm,
+            pageDefaultTerm,
+            termAvailable,
+            sentValues,
+            ddlTermTag: getSelectTag(pageHtml, 'ddlTerm'),
+            ddlSubjectTag: getSelectTag(pageHtml, 'ddlSubject'),
+            onchangeHandlers: getOnchangeHandlers(pageHtml),
+            sessionOptions: getSelectOptions(pageHtml, 'ddlSession'),
+            didRetry,
             formSubject: subject,
             termOptions,
             subjectOptions,
@@ -362,9 +523,14 @@ module.exports = async function handler(req, res) {
             step2_html_length: resultHtml.length,
             hasResultsTable: /<TABLE[^>]*class="results"/i.test(resultHtml),
             step2_snippet: resultHtml.slice(0, 2000),
+            step2_end_snippet: resultHtml.slice(-1500),
           },
         }
       : {};
+
+    const termNote = !termAvailable
+      ? `Note: ${appTerm.slice(4,6)==='90'?'Fall':appTerm.slice(4,6)==='50'?'Summer':'Spring'} ${appTerm.slice(0,4)} is not yet available on classes.tcu.edu. Showing results for the closest available term.`
+      : null;
 
     if (sections.length === 0) {
       // Check if there's an error message in the page
@@ -375,15 +541,19 @@ module.exports = async function handler(req, res) {
         /No classes were found/i,
       );
 
+      let detail = noResultsMatch
+        ? 'No classes were found matching your search criteria.'
+        : msgMatch
+          ? stripTags(msgMatch[1])
+          : `No results found (HTTP ${postRes.status}).`;
+      if (termNote) detail = termNote;
+
       return res.status(200).json({
         sections: [],
         totalCount: 0,
         term: appTerm,
-        detail: noResultsMatch
-          ? 'No classes were found matching your search criteria.'
-          : msgMatch
-            ? stripTags(msgMatch[1])
-            : `No results found (HTTP ${postRes.status}).`,
+        termAvailable,
+        detail,
         ...debugInfo,
       });
     }
@@ -392,6 +562,8 @@ module.exports = async function handler(req, res) {
       sections,
       totalCount: sections.length,
       term: appTerm,
+      termAvailable,
+      ...(termNote && { termNote }),
       ...debugInfo,
     });
   } catch (err) {

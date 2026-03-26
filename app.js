@@ -11,6 +11,7 @@ const DEFAULTS = {
   lastName:          '',
   level:             'undergrad',
   majorProgram:      'Movement Science',
+  emphasis:          '',
   minorProgram:      '',
   honorsCollege:     false,
   startTerm:         'Fall 2026',
@@ -99,6 +100,23 @@ function syncMajorOptions() {
 
 levelSelect?.addEventListener('change', syncMajorOptions);
 syncMajorOptions(); // run once on page load
+
+// ── Health & Fitness emphasis / minor sync ────────────────────────────────────
+const emphasisField  = document.getElementById('emphasisField');
+const emphasisSelect = document.getElementById('emphasis');
+const minorSelect    = document.getElementById('minorProgram');
+
+function syncEmphasisAndMinor() {
+  const isHF = majorSelect.value === 'Health and Fitness';
+  emphasisField.hidden   = !isHF;
+  emphasisSelect.disabled = !isHF;
+  if (!isHF) emphasisSelect.value = '';
+  minorSelect.disabled = isHF;
+  if (isHF) minorSelect.value = '';
+}
+
+majorSelect.addEventListener('change', syncEmphasisAndMinor);
+syncEmphasisAndMinor();
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── App state ─────────────────────────────────────────────────────────────────
@@ -126,6 +144,7 @@ function readProfile() {
     lastName:         String(data.get('lastName')        || '').trim(),
     level:            String(data.get('level') || 'undergrad').trim().toLowerCase() === 'grad' ? 'grad' : 'undergrad',
     majorProgram:     String(data.get('majorProgram')    || '').trim(),
+    emphasis:         String(data.get('emphasis')         || '').trim(),
     minorProgram:     String(data.get('minorProgram')    || '').trim(),
     honorsCollege:    Boolean(data.get('honorsCollege')),
     startTerm:        String(data.get('startTerm')        || '').trim(),
@@ -350,7 +369,7 @@ function renderAssistantPlan(container, planJson) {
     const details = document.createElement('details');
     details.className = 'plan-details-toggle';
     const summary = document.createElement('summary');
-    summary.textContent = 'ℹ️ Policies & Assumptions';
+    summary.textContent = 'Policies & Assumptions';
     details.appendChild(summary);
     if (planJson.policyWarnings?.length) {
       details.appendChild(listSection('Policy Warnings', planJson.policyWarnings));
@@ -1010,6 +1029,40 @@ const sectionsResults  = document.getElementById('sectionsResults');
 const sectionsStatus   = document.getElementById('sectionsStatus');
 const sectionsSubject  = document.getElementById('sectionsSubject');
 const sectionsCourse   = document.getElementById('sectionsCourse');
+const sectionsTerm     = document.getElementById('sectionsTerm');
+
+// Populate term dropdown with current and next terms
+(function populateTermOptions() {
+  if (!sectionsTerm) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const terms = [];
+  // Build a list of relevant terms
+  const termDefs = [
+    { suffix: '30', label: 'Spring' },
+    { suffix: '50', label: 'Summer' },
+    { suffix: '90', label: 'Fall' },
+  ];
+  // Current year terms
+  for (const t of termDefs) terms.push({ code: `${year}${t.suffix}`, label: `${t.label} ${year}` });
+  // Next year spring
+  terms.push({ code: `${year + 1}30`, label: `Spring ${year + 1}` });
+
+  // Pick a sensible default: current or upcoming term
+  let defaultCode;
+  if (month <= 5) defaultCode = `${year}30`;
+  else if (month <= 7) defaultCode = `${year}50`;
+  else defaultCode = `${year}90`;
+
+  for (const t of terms) {
+    const opt = document.createElement('option');
+    opt.value = t.code;
+    opt.textContent = t.label;
+    if (t.code === defaultCode) opt.selected = true;
+    sectionsTerm.appendChild(opt);
+  }
+})();
 
 function openSectionsModal() {
   if (sectionsModal) sectionsModal.hidden = false;
@@ -1020,6 +1073,10 @@ function closeSectionsModal() {
   if (sectionsModal) sectionsModal.hidden = true;
 }
 
+const sidebarSectionsBtn = document.getElementById('sidebarSectionsBtn');
+if (sidebarSectionsBtn) {
+  sidebarSectionsBtn.addEventListener('click', openSectionsModal);
+}
 if (closeSectionsBtn) {
   closeSectionsBtn.addEventListener('click', closeSectionsModal);
 }
@@ -1054,6 +1111,8 @@ async function searchLiveSections() {
   try {
     const params = new URLSearchParams({ subject });
     if (courseNum) params.set('course', courseNum);
+    const termCode = sectionsTerm?.value;
+    if (termCode) params.set('term', termCode);
 
     const response = await fetch(`/api/tcu-sections?${params}`);
     const payload = await response.json();
@@ -1065,9 +1124,11 @@ async function searchLiveSections() {
 
     const sections = payload.sections || [];
     if (sectionsStatus) {
-      sectionsStatus.textContent = sections.length
+      let statusMsg = sections.length
         ? `Found ${sections.length} section(s)`
-        : 'No sections found for this search.';
+        : (payload.detail || 'No sections found for this search.');
+      if (payload.termNote) statusMsg = payload.termNote + ' ' + statusMsg;
+      sectionsStatus.textContent = statusMsg;
     }
 
     sections.forEach(sec => {
@@ -1213,6 +1274,7 @@ if (saveProfileBtn) {
     profileSaveStatus.textContent = '✓ Saved';
     profileSaveStatus.classList.add('visible');
     setTimeout(() => profileSaveStatus.classList.remove('visible'), 2000);
+    profileModal.hidden = true;
   });
 }
 
@@ -1262,30 +1324,20 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 (function bootstrap() {
-  // Restore saved profile or apply defaults
-  const savedProfile = localStorage.getItem(PROFILE_KEY);
-  if (savedProfile) {
-    try   { applyProfile(JSON.parse(savedProfile)); }
-    catch { applyProfile(DEFAULTS); }
-  } else {
-    applyProfile(DEFAULTS);
-  }
+  // Clear stale data so every page visit starts fresh
+  localStorage.removeItem(PROFILE_KEY);
+  localStorage.removeItem(THREAD_KEY);
+  localStorage.removeItem(LAST_PLAN_KEY);
 
-  // Restore conversation history
-  const savedMessages = localStorage.getItem(THREAD_KEY);
-  if (savedMessages) {
-    try   { messages = JSON.parse(savedMessages); }
-    catch { messages = []; }
-  }
-
-  // Restore last plan
-  const savedPlan = localStorage.getItem(LAST_PLAN_KEY);
-  if (savedPlan) {
-    try   { lastPlan = JSON.parse(savedPlan); }
-    catch { lastPlan = null; }
-  }
+  // Start with defaults
+  applyProfile(DEFAULTS);
+  messages = [];
+  lastPlan = null;
 
   updateQuickActionLabels();
   updateSidebarProfile();
   renderThread();
+
+  // Auto-open profile modal so students know to fill it out
+  profileModal.hidden = false;
 })();

@@ -1029,6 +1029,40 @@ const sectionsResults  = document.getElementById('sectionsResults');
 const sectionsStatus   = document.getElementById('sectionsStatus');
 const sectionsSubject  = document.getElementById('sectionsSubject');
 const sectionsCourse   = document.getElementById('sectionsCourse');
+const sectionsTerm     = document.getElementById('sectionsTerm');
+
+// Populate term dropdown with current and next terms
+(function populateTermOptions() {
+  if (!sectionsTerm) return;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const terms = [];
+  // Build a list of relevant terms
+  const termDefs = [
+    { suffix: '30', label: 'Spring' },
+    { suffix: '50', label: 'Summer' },
+    { suffix: '90', label: 'Fall' },
+  ];
+  // Current year terms
+  for (const t of termDefs) terms.push({ code: `${year}${t.suffix}`, label: `${t.label} ${year}` });
+  // Next year spring
+  terms.push({ code: `${year + 1}30`, label: `Spring ${year + 1}` });
+
+  // Pick a sensible default: current or upcoming term
+  let defaultCode;
+  if (month <= 5) defaultCode = `${year}30`;
+  else if (month <= 7) defaultCode = `${year}50`;
+  else defaultCode = `${year}90`;
+
+  for (const t of terms) {
+    const opt = document.createElement('option');
+    opt.value = t.code;
+    opt.textContent = t.label;
+    if (t.code === defaultCode) opt.selected = true;
+    sectionsTerm.appendChild(opt);
+  }
+})();
 
 function openSectionsModal() {
   if (sectionsModal) sectionsModal.hidden = false;
@@ -1077,6 +1111,8 @@ async function searchLiveSections() {
   try {
     const params = new URLSearchParams({ subject });
     if (courseNum) params.set('course', courseNum);
+    const termCode = sectionsTerm?.value;
+    if (termCode) params.set('term', termCode);
 
     const response = await fetch(`/api/tcu-sections?${params}`);
     const payload = await response.json();

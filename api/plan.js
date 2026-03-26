@@ -226,6 +226,15 @@ OUTPUT SCHEMA (return this exact structure, no extra keys):
   "disclaimer": "string"
 }
 
+REVISION CONFIRMATION RULE:
+When the student has an EXISTING PLAN and requests a change (swap a course, move a course to a different semester, drop/add a course, change credit load, etc.), do NOT immediately regenerate the full plan. Instead, FIRST confirm the revision using the chat format below:
+1. Summarize exactly what you understand the student wants changed.
+2. Note any side effects (prerequisite shifts, credit-load changes, scheduling conflicts).
+3. Provide a "Yes, apply changes" nextStep button whose prompt repeats the revision request prefixed with "CONFIRMED: ".
+4. Optionally provide an "Adjust request" button if ambiguity exists.
+
+When the student's message starts with "CONFIRMED: ", skip confirmation and immediately apply the change — return the full plan schema with the revision applied.
+
 CONVERSATIONAL RESPONSES:
 If the student's message is casual conversation (greetings, thank-yous, general questions about kinesiology or TCU, clarifying questions NOT requesting a plan change), return this simpler JSON instead:
 {
@@ -235,7 +244,9 @@ If the student's message is casual conversation (greetings, thank-yous, general 
     { "label": "string — short button label (max 5 words)", "prompt": "string — full prompt to send" }
   ]
 }
-IMPORTANT: Only use the chat format for messages that clearly do NOT require building, modifying, or comparing a degree plan. If the action is "build", "add_minor", "honors", or "compare", ALWAYS return the full plan schema above — never return chat format for those. If in doubt, return the full plan schema.`;
+Also use the chat format for revision confirmations (see REVISION CONFIRMATION RULE above).
+
+IMPORTANT: Only use the chat format for messages that clearly do NOT require building, modifying, or comparing a degree plan, OR for confirming a revision before applying it. If the action is "build", "add_minor", "honors", or "compare", ALWAYS return the full plan schema above — never return chat format for those. If in doubt, return the full plan schema.`;
 }
 
 // ── Term ordering (for filtering stale terms) ─────────────────────────────────

@@ -1039,6 +1039,10 @@ function closeSectionsModal() {
   if (sectionsModal) sectionsModal.hidden = true;
 }
 
+const sidebarSectionsBtn = document.getElementById('sidebarSectionsBtn');
+if (sidebarSectionsBtn) {
+  sidebarSectionsBtn.addEventListener('click', openSectionsModal);
+}
 if (closeSectionsBtn) {
   closeSectionsBtn.addEventListener('click', closeSectionsModal);
 }

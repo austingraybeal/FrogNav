@@ -145,7 +145,7 @@
     },
 
     "Clinical/Allied Health": {
-      "label": "Clinical or Allied Health (non-MD)",
+      "label": "Clinical or Health and Wellness Professional (non-MD)",
       "applicableMajors": ["Health and Fitness", "Movement Science"],
       "description": "Optimizes plan for careers in clinical exercise physiology, cardiac rehab, corporate wellness, or allied health. Prioritizes health science, nutrition, and clinical coursework.",
       "genedRecommendations": {

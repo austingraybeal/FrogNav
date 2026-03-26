@@ -310,19 +310,22 @@ module.exports = async function handler(req, res) {
     }
 
     function getRadioValue(html, radioName) {
-      // Find checked radio, or fall back to last radio value (usually "all")
-      const checkedRe = new RegExp(`<input[^>]+name="${radioName}"[^>]+checked[^>]+value="([^"]*)"`, 'i');
-      const cm = html.match(checkedRe);
-      if (cm) return cm[1];
-      // Also try checked before value
-      const checkedRe2 = new RegExp(`<input[^>]+checked[^>]+name="${radioName}"[^>]+value="([^"]*)"`, 'i');
-      const cm2 = html.match(checkedRe2);
-      if (cm2) return cm2[1];
-      // Fall back: extract all radio values, return last one (usually "all/any")
-      const allRe = new RegExp(`<input[^>]+name="${radioName}"[^>]+value="([^"]*)"`, 'gi');
-      let last = null, m;
-      while ((m = allRe.exec(html)) !== null) last = m[1];
-      return last || 'A';
+      // Find all radio inputs with this name, then check which one has "checked"
+      const allRe = new RegExp(`<input[^>]+name="${radioName}"[^>]*>`, 'gi');
+      const radios = [];
+      let m;
+      while ((m = allRe.exec(html)) !== null) {
+        const tag = m[0];
+        const valMatch = tag.match(/value="([^"]*)"/i);
+        if (valMatch) {
+          radios.push({ value: valMatch[1], checked: /checked/i.test(tag) });
+        }
+      }
+      // Return checked radio's value
+      const checked = radios.find(r => r.checked);
+      if (checked) return checked.value;
+      // Fall back to last radio value (usually "all/any")
+      return radios.length > 0 ? radios[radios.length - 1].value : 'A';
     }
 
     function getHiddenValue(html, name, fallback) {

@@ -169,6 +169,18 @@ body {
   vertical-align: top;
 }
 
+.course-link {
+  cursor: pointer;
+  color: var(--purple-soft);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+.course-link:hover {
+  color: var(--purple);
+  text-decoration-style: solid;
+}
+
 .status {
   min-height: 1.1rem;
   text-align: center;

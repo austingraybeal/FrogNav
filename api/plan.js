@@ -233,12 +233,28 @@ OUTPUT SCHEMA (return this exact structure, no extra keys):
   "policyWarnings": ["string"],
   "adjustmentOptions": ["string"],
   "assumptions": ["string"],
-  "questions": ["string"],
+  "questions": ["string — see QUESTION GUIDELINES below"],
   "nextSteps": [
     { "label": "string — short button label (max 5 words)", "prompt": "string — full prompt to send" }
   ],
   "disclaimer": "string"
 }
+
+QUESTION GUIDELINES (for the "questions" field):
+Generate 2-4 thoughtful, personalized questions that will directly improve this specific student's plan. Questions should:
+- Be based on THIS student's profile, major, career goal (or lack of one), and current plan gaps
+- Reference specific details from their plan (e.g., "I noticed you have room in Spring 2028 — would you like to add a research methods course?")
+- Help uncover information that would change course recommendations (career goals, grad school plans, certification interests, scheduling preferences)
+- Feel like a conversation with a knowledgeable advisor, not a generic intake form
+- NEVER repeat questions the student has already answered in the conversation history
+- NEVER ask generic questions like "Do you have any questions?" or "Is there anything else?"
+- Frame each question so the student understands HOW their answer will improve the plan
+
+Examples of GOOD questions (adapt to the student's actual situation):
+- "Your plan includes the Pre-PT prerequisite courses. Are you targeting specific DPT programs? Some require additional courses like Medical Terminology."
+- "You have 3 credit hours of flexibility in Fall 2028. Would you prefer a research-focused elective like Independent Study, or a clinical one like Exercise Assessment?"
+- "Since you're in Movement Science without a career goal set, are you leaning toward graduate school, professional programs (PT/OT/PA), or entering the workforce directly? This changes which electives I'd recommend."
+- "I see you don't have a minor selected. Have you considered a Psychology minor? It pairs well with your emphasis and only requires 3 additional courses."
 
 REVISION CONFIRMATION RULE:
 When the student has an EXISTING PLAN and requests a change (swap a course, move a course to a different semester, drop/add a course, change credit load, etc.), do NOT immediately regenerate the full plan. Instead, FIRST confirm the revision using the chat format below:
@@ -677,6 +693,7 @@ module.exports = async function handler(req, res) {
   const action   = VALID_ACTIONS.has(body.action) ? body.action : 'chat';
   const message  = typeof body.message === 'string' ? body.message : '';
   const lastPlan = body.lastPlan && typeof body.lastPlan === 'object' ? body.lastPlan : null;
+  const conversationHistory = Array.isArray(body.conversationHistory) ? body.conversationHistory : [];
 
   // Load rules
   const kineFile  = path.join(process.cwd(), 'data',
@@ -695,8 +712,18 @@ module.exports = async function handler(req, res) {
   // Build prompt
   const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules, careerDefaults);
 
+  // Build conversation context from recent history
+  const historyBlock = conversationHistory.length > 0
+    ? `\nRECENT CONVERSATION (for context — do NOT repeat information already discussed):\n` +
+      conversationHistory
+        .filter(m => m.content && m.content.trim())
+        .map(m => `${m.role === 'user' ? 'Student' : 'FrogNav'}: ${String(m.content).slice(0, 300)}`)
+        .join('\n') +
+      '\n'
+    : '';
+
   const userMessage = lastPlan
-    ? `The student has an existing degree plan. Update or build on it based on their message — do NOT start from scratch. Preserve all existing terms and courses unless the student explicitly asks to change them.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}\n\nSTUDENT MESSAGE: ${message || action}`
+    ? `The student has an existing degree plan. Update or build on it based on their message — do NOT start from scratch. Preserve all existing terms and courses unless the student explicitly asks to change them.\n\nEXISTING PLAN:\n${JSON.stringify(lastPlan)}${historyBlock}\nSTUDENT MESSAGE: ${message || action}`
     : JSON.stringify({ action, profile, message });
 
   // Call Claude with timeout

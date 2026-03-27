@@ -656,6 +656,10 @@ async function callAssistant(userContent, action = 'chat') {
         action,
         lastPlan,
         message:  userContent,
+        conversationHistory: messages.slice(-10).map(m => ({
+          role: m.role,
+          content: m.content || m.planJson?.planSummary || '',
+        })),
       }),
     });
 

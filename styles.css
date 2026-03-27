@@ -373,6 +373,12 @@ body {
   .hub { padding-top: 2rem; }
   .quick-actions { grid-template-columns: 1fr; }
   .chat-thread { max-height: 48vh; }
+  .profile-banner {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 10px;
+    margin-bottom: 0.35rem;
+  }
 }
 
 .plan-section {

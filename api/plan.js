@@ -186,6 +186,11 @@ SCHEDULING CONFLICT RULES (MUST follow when assigning courses to terms):
 - NEVER schedule any Chemistry course (CHEM 10113, CHEM 10125) in the SAME semester as Physics (PHYS 10154). These heavy lab-science courses must be in separate terms.
 If a conflict is unavoidable due to student constraints, add a policyWarning explaining it.
 
+COURSE DISTRIBUTION RULES:
+- Spread TCU Core (gen-ed) courses across the FIRST 4 semesters (freshman and sophomore years). Students should NOT have a heavy load of gen-ed courses in junior/senior year — those semesters should focus on major, emphasis, and career-driven electives.
+- Each semester should have a balanced mix of major requirements and gen-ed courses, not clusters of one type.
+- Junior/Senior semesters (semesters 5-8) should be primarily major core, emphasis, foundation, and career-track elective courses.
+
 KEY POLICIES:
 ${policyText}
 
@@ -271,7 +276,7 @@ function normalizeChecklistStatus(status) {
     return 'Needs Review';
   }
   // Positive signals → Met
-  if (/\b(met|complete|satisfied|included|scheduled|distributed|covered|fulfilled|on track|all\b)/.test(s)) {
+  if (/\b(met|complete|satisfied|included|scheduled|distributed|covered|fulfilled|on track|most|all\b)/.test(s)) {
     return 'Met';
   }
   // Progress signals → Planned
@@ -399,64 +404,96 @@ function normalizePlan(raw, profile, careerDefaults) {
 
   // Free elective pool from career defaults
   const elecPool = (rpTrack?.freeElectiveRecommendations || []).slice();
-  // Track codes already in the plan
+  // Track codes already in the plan (real courses only)
   const usedCodes = new Set();
-  terms.forEach(t => (t.courses || []).forEach(c => usedCodes.add(String(c.code || '').toUpperCase().trim())));
+  terms.forEach(t => (t.courses || []).forEach(c => {
+    const code = String(c.code || '').toUpperCase().trim();
+    if (!code.startsWith('TCU-CORE') && !code.startsWith('GENED-') && !code.startsWith('FREE')) {
+      usedCodes.add(code);
+    }
+  }));
 
-  terms.forEach(t => {
-    t.courses = (t.courses || []).map(c => {
-      const code = String(c.code || '').toUpperCase().trim();
+  // Resolve a placeholder code into an actual course
+  function resolvePlaceholder(c) {
+    const code = String(c.code || '').toUpperCase().trim();
 
-      // Replace TCU-CORE-* placeholders
-      if (code.startsWith('TCU-CORE') || code.startsWith('GENED-')) {
-        // Check career-based gen-ed map first
-        const mapped = genedMap[code];
-        if (mapped && !usedCodes.has(mapped.code.toUpperCase())) {
-          usedCodes.add(mapped.code.toUpperCase());
-          return { code: mapped.code, title: mapped.title || c.title, credits: mapped.credits || c.credits, notes: mapped.notes || c.notes };
-        }
-        // Fall back to hardcoded defaults
-        const fb = genedFallbacks[code];
-        if (fb && !usedCodes.has(fb.code.toUpperCase())) {
+    // TCU-CORE-* or GENED-* → look up real course
+    if (code.startsWith('TCU-CORE') || code.startsWith('GENED-')) {
+      const mapped = genedMap[code];
+      if (mapped && !usedCodes.has(mapped.code.toUpperCase())) {
+        usedCodes.add(mapped.code.toUpperCase());
+        return { code: mapped.code, title: mapped.title || c.title, credits: mapped.credits || c.credits, notes: mapped.notes || c.notes };
+      }
+      const fb = genedFallbacks[code];
+      if (fb && !usedCodes.has(fb.code.toUpperCase())) {
+        usedCodes.add(fb.code.toUpperCase());
+        return { ...fb };
+      }
+      if (fb) return { ...fb };
+    }
+
+    // FREE-ELECTIVE → career elective, then gen-ed fallback
+    if (code === 'FREE-ELECTIVE' || code.startsWith('FREE-ELECTIVE') || code.startsWith('FREE')) {
+      const credits = c.credits || 3;
+      const idx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()) && e.credits === credits);
+      if (idx !== -1) {
+        const repl = elecPool[idx];
+        usedCodes.add(repl.code.toUpperCase());
+        return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+      }
+      const anyIdx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()));
+      if (anyIdx !== -1) {
+        const repl = elecPool[anyIdx];
+        usedCodes.add(repl.code.toUpperCase());
+        return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+      }
+      for (const fb of Object.values(genedFallbacks)) {
+        if (!usedCodes.has(fb.code.toUpperCase())) {
           usedCodes.add(fb.code.toUpperCase());
           return { ...fb };
         }
-        // If the specific code already used, still try to return any matching fallback
-        if (fb) {
-          return { ...fb, notes: fb.notes + ' (verify — may share slot with another course)' };
-        }
       }
+    }
+    return null;
+  }
 
-      // Replace FREE-ELECTIVE placeholders
-      if (code === 'FREE-ELECTIVE' || code.startsWith('FREE-ELECTIVE') || code.startsWith('FREE')) {
-        const credits = c.credits || 3;
-        // Try matching credit count first
-        const idx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()) && e.credits === credits);
-        if (idx !== -1) {
-          const repl = elecPool[idx];
-          usedCodes.add(repl.code.toUpperCase());
-          return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
-        }
-        // Try any unused career elective
-        const anyIdx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()));
-        if (anyIdx !== -1) {
-          const repl = elecPool[anyIdx];
-          usedCodes.add(repl.code.toUpperCase());
-          return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
-        }
-        // Last resort: use a gen-ed course that hasn't been placed yet
-        for (const fb of Object.values(genedFallbacks)) {
-          if (!usedCodes.has(fb.code.toUpperCase())) {
-            usedCodes.add(fb.code.toUpperCase());
-            return { ...fb };
-          }
-        }
+  // Pass 1: Pull all placeholders out of terms, resolve them, collect for redistribution
+  const maxCredits = toNum(profile.creditsPerTerm, 15);
+  const resolved = []; // courses to redistribute into early semesters
+  terms.forEach(t => {
+    const keep = [];
+    (t.courses || []).forEach(c => {
+      const code = String(c.code || '').toUpperCase().trim();
+      if (code.startsWith('TCU-CORE') || code.startsWith('GENED-') || code.startsWith('FREE')) {
+        const actual = resolvePlaceholder(c);
+        if (actual) resolved.push(actual);
+      } else {
+        keep.push(c);
       }
-
-      return c;
     });
-    t.totalCredits = t.courses.reduce((s, cc) => s + (cc.credits || 0), 0);
+    t.courses = keep;
+    t.totalCredits = keep.reduce((s, cc) => s + (cc.credits || 0), 0);
   });
+
+  // Pass 2: Distribute resolved courses into earliest semesters with room
+  // Spread core/gen-ed across the first ~6 semesters so students take them early
+  for (const course of resolved) {
+    let placed = false;
+    for (const t of terms) {
+      if (t.totalCredits + course.credits <= maxCredits) {
+        t.courses.push(course);
+        t.totalCredits += course.credits;
+        placed = true;
+        break;
+      }
+    }
+    // If no term has room under the cap, add to the least-loaded term
+    if (!placed) {
+      const lightest = terms.reduce((a, b) => a.totalCredits <= b.totalCredits ? a : b);
+      lightest.courses.push(course);
+      lightest.totalCredits += course.credits;
+    }
+  }
 
   // ── Scheduling conflict detection ──────────────────────────────────────────
   const policyWarnings = (raw.policyWarnings || []).map(String);

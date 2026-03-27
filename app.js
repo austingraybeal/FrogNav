@@ -391,14 +391,9 @@ function renderAssistantPlan(container, planJson) {
     const summarySection = document.createElement('section');
     summarySection.className = 'plan-section plan-summary-compact';
 
-    // Determine met vs needs-attention by checking status + notes for positive signals
-    const metPattern = /\b(met|complete|satisfied|included|scheduled|distributed|covered|fulfilled|on track|all\b)/i;
-    const needsPattern = /\b(need|missing|short|incomplete|not met|pending|under|below|review)\b/i;
+    // Status is now normalized server-side to: Met | In Progress | Planned | Needs Review
     function isMet(c) {
-      const text = `${c.status || ''} ${c.notes || ''}`;
-      if (needsPattern.test(text)) return false;
-      if (metPattern.test(text)) return true;
-      return false;
+      return c.status === 'Met' || c.status === 'Planned';
     }
 
     const met   = checklist.filter(isMet).length;

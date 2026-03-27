@@ -260,9 +260,28 @@ function termOrder(termStr) {
   return year * 3 + offset;
 }
 
+// ── Checklist status normalizer ───────────────────────────────────────────────
+
+function normalizeChecklistStatus(status) {
+  const canonical = ['Met', 'In Progress', 'Planned', 'Needs Review'];
+  if (canonical.includes(status)) return status;
+  const s = status.toLowerCase();
+  // Negative signals → Needs Review
+  if (/\b(need|missing|short|incomplete|not met|pending|under|below|review|lacks?)\b/.test(s)) {
+    return 'Needs Review';
+  }
+  // Positive signals → Met
+  if (/\b(met|complete|satisfied|included|scheduled|distributed|covered|fulfilled|on track|all\b)/.test(s)) {
+    return 'Met';
+  }
+  // Progress signals → Planned
+  if (/\b(planned|progress|partial)\b/.test(s)) return 'Planned';
+  return 'Needs Review';
+}
+
 // ── Response normalizer ───────────────────────────────────────────────────────
 
-function normalizePlan(raw, profile) {
+function normalizePlan(raw, profile, careerDefaults) {
   const defaultTerms = buildTermSequence(profile.startTerm);
 
   // Normalize terms — keep AI-generated, fill gaps with empty slots
@@ -308,6 +327,37 @@ function normalizePlan(raw, profile) {
    'Prerequisite sequencing assumed based on standard progression.']
     .forEach(line => { if (!assumptions.includes(line)) assumptions.push(line); });
 
+  // ── Replace FREE-ELECTIVE placeholders with career-track courses ──────────
+  const career = careerDefaults?.careerTracks?.[profile.careerGoal] || null;
+  const defaultTrack = careerDefaults?.careerTracks?.['Pre-PT/OT/DPT'] || null;
+  const effectiveTrack = career || defaultTrack;
+  const elecPool = (effectiveTrack?.freeElectiveRecommendations || []).slice();
+  // Track which replacements have already been used (by course code)
+  const usedCodes = new Set();
+  terms.forEach(t => (t.courses || []).forEach(c => usedCodes.add(String(c.code || '').toUpperCase().trim())));
+
+  terms.forEach(t => {
+    t.courses = (t.courses || []).map(c => {
+      const code = String(c.code || '').toUpperCase().trim();
+      if (code !== 'FREE-ELECTIVE' && !code.startsWith('FREE-ELECTIVE')) return c;
+      // Find next unused career elective that matches credit count
+      const credits = c.credits || 3;
+      const idx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()) && e.credits === credits);
+      if (idx === -1) {
+        // Try any unused career elective regardless of credits
+        const anyIdx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()));
+        if (anyIdx === -1) return c; // no replacements left
+        const repl = elecPool[anyIdx];
+        usedCodes.add(repl.code.toUpperCase());
+        return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+      }
+      const repl = elecPool[idx];
+      usedCodes.add(repl.code.toUpperCase());
+      return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+    });
+    t.totalCredits = t.courses.reduce((s, c) => s + (c.credits || 0), 0);
+  });
+
   // ── Scheduling conflict detection ──────────────────────────────────────────
   const policyWarnings = (raw.policyWarnings || []).map(String);
 
@@ -345,8 +395,7 @@ function normalizePlan(raw, profile) {
     terms,
     requirementChecklist: (raw.requirementChecklist || []).map(item => ({
       item:   String(item.item   || '').trim(),
-      status: ['Met','In Progress','Planned','Needs Review'].includes(item.status)
-               ? item.status : 'Needs Review',
+      status: normalizeChecklistStatus(String(item.status || '').trim()),
       notes:  String(item.notes  || '').trim(),
     })),
     policyWarnings,
@@ -510,5 +559,5 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  return res.status(200).json(normalizePlan(rawPlan, profile));
+  return res.status(200).json(normalizePlan(rawPlan, profile, careerDefaults));
 };

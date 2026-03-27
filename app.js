@@ -381,7 +381,7 @@ function renderAssistantPlan(container, planJson) {
     container.appendChild(termsSection);
   }
 
-  // Compact requirement summary + adjustments
+  // Compact requirement summary + adjustments + policies
   const checklist = Array.isArray(planJson.requirementChecklist)
     ? planJson.requirementChecklist : [];
   const adjustments = Array.isArray(planJson.adjustmentOptions)
@@ -400,22 +400,22 @@ function renderAssistantPlan(container, planJson) {
     const total = checklist.length;
     const needs = total - met;
 
-    // Conversational one-liner
-    const intro = document.createElement('p');
-    intro.className = 'summary-intro';
+    // Bold heading
+    const reqHeading = document.createElement('h4');
+    reqHeading.className = 'summary-heading';
     if (total === 0) {
-      intro.textContent = 'No requirement details available for this plan.';
+      reqHeading.textContent = 'Requirement Summary';
     } else if (needs === 0) {
-      intro.textContent = `All ${total} requirements look good — you're on track!`;
+      reqHeading.textContent = `All ${total} requirements look good — you're on track!`;
     } else {
-      intro.textContent = `${met} of ${total} requirements met — ${needs} still need${needs === 1 ? 's' : ''} attention.`;
+      reqHeading.textContent = `${met} of ${total} requirements met — ${needs} still need${needs === 1 ? 's' : ''} attention.`;
     }
-    summarySection.appendChild(intro);
+    summarySection.appendChild(reqHeading);
 
-    // Pill-style badges: green for met, amber for needs attention
+    // Pill-style badges: green for met, amber for needs attention — always stacked
     if (checklist.length) {
       const pills = document.createElement('div');
-      pills.className = 'summary-pills';
+      pills.className = 'summary-pills stacked';
       checklist.forEach(c => {
         const pill = document.createElement('span');
         pill.className = isMet(c) ? 'summary-pill met' : 'summary-pill';
@@ -428,7 +428,7 @@ function renderAssistantPlan(container, planJson) {
     // Adjustment options as collapsible
     if (adjustments.length) {
       const adjDetails = document.createElement('details');
-      adjDetails.className = 'plan-details-toggle';
+      adjDetails.className = 'plan-details-toggle adj-toggle';
       const adjSummary = document.createElement('summary');
       adjSummary.textContent = `${adjustments.length} Adjustment Option${adjustments.length === 1 ? '' : 's'}`;
       adjDetails.appendChild(adjSummary);
@@ -442,39 +442,74 @@ function renderAssistantPlan(container, planJson) {
       summarySection.appendChild(adjDetails);
     }
 
+    // Policies & Assumptions nested under adjustments (smaller font)
+    if (planJson.policyWarnings?.length || planJson.assumptions?.length) {
+      const polDetails = document.createElement('details');
+      polDetails.className = 'plan-details-toggle policies-nested';
+      const polSummary = document.createElement('summary');
+      polSummary.textContent = 'Policies & Assumptions';
+      polDetails.appendChild(polSummary);
+      if (planJson.policyWarnings?.length) {
+        polDetails.appendChild(listSection('Policy Warnings', planJson.policyWarnings));
+      }
+      if (planJson.assumptions?.length) {
+        polDetails.appendChild(listSection('Assumptions', planJson.assumptions));
+      }
+      summarySection.appendChild(polDetails);
+    }
+
     container.appendChild(summarySection);
   }
-  container.appendChild(listSection('Questions',          planJson.questions));
 
-  // Policy Warnings + Assumptions collapsed into a details toggle
-  if (
-    (planJson.policyWarnings?.length || planJson.assumptions?.length)
-  ) {
-    const details = document.createElement('details');
-    details.className = 'plan-details-toggle';
-    const summary = document.createElement('summary');
-    summary.textContent = 'Policies & Assumptions';
-    details.appendChild(summary);
-    if (planJson.policyWarnings?.length) {
-      details.appendChild(listSection('Policy Warnings', planJson.policyWarnings));
-    }
-    if (planJson.assumptions?.length) {
-      details.appendChild(listSection('Assumptions', planJson.assumptions));
-    }
-    container.appendChild(details);
+  // Questions — conversational framing
+  const questions = Array.isArray(planJson.questions) && planJson.questions.length
+    ? planJson.questions : [];
+  if (questions.length) {
+    const qSection = document.createElement('section');
+    qSection.className = 'plan-section';
+    const qHeading = document.createElement('h4');
+    qHeading.className = 'section-heading-lg';
+    qHeading.textContent = 'Help Us Personalize Your Plan';
+    qSection.appendChild(qHeading);
+    const qIntro = document.createElement('p');
+    qIntro.className = 'questions-intro';
+    qIntro.textContent = 'Answering these questions helps us align your schedule with your career goals and program requirements.';
+    qSection.appendChild(qIntro);
+    const qList = document.createElement('ul');
+    questions.forEach(q => {
+      const li = document.createElement('li');
+      li.textContent = String(q || '');
+      qList.appendChild(li);
+    });
+    qSection.appendChild(qList);
+    container.appendChild(qSection);
   }
 
-  // What's next
-  if (Array.isArray(planJson.nextSteps) && planJson.nextSteps.length) {
+  // What's next — always include default options + AI-generated ones
+  {
     const nextSection = document.createElement('section');
     nextSection.className = 'plan-section next-steps';
-    const nextHeading = document.createElement('p');
-    nextHeading.className = 'next-steps-label';
+    const nextHeading = document.createElement('h4');
+    nextHeading.className = 'section-heading-lg';
     nextHeading.textContent = 'What would you like to do next?';
     nextSection.appendChild(nextHeading);
     const btnRow = document.createElement('div');
     btnRow.className = 'next-steps-btns';
-    planJson.nextSteps.forEach(step => {
+
+    // Always-present default buttons
+    const defaults = [
+      { label: 'Make changes to my schedule', prompt: 'I\'d like to make some changes to my current schedule. What are my options?' },
+      { label: 'Download my course schedule', prompt: 'Please generate a downloadable version of my current degree plan.' },
+    ];
+
+    // AI-generated steps (deduplicate against defaults)
+    const aiSteps = Array.isArray(planJson.nextSteps) ? planJson.nextSteps : [];
+    const allSteps = [...aiSteps.filter(s => {
+      const lbl = (s.label || '').toLowerCase();
+      return !lbl.includes('download') && !lbl.includes('make changes');
+    }), ...defaults];
+
+    allSteps.forEach(step => {
       const btn = document.createElement('button');
       btn.className = 'next-step-btn';
       btn.textContent = step.label;

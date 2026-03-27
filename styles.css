@@ -348,25 +348,40 @@ body {
   padding: 0.6rem 0.75rem;
   background: rgba(126, 77, 255, 0.05);
 }
-.summary-intro {
-  font-size: 0.88rem;
-  line-height: 1.4;
+/* Summary heading */
+.summary-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.45rem;
   color: var(--text);
+}
+/* Section headings (Questions, What's next) */
+.section-heading-lg {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem;
+  color: var(--text);
+}
+/* Questions intro */
+.questions-intro {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0 0 0.4rem;
+  line-height: 1.4;
 }
 .summary-pills {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   gap: 0.3rem;
   margin-top: 0.4rem;
 }
 .summary-pill {
   display: inline-flex;
   align-items: center;
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  white-space: nowrap;
+  width: fit-content;
   background: rgba(255, 170, 50, 0.15);
   color: #d4890a;
   border: 1px solid rgba(255, 170, 50, 0.25);
@@ -375,6 +390,11 @@ body {
   background: rgba(50, 205, 100, 0.12);
   color: #3cc966;
   border-color: rgba(50, 205, 100, 0.22);
+}
+/* Adjustment toggle — bold, larger */
+.plan-summary-compact .adj-toggle summary {
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 .plan-summary-compact .plan-details-toggle {
   margin-top: 0.45rem;
@@ -385,6 +405,21 @@ body {
   display: grid;
   gap: 0.25rem;
   font-size: 0.85rem;
+}
+/* Policies nested — smaller than adjustments */
+.policies-nested {
+  margin-top: 0.3rem;
+}
+.policies-nested summary {
+  font-size: 0.78rem !important;
+  font-weight: 400 !important;
+}
+.policies-nested ul {
+  font-size: 0.78rem !important;
+}
+.policies-nested h4 {
+  font-size: 0.8rem;
+  margin: 0.2rem 0 0.15rem;
 }
 
 .plan-section.has-table {
@@ -833,12 +868,6 @@ body::-webkit-scrollbar-button,
 
 /* ── What's next ─────────────────────────────────────────────────────────── */
 .next-steps { margin-top: 1.25rem; }
-.next-steps-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--muted);
-  margin: 0 0 0.6rem;
-}
 .next-steps-btns {
   display: flex;
   flex-wrap: wrap;

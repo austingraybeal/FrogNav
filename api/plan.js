@@ -730,36 +730,54 @@ module.exports = async function handler(req, res) {
   const controller  = new AbortController();
   const abortTimer  = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [2000, 4000, 8000]; // exponential backoff
   let response;
-  try {
-    response = await fetch(ANTHROPIC_URL, {
-      method:  'POST',
-      signal:  controller.signal,
-      headers: {
-        'x-api-key':         process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type':      'application/json',
-      },
-      body: JSON.stringify({
-        model:      MODEL,
-        max_tokens: 4096,
-        system:     systemPrompt,
-        messages:   [{ role: 'user', content: userMessage }],
-      }),
-    });
-  } catch (fetchError) {
-    clearTimeout(abortTimer);
-    if (fetchError?.name === 'AbortError') {
-      return err(res, 504, 'Request to AI model timed out. Please try again.', 'FROGNAV_TIMEOUT');
+  let payload;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      response = await fetch(ANTHROPIC_URL, {
+        method:  'POST',
+        signal:  controller.signal,
+        headers: {
+          'x-api-key':         process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type':      'application/json',
+        },
+        body: JSON.stringify({
+          model:      MODEL,
+          max_tokens: 4096,
+          system:     systemPrompt,
+          messages:   [{ role: 'user', content: userMessage }],
+        }),
+      });
+    } catch (fetchError) {
+      clearTimeout(abortTimer);
+      if (fetchError?.name === 'AbortError') {
+        return err(res, 504, 'Request to AI model timed out. Please try again.', 'FROGNAV_TIMEOUT');
+      }
+      return err(res, 502, `Network error: ${fetchError.message}`, 'FROGNAV_NETWORK_ERROR');
     }
-    return err(res, 502, `Network error: ${fetchError.message}`, 'FROGNAV_NETWORK_ERROR');
+
+    // If overloaded (529) and we have retries left, wait and try again
+    if (response.status === 529 && attempt < MAX_RETRIES - 1) {
+      console.log(`[plan] 529 Overloaded — retrying in ${RETRY_DELAYS[attempt]}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+      await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+      continue;
+    }
+
+    break;
   }
   clearTimeout(abortTimer);
 
   // Parse Claude response
-  const payload = await response.json().catch(() => ({}));
+  payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const msg = payload?.error?.message || 'Upstream model request failed.';
+    if (response.status === 529) {
+      return err(res, 529, 'The AI is currently busy. Please wait a moment and try again.', 'FROGNAV_OVERLOADED');
+    }
     return err(res, response.status, String(msg).slice(0, 240), 'FROGNAV_API_ERROR');
   }
 

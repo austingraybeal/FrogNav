@@ -1114,6 +1114,15 @@ body::-webkit-scrollbar-button,
   -webkit-text-fill-color: var(--text);
   transition: background-color 5000s ease-in-out 0s;
 }
+/* Hide native number input spinners */
+.profile-field input[type="number"]::-webkit-inner-spin-button,
+.profile-field input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.profile-field input[type="number"] {
+  -moz-appearance: textfield;
+}
 .profile-upload-btn {
   background: var(--panel-soft);
   border: 1px dashed var(--border);

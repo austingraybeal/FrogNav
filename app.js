@@ -1020,24 +1020,60 @@ if (plusBtn && toolMenuPopover) {
   });
 }
 
+// ── Tool chips (attachment-style) ─────────────────────────────────────────────
+const composerChips = document.getElementById('composerChips');
+let activeToolChip = null; // { tool, label, icon, promptPrefix }
+
+const CHIP_TOOLS = {
+  research: { label: 'Deep Research',     icon: '🔬', placeholder: 'Ask a detailed question...',       promptPrefix: '[DEEP RESEARCH MODE] Provide an in-depth, comprehensive analysis: ' },
+  map:      { label: 'Visual Map',         icon: '🗺️', placeholder: 'Describe what to visualize...',    promptPrefix: 'Generate a visual semester-by-semester flowchart of my current degree plan. ' },
+};
+
+function addToolChip(tool) {
+  const info = CHIP_TOOLS[tool];
+  if (!info) return;
+  // Only one chip at a time
+  removeToolChip();
+  activeToolChip = { tool, ...info };
+
+  composerChips.hidden = false;
+  composerChips.innerHTML = '';
+  const chip = document.createElement('span');
+  chip.className = 'composer-chip';
+  chip.innerHTML = `<span class="chip-icon">${info.icon}</span><span class="chip-label">${info.label}</span><button type="button" class="chip-remove" aria-label="Remove">&times;</button>`;
+  chip.querySelector('.chip-remove').addEventListener('click', removeToolChip);
+  composerChips.appendChild(chip);
+
+  chatInput.placeholder = info.placeholder;
+  chatInput.focus();
+}
+
+function removeToolChip() {
+  activeToolChip = null;
+  if (composerChips) {
+    composerChips.innerHTML = '';
+    composerChips.hidden = true;
+  }
+  chatInput.placeholder = 'Message FrogNav...';
+}
+
 // ── Tool action handlers ─────────────────────────────────────────────────────
 function handleToolAction(tool) {
+  // Instant-action tools execute immediately
   switch (tool) {
     case 'upload':
       transcriptFileInput.click();
-      break;
+      return;
     case 'pdf':
       handleExportPDF();
-      break;
-    case 'map':
-      handleVisualMap();
-      break;
-    case 'research':
-      handleDeepResearch();
-      break;
+      return;
     case 'sections':
       openSectionsModal();
-      break;
+      return;
+  }
+  // Chip-based tools: attach chip to composer
+  if (CHIP_TOOLS[tool]) {
+    addToolChip(tool);
   }
 }
 
@@ -1144,28 +1180,7 @@ function handleExportPDF() {
   setStatus('PDF print dialog opened.');
 }
 
-// ── Generate Visual Map ──────────────────────────────────────────────────────
-function handleVisualMap() {
-  if (!lastPlan) {
-    setStatus('Build a plan first before generating a visual map.', true);
-    return;
-  }
-  const prompt = `Generate a visual semester-by-semester flowchart of my current degree plan. Show prerequisites as arrows between courses, highlight courses that are currently in my plan, and indicate which requirements each course fulfills.`;
-  callAssistant(prompt, 'chat');
-}
-
-// ── Deep Research ────────────────────────────────────────────────────────────
-function handleDeepResearch() {
-  const input = chatInput.value.trim();
-  if (!input) {
-    setStatus('Type a question first, then click Deep Research.', true);
-    chatInput.focus();
-    return;
-  }
-  const prompt = `[DEEP RESEARCH MODE] Provide an in-depth, comprehensive analysis: ${input}`;
-  chatInput.value = '';
-  callAssistant(prompt, 'chat');
-}
+// ── (Visual Map and Deep Research now use composer chips — see CHIP_TOOLS) ──
 
 // ── Check Live Sections ──────────────────────────────────────────────────────
 const sectionsModal   = document.getElementById('sectionsModal');
@@ -1332,7 +1347,14 @@ chatComposer.addEventListener('submit', event => {
   const content = chatInput.value.trim();
   if (!content || loading) return;
   chatInput.value = '';
-  callAssistant(content, 'chat');
+
+  // If a tool chip is active, wrap the prompt with the tool context
+  let prompt = content;
+  if (activeToolChip) {
+    prompt = activeToolChip.promptPrefix + content;
+    removeToolChip();
+  }
+  callAssistant(prompt, 'chat');
 });
 
 // ── Profile form listeners ────────────────────────────────────────────────────

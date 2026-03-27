@@ -1152,6 +1152,12 @@ body::-webkit-scrollbar-button,
   border-color: var(--purple);
   background: rgba(116, 78, 205, 0.08);
 }
+.profile-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
 .profile-field--inline label {
   display: flex;
   align-items: center;

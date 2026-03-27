@@ -223,6 +223,55 @@ ${policyText}
 REQUIRED DISCLAIMER (end the disclaimer field with this exactly):
 ${REQUIRED_DISCLAIMER}
 
+SCHEDULING AWARENESS — KINE/HLTH Course Offering Patterns:
+Use this data when placing courses into semesters. Do NOT schedule a Fall-only course in Spring or vice versa.
+
+FALL ONLY courses (do NOT place in Spring):
+- KINE 20403 PHED For Elem Sch Children (TR)
+- KINE 30343 Theory of Coaching (MWF)
+- KINE 30723 Sociology of Sport (TR)
+- KINE 30733 Exercise Psychology (TR)
+- KINE 40103 Seminar in Kinesiology (TR)
+- KINE 40313 Sport Skills Techn & Analysis (TR)
+- KINE 40513 Principles of Strength & Cond (MWF)
+
+SPRING ONLY courses (do NOT place in Fall):
+- KINE 30443 Coaching Pedagogy & Practice (TR)
+- KINE 40543 Adv Strength and Conditioning (MWF)
+- KINE 40623 PE For Secondary Youth (TR)
+- HLTH 40203 Study Of Human Disease (TR)
+
+FALL + SPRING courses (available both semesters):
+- KINE 10101 Introduction to Kinesiology (8-week, MW)
+- KINE 10603 Anatomical Kinesiology (MWF)
+- KINE 20313 Foundations of Sport Injuries (TR)
+- KINE 30403 Motor Behavior (MWF)
+- KINE 30423 Motor Development (MWF)
+- KINE 30523 Exercise Assessment & Prescription (MWF)
+- KINE 30623 Biomechanics (Fall: MWF, Spring: TR — days change by semester)
+- KINE 30634 Exercise Physiology (MWF + lab on a separate day)
+- KINE 30833 Phys Activity and Disability (TR)
+- KINE 30843 Neuromuscular Pathophysiology (TR)
+- KINE 30713 Psychology of Sport (Spring, TR)
+- HLTH 20203 Health & Wellness Concepts (TR or single day)
+- HLTH 30203 Health & Stress Management (mixed days)
+- HLTH 30213 Health Aspects of Human Sexuality (TR)
+- HLTH 30423 Nutrition & Physical Activity (TR)
+
+COURSES WITH LABS:
+- KINE 30634 Exercise Physiology — lecture MWF + 1 lab day (M, T, W, or R depending on section)
+
+DAY PATTERNS for constraint checking:
+- MWF courses: KINE 10603, 30403, 30423, 30523, 30623 (Fall), 30634, 30343 (Fall), 40513 (Fall), 40543 (Spring)
+- TR courses: KINE 20313, 20403 (Fall), 30623 (Spring), 30723 (Fall), 30733 (Fall), 30833, 30843, 40103 (Fall), 40313 (Fall), 30713 (Spring), HLTH 20203, 30213, 30423, 40203 (Spring)
+
+CONSTRAINT RULES:
+- If student says "No Friday classes": flag all MWF courses. Suggest TR alternatives where available.
+- If student says "No classes before 10am": note that morning sections are common. Check availability.
+- KINE 30623 (Biomechanics) switches from MWF in Fall to TR in Spring — if student has MWF constraints, suggest Spring.
+- KINE 30634 (Exercise Physiology) labs require a separate day block — warn students with tight schedules.
+- For any affected course add a note: "Heads up: [COURSE] is typically offered [DAYS] — this may conflict with your [CONSTRAINT]. Register early or consider taking it in [ALT SEMESTER] instead."
+
 OUTPUT SCHEMA (return this exact structure, no extra keys):
 {
   "planSummary": "string — 2-3 sentence overview",

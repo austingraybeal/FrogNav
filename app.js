@@ -570,12 +570,16 @@ function positionComposer(hasMessages) {
       eg.style.position = 'fixed';
       eg.style.left = '50%';
       eg.style.width = 'min(780px, 92vw)';
-      // Wait for layout before measuring position
+      // Center greeting between header bottom and composer top
       requestAnimationFrame(() => {
-        const rect = composerWrap.getBoundingClientRect();
+        const header = document.querySelector('.hub-header');
+        const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+        const composerTop = composerWrap.getBoundingClientRect().top;
+        const egHeight = eg.getBoundingClientRect().height;
+        const midpoint = headerBottom + (composerTop - headerBottom) / 2 - egHeight / 2;
         eg.style.transform = 'translateX(-50%)';
-eg.style.left = 'calc(220px + (100vw - 220px) / 2)';
-eg.style.top = (rect.top - 60) + 'px';
+        eg.style.left = 'calc(220px + (100vw - 220px) / 2)';
+        eg.style.top = Math.max(headerBottom + 8, midpoint) + 'px';
       });
     }
   }

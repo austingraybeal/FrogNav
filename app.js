@@ -1123,9 +1123,17 @@ if (profileUploadBtn && profileTranscriptInput) {
   });
 }
 
-// Select Completed Courses button — opens checklist modal
-document.getElementById('openChecklistBtn2')?.addEventListener('click', () => {
-  document.getElementById('checklistModal').hidden = false;
+// Select Completed Courses button — loads courses then opens checklist modal
+document.getElementById('openChecklistBtn2')?.addEventListener('click', async () => {
+  const profile = readProfile();
+  try {
+    const response = await fetch(`/api/checklist-courses?level=${encodeURIComponent(profile.level)}&major=${encodeURIComponent(profile.majorProgram)}`);
+    const payload  = await response.json().catch(() => ({ courses: [] }));
+    buildChecklistGroups(Array.isArray(payload.courses) ? payload.courses : []);
+  } catch {
+    buildChecklistGroups([]);
+  }
+  openChecklist();
 });
 
 // Type My Courses button — toggles the textarea

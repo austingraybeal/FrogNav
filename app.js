@@ -1653,7 +1653,11 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
   // Show profile banner + sidebar glow if no saved profile
   if (!localStorage.getItem(PROFILE_KEY)) {
     const banner = document.getElementById('profileBanner');
-    if (banner) banner.hidden = false;
+    if (banner) {
+      banner.hidden = false;
+      banner.classList.add('profile-glow');
+      banner.addEventListener('animationend', () => banner.classList.remove('profile-glow'));
+    }
     const card = document.getElementById('openProfileBtn');
     if (card) {
       card.classList.add('profile-glow');

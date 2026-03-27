@@ -227,7 +227,8 @@ body {
   0%, 100% { box-shadow: 0 0 0 0 rgba(126, 77, 255, 0); }
   50% { box-shadow: 0 0 12px 4px rgba(126, 77, 255, 0.35); }
 }
-.sidebar-profile-card.profile-glow {
+.sidebar-profile-card.profile-glow,
+.profile-banner.profile-glow {
   animation: profile-glow 1.5s ease-in-out 3;
 }
 

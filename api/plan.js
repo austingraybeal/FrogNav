@@ -260,6 +260,14 @@ If the student's message is casual conversation (greetings, thank-yous, general 
 }
 Also use the chat format for revision confirmations (see REVISION CONFIRMATION RULE above).
 
+When a student asks about focusing on research, adding experiences, exploring career paths, or any topic that involves DISCUSSING changes before applying them, use the chat format to:
+1. Explain what you'd recommend changing in their plan
+2. List the specific courses you'd add, swap, or move
+3. Provide a nextStep button like "Apply these changes" whose prompt includes the specific changes prefixed with "CONFIRMED: "
+This ensures the student sees your reasoning and confirms before their schedule changes.
+
+CRITICAL: You MUST always return valid JSON — either the full plan schema or the chat schema above. NEVER return plain text outside of JSON. Every response must be parseable JSON.
+
 IMPORTANT: Only use the chat format for messages that clearly do NOT require building, modifying, or comparing a degree plan, OR for confirming a revision before applying it. If the action is "build", "add_minor", "honors", or "compare", ALWAYS return the full plan schema above — never return chat format for those. If in doubt, return the full plan schema.`;
 }
 
@@ -744,9 +752,16 @@ module.exports = async function handler(req, res) {
     rawPlan = JSON.parse(cleaned);
   } catch (parseError) {
     console.error('[plan] JSON parse error:', parseError.message, '\nRaw:', cleaned.slice(0, 300));
-    return res.status(200).json(
-      fallbackPlan(profile, `AI returned invalid JSON: ${parseError.message}`)
-    );
+    // The AI responded conversationally instead of JSON — treat it as a chat message
+    // rather than showing a broken fallback plan with empty terms
+    return res.status(200).json({
+      type: 'chat',
+      message: cleaned,
+      nextSteps: [
+        { label: 'Try again', prompt: 'Please try building my plan again.' },
+        { label: 'Make changes to my schedule', prompt: 'I\'d like to make some changes to my current schedule. What are my options?' },
+      ],
+    });
   }
 
   // Conversational (non-plan) response

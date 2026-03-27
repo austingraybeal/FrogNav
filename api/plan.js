@@ -295,7 +295,7 @@ function normalizeChecklistStatus(status) {
 
 // ── Response normalizer ───────────────────────────────────────────────────────
 
-function normalizePlan(raw, profile, careerDefaults) {
+function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
   const defaultTerms = buildTermSequence(profile.startTerm);
 
   // Normalize terms — keep AI-generated, fill gaps with empty slots
@@ -544,20 +544,57 @@ function normalizePlan(raw, profile, careerDefaults) {
       const allCodes = new Set();
       terms.forEach(t => (t.courses || []).forEach(c => allCodes.add(String(c.code || '').toUpperCase().trim())));
 
-      // Courses that satisfy TCU Core Math requirement
-      const MATH_CORE = ['MATH 10033','MATH 10043','MATH 10283','MATH 10524','MATH 20524'];
-      const hasMathCore = MATH_CORE.some(m => allCodes.has(m));
+      // Build a set of which core areas are satisfied by courses in the plan
+      const coreMap = (coreCodeMap && coreCodeMap.courses) || {};
+      const satisfiedCores = new Set();
+      allCodes.forEach(code => {
+        const cores = coreMap[code];
+        if (cores) cores.forEach(c => satisfiedCores.add(c));
+      });
+
+      // Map core area codes to keywords that might appear in checklist items
+      const coreKeywords = {
+        'MTH':  /\b(math|mathematical|calculus|statistics)\b/i,
+        'NSC':  /\b(natural science|science|lab|biology|chemistry|physics)\b/i,
+        'OCO':  /\b(oral comm|communication|speech)\b/i,
+        'WCO':  /\b(written comm|composition|writing)\b/i,
+        'WEM':  /\b(writing emphasis)\b/i,
+        'HUM':  /\b(humanities)\b/i,
+        'SSC':  /\b(social science)\b/i,
+        'HT':   /\b(historical traditions|history)\b/i,
+        'LT':   /\b(literary traditions|literature)\b/i,
+        'RT':   /\b(religious traditions|religion)\b/i,
+        'FAR':  /\b(fine arts?)\b/i,
+        'CA':   /\b(cultural awareness)\b/i,
+        'GA':   /\b(global awareness)\b/i,
+        'CSV':  /\b(citizenship|social values)\b/i,
+      };
 
       return (raw.requirementChecklist || []).map(item => {
         const itemText = String(item.item || '').trim();
         let status = normalizeChecklistStatus(String(item.status || '').trim());
         let notes  = String(item.notes || '').trim();
+        const combined = itemText + ' ' + notes;
 
-        // Override: if a math-related requirement is flagged but a valid math course exists
-        if (hasMathCore && status !== 'Met' && /\b(math|mathematical)\b/i.test(itemText + ' ' + notes)) {
-          const found = MATH_CORE.find(m => allCodes.has(m));
-          status = 'Met';
-          notes = notes ? notes : `${found} satisfies TCU Core Math requirement`;
+        // If a TCU Core-related item is flagged as unmet, check if courses
+        // in the plan actually satisfy that core area
+        if (status !== 'Met' && /\b(core|gen.?ed|general education|tcu core)\b/i.test(combined)) {
+          // Check each core area — if the checklist item mentions it and it's satisfied, override
+          for (const [coreCode, pattern] of Object.entries(coreKeywords)) {
+            if (pattern.test(combined) && satisfiedCores.has(coreCode)) {
+              status = 'Met';
+              break;
+            }
+          }
+          // If the item generically says "TCU Core" without specifying an area,
+          // check if most core areas are covered
+          if (status !== 'Met' && !/math|science|comm|hum|history|liter|relig|arts?|cultur|global|citizen/i.test(combined)) {
+            const totalAreas = Object.keys(coreKeywords).length;
+            if (satisfiedCores.size >= totalAreas * 0.7) {
+              status = 'Met';
+              notes = notes || `${satisfiedCores.size} of ${totalAreas} core areas satisfied by scheduled courses`;
+            }
+          }
         }
 
         return { item: itemText, status, notes };
@@ -644,6 +681,8 @@ module.exports = async function handler(req, res) {
     : { buckets: [] };
   const careerDefaultsFile = path.join(process.cwd(), 'data', 'career_defaults.json');
   const careerDefaults = loadJson(careerDefaultsFile) || { careerTracks: {} };
+  const coreCodeMapFile = path.join(process.cwd(), 'data', 'core_code_map.json');
+  const coreCodeMap = loadJson(coreCodeMapFile) || { courses: {} };
 
   // Build prompt
   const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules, careerDefaults);
@@ -724,5 +763,5 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  return res.status(200).json(normalizePlan(rawPlan, profile, careerDefaults));
+  return res.status(200).json(normalizePlan(rawPlan, profile, careerDefaults, coreCodeMap));
 };

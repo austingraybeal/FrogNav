@@ -385,11 +385,31 @@ body {
   background: rgba(255, 170, 50, 0.15);
   color: #d4890a;
   border: 1px solid rgba(255, 170, 50, 0.25);
+  font-family: inherit;
 }
 .summary-pill.met {
   background: rgba(50, 205, 100, 0.12);
   color: #3cc966;
   border-color: rgba(50, 205, 100, 0.22);
+}
+/* Clickable amber fix pills */
+button.summary-pill.fix {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  gap: 0.4rem;
+}
+button.summary-pill.fix:hover {
+  background: rgba(255, 170, 50, 0.28);
+  border-color: rgba(255, 170, 50, 0.5);
+  box-shadow: 0 0 6px rgba(255, 170, 50, 0.2);
+}
+.fix-hint {
+  font-size: 0.68rem;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+button.summary-pill.fix:hover .fix-hint {
+  opacity: 1;
 }
 /* Adjustment toggle — bold, larger */
 .plan-summary-compact .adj-toggle summary {

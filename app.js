@@ -412,15 +412,32 @@ function renderAssistantPlan(container, planJson) {
     }
     summarySection.appendChild(reqHeading);
 
-    // Pill-style badges: green for met, amber for needs attention — always stacked
+    // Pill-style badges: green for met, amber (clickable) for needs attention
     if (checklist.length) {
       const pills = document.createElement('div');
       pills.className = 'summary-pills stacked';
       checklist.forEach(c => {
-        const pill = document.createElement('span');
-        pill.className = isMet(c) ? 'summary-pill met' : 'summary-pill';
-        pill.textContent = c.item + (c.notes ? ` — ${c.notes}` : '');
-        pills.appendChild(pill);
+        const label = c.item + (c.notes ? ` — ${c.notes}` : '');
+        if (isMet(c)) {
+          const pill = document.createElement('span');
+          pill.className = 'summary-pill met';
+          pill.textContent = label;
+          pills.appendChild(pill);
+        } else {
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = 'summary-pill fix';
+          pill.innerHTML = `${label} <span class="fix-hint">⟶ Tap to fix</span>`;
+          pill.addEventListener('click', () => {
+            callAssistant(
+              `The requirement "${c.item}" needs attention (${c.notes || c.status}). ` +
+              `Please review my current schedule and tell me exactly what course(s) I should add, swap, or move to fully satisfy this requirement. ` +
+              `Show me the specific changes and let me confirm before applying them.`,
+              'chat'
+            );
+          });
+          pills.appendChild(pill);
+        }
       });
       summarySection.appendChild(pills);
     }

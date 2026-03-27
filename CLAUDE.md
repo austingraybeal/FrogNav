@@ -28,3 +28,12 @@ Pure HTML/CSS/JS. Deployed on Vercel via auto-deploy from main.
    the fix is ALWAYS in normalizePlan() — expand isPlaceholder(), add the new pattern to
    genedAliases, or extend the keyword catch-all. NEVER rely on prompt instructions alone
    to prevent placeholders; the server MUST catch them.
+
+## PROTECTED: Elective & Core Course Defaulting Logic
+The elective/core defaulting hierarchy in /api/plan.js is LOCKED. Do NOT change:
+- The 5-tier priority order (Major → Minor/Emphasis → Career Goal → Chat Context → Default Fallback)
+- The default fallback courses (Movement Science + pre-professional PT/OT/PA track)
+- The instruction to avoid generic placeholders when a real course applies
+- Any of the career goal → course mapping examples
+
+If a task requires modifying elective logic, change ONLY the specific part requested. Do not reorganize the hierarchy, remove tiers, or change the fallback defaults.

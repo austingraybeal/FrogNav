@@ -696,6 +696,17 @@ function renderThread() {
       prose.innerHTML = renderMarkdown(message.content);
       node.appendChild(prose);
 
+      // Render mermaid diagram if present
+      if (message.mermaidSyntax) {
+        const mermaidContainer = document.createElement('div');
+        mermaidContainer.className = 'mermaid-container';
+        const mermaidDiv = document.createElement('div');
+        mermaidDiv.className = 'mermaid';
+        mermaidDiv.textContent = message.mermaidSyntax;
+        mermaidContainer.appendChild(mermaidDiv);
+        node.appendChild(mermaidContainer);
+      }
+
       // Render next-step buttons for chat responses
       if (Array.isArray(message.chatNextSteps) && message.chatNextSteps.length) {
         const btnRow = document.createElement('div');
@@ -861,6 +872,68 @@ async function callResearch(userContent) {
   } finally {
     setLoading(false);
     renderThread();
+  }
+}
+
+// ── Generate Visual Map ──────────────────────────────────────────────────────
+async function handleGenerateMap() {
+  if (!lastPlan) {
+    setStatus('Build a degree plan first, then I can generate your visual map.', true);
+    return;
+  }
+
+  messages.push({ role: 'user', content: 'Generate a visual map of my degree plan.' });
+  renderThread();
+  persistConversation();
+
+  setLoading(true);
+  setStatus('Generating visual map...');
+
+  try {
+    const response = await fetch('/api/map', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile:  readProfile(),
+        lastPlan: lastPlan,
+      }),
+    });
+
+    const raw = await response.text();
+    let payload = null;
+    try   { payload = raw ? JSON.parse(raw) : null; }
+    catch { payload = null; }
+
+    if (!response.ok) {
+      const detail = payload?.detail || `Map generation failed (${response.status}).`;
+      throw new Error(detail);
+    }
+
+    if (!payload || !payload.mermaid) {
+      throw new Error('No map data returned from backend.');
+    }
+
+    // Store the mermaid syntax in the message so it renders as a map
+    messages.push({
+      role:    'assistant',
+      content: 'Here is your visual degree plan map:',
+      mermaidSyntax: payload.mermaid,
+    });
+
+    setStatus('Ready.');
+  } catch (error) {
+    messages.push({
+      role:    'assistant',
+      content: error.message || 'Map generation failed.',
+    });
+    setStatus(error.message || 'Map generation failed.', true);
+  } finally {
+    setLoading(false);
+    renderThread();
+    // Render mermaid diagrams after thread is in the DOM
+    try {
+      await mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+    } catch (_) { /* mermaid parse error — diagram still shows raw syntax */ }
   }
 }
 
@@ -1161,7 +1234,6 @@ let activeToolChip = null; // { tool, label, icon, promptPrefix }
 
 const CHIP_TOOLS = {
   research: { label: 'Deep Research',     icon: '🔬', placeholder: 'Ask a detailed question...',       promptPrefix: '[DEEP RESEARCH MODE] Provide an in-depth, comprehensive analysis: ' },
-  map:      { label: 'Visual Map',         icon: '🗺️', placeholder: 'Describe what to visualize...',    promptPrefix: 'Generate a visual semester-by-semester flowchart of my current degree plan. ' },
 };
 
 function addToolChip(tool) {
@@ -1204,6 +1276,9 @@ function handleToolAction(tool) {
       return;
     case 'sections':
       openSectionsModal();
+      return;
+    case 'map':
+      handleGenerateMap();
       return;
   }
   // Chip-based tools: attach chip to composer

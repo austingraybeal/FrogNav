@@ -199,6 +199,19 @@ body {
   text-decoration-style: solid;
 }
 
+.mermaid-container {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+.mermaid-container .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
 .status {
   min-height: 1.1rem;
   text-align: center;

@@ -175,6 +175,15 @@ ${minorBlock}
 TCU CORE (GEN-ED) PLACEHOLDERS — use these codes exactly for unspecified core slots:
 ${genedList}
 
+TCU CORE MATHEMATICAL REASONING REQUIREMENT:
+Any ONE of the following courses satisfies the TCU Core Math requirement:
+- MATH 10033 — Topics in Mathematics (3 cr)
+- MATH 10043 — Elementary Statistics (3 cr)
+- MATH 10283 — Applied Calculus (3 cr)
+- MATH 10524 — Calculus I (4 cr)
+- MATH 20524 — Calculus II (4 cr)
+If ANY of these courses appears in the student's schedule, the TCU Core Math requirement IS MET. Do NOT flag it as unmet. The student's degree program may require additional math courses beyond core — those are separate requirements.
+
 CAREER GOAL: ${profile.careerGoal || 'Not set — ask the student in the questions field'}
 
 ${careerElectivesBlock}
@@ -375,7 +384,7 @@ function normalizePlan(raw, profile, careerDefaults) {
     'TCU-CORE-SOSC': { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
     'TCU-CORE-SSC':  { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
     'TCU-CORE-SOC':  { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
-    'TCU-CORE-MATH': { code: 'MATH 10043', title: 'Elementary Statistics', credits: 3, notes: 'TCU Core Math requirement' },
+    'TCU-CORE-MATH': { code: 'MATH 10043', title: 'Elementary Statistics', credits: 3, notes: 'TCU Core Math requirement (also satisfied by MATH 10033, 10283, 10524, or 20524)' },
     'TCU-CORE-FA':   { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
     'TCU-CORE-FAR':  { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
     'TCU-CORE-FINE': { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
@@ -530,11 +539,30 @@ function normalizePlan(raw, profile, careerDefaults) {
       creditsPerTerm:   toNum(raw.profileEcho?.creditsPerTerm ?? profile.creditsPerTerm, 15),
     },
     terms,
-    requirementChecklist: (raw.requirementChecklist || []).map(item => ({
-      item:   String(item.item   || '').trim(),
-      status: normalizeChecklistStatus(String(item.status || '').trim()),
-      notes:  String(item.notes  || '').trim(),
-    })),
+    requirementChecklist: (() => {
+      // Collect all course codes in the plan for requirement validation
+      const allCodes = new Set();
+      terms.forEach(t => (t.courses || []).forEach(c => allCodes.add(String(c.code || '').toUpperCase().trim())));
+
+      // Courses that satisfy TCU Core Math requirement
+      const MATH_CORE = ['MATH 10033','MATH 10043','MATH 10283','MATH 10524','MATH 20524'];
+      const hasMathCore = MATH_CORE.some(m => allCodes.has(m));
+
+      return (raw.requirementChecklist || []).map(item => {
+        const itemText = String(item.item || '').trim();
+        let status = normalizeChecklistStatus(String(item.status || '').trim());
+        let notes  = String(item.notes || '').trim();
+
+        // Override: if a math-related requirement is flagged but a valid math course exists
+        if (hasMathCore && status !== 'Met' && /\b(math|mathematical)\b/i.test(itemText + ' ' + notes)) {
+          const found = MATH_CORE.find(m => allCodes.has(m));
+          status = 'Met';
+          notes = notes ? notes : `${found} satisfies TCU Core Math requirement`;
+        }
+
+        return { item: itemText, status, notes };
+      });
+    })(),
     policyWarnings,
     adjustmentOptions: (raw.adjustmentOptions || []).map(String),
     assumptions,

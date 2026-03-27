@@ -59,9 +59,13 @@
           "hours": 3,
           "outcome": "Apply mathematical reasoning to solve problems.",
           "commonCourses": [
+            "MATH 10033 Topics in Mathematics",
             "MATH 10043 Elementary Statistics",
-            "MATH 10054 Precalculus with Trigonometry"
-          ]
+            "MATH 10283 Applied Calculus",
+            "MATH 10524 Calculus I",
+            "MATH 20524 Calculus II"
+          ],
+          "notes": "Any one of these courses satisfies the TCU Core Mathematical Reasoning requirement. Degree programs may require additional math beyond core."
         },
         {
           "id": "NSC",

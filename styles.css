@@ -1023,6 +1023,7 @@ body::-webkit-scrollbar-button,
   gap: 0.3rem;
   margin-bottom: 0.65rem;
 }
+.profile-field[hidden] { display: none; }
 .profile-field:last-child { margin-bottom: 0; }
 .profile-field label {
   font-size: 0.82rem;

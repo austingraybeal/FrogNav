@@ -977,13 +977,6 @@ quickActionButtons.forEach(button => {
     }
 
     const prompt = quickActionPrompt(action, profile);
-
-    // Show checklist interstitial if completedCourses is empty
-    if (!profile.completedCourses && profile.level === 'undergrad') {
-      openChecklistForAction(action, prompt);
-      return;
-    }
-
     callAssistant(prompt, action);
   });
 });

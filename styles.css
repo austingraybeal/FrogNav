@@ -368,6 +368,11 @@ body {
   color: #d4890a;
   border: 1px solid rgba(255, 170, 50, 0.25);
 }
+.summary-pill.met {
+  background: rgba(50, 205, 100, 0.15);
+  color: #2ebd5e;
+  border-color: rgba(50, 205, 100, 0.25);
+}
 .plan-summary-compact .plan-details-toggle {
   margin-top: 0.45rem;
 }

@@ -391,8 +391,17 @@ function renderAssistantPlan(container, planJson) {
     const summarySection = document.createElement('section');
     summarySection.className = 'plan-section plan-summary-compact';
 
-    // Status counts
-    const met   = checklist.filter(c => /met|complete|satisfied/i.test(c.status)).length;
+    // Determine met vs needs-attention by checking status + notes for positive signals
+    const metPattern = /\b(met|complete|satisfied|included|scheduled|distributed|covered|fulfilled|on track|all\b)/i;
+    const needsPattern = /\b(need|missing|short|incomplete|not met|pending|under|below|review)\b/i;
+    function isMet(c) {
+      const text = `${c.status || ''} ${c.notes || ''}`;
+      if (needsPattern.test(text)) return false;
+      if (metPattern.test(text)) return true;
+      return false;
+    }
+
+    const met   = checklist.filter(isMet).length;
     const total = checklist.length;
     const needs = total - met;
 
@@ -408,18 +417,16 @@ function renderAssistantPlan(container, planJson) {
     }
     summarySection.appendChild(intro);
 
-    // Pill-style badges for items needing attention
-    if (needs > 0) {
+    // Pill-style badges: green for met, amber for needs attention
+    if (checklist.length) {
       const pills = document.createElement('div');
       pills.className = 'summary-pills';
-      checklist
-        .filter(c => !/met|complete|satisfied/i.test(c.status))
-        .forEach(c => {
-          const pill = document.createElement('span');
-          pill.className = 'summary-pill';
-          pill.textContent = c.item + (c.notes ? ` — ${c.notes}` : '');
-          pills.appendChild(pill);
-        });
+      checklist.forEach(c => {
+        const pill = document.createElement('span');
+        pill.className = isMet(c) ? 'summary-pill met' : 'summary-pill';
+        pill.textContent = c.item + (c.notes ? ` — ${c.notes}` : '');
+        pills.appendChild(pill);
+      });
       summarySection.appendChild(pills);
     }
 

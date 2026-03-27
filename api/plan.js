@@ -442,19 +442,19 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
   const genedRecs = rpTrack?.genedRecommendations || {};
   // Map various placeholder patterns the AI might use to the career defaults keys
   const genedAliases = {
-    'GENED-COMM':    ['TCU-CORE-ORAL', 'TCU-CORE-OCO', 'GENED-COMM', 'TCU-CORE-COMM', 'ORAL-CORE', 'ORAL-COMM-CORE', 'SPEECH-CORE'],
-    'GENED-ENGLISH': ['TCU-CORE-WCO', 'TCU-CORE-WCO1', 'TCU-CORE-WCO2', 'TCU-CORE-WEM', 'TCU-CORE-ENGLISH', 'GENED-ENGLISH', 'TCU-CORE-WRIT', 'ENGLISH-CORE', 'WRITING-CORE', 'COMP-CORE'],
-    'GENED-MATH':    ['TCU-CORE-MATH', 'GENED-MATH', 'MATH-CORE'],
-    'GENED-SCI-NAT': ['TCU-CORE-NSC', 'TCU-CORE-SCI', 'GENED-SCI-NAT', 'TCU-CORE-NAT', 'SCIENCE-CORE', 'SCI-CORE', 'NAT-SCI-CORE'],
-    'GENED-HIST':    ['TCU-CORE-HIST', 'TCU-CORE-HT', 'GENED-HIST', 'HIST-CORE', 'HISTORY-CORE', 'HIST-TRAD-CORE'],
-    'GENED-GOV':     ['TCU-CORE-GOV', 'TCU-CORE-CSV', 'GENED-GOV', 'GOV-CORE', 'GOVT-CORE', 'CITIZEN-CORE', 'CSV-CORE'],
-    'GENED-SOCIAL':  ['TCU-CORE-SOSC', 'TCU-CORE-SSC', 'TCU-CORE-SOC', 'GENED-SOCIAL', 'SOCI-CORE', 'SOCIAL-CORE', 'SOCIAL-SCIENCE-CORE'],
-    'GENED-HUM':     ['TCU-CORE-HUM', 'GENED-HUM', 'HUMANITIES-CORE', 'HUM-CORE'],
-    'GENED-RELIGION':['TCU-CORE-REL', 'TCU-CORE-RELI', 'TCU-CORE-RT', 'GENED-RELIGION', 'RELIG-CORE', 'RELIGION-CORE', 'RELIG-TRAD-CORE'],
-    'GENED-CULTURE': ['TCU-CORE-CULT', 'TCU-CORE-CA', 'GENED-CULTURE', 'CULT-AWARE-CORE', 'CULTURE-CORE', 'CULTURAL-CORE'],
-    'GENED-FINE-ART':['TCU-CORE-FA', 'TCU-CORE-FAR', 'TCU-CORE-FINE', 'GENED-FINE-ART', 'FINE-ART-CORE', 'FINE-ARTS-CORE', 'ART-CORE'],
-    'GENED-LIT':     ['TCU-CORE-LIT', 'TCU-CORE-LT', 'GENED-LIT', 'LITER-TRAD-CORE', 'LIT-CORE', 'LITERARY-CORE'],
-    'GENED-GLOBAL':  ['TCU-CORE-GA', 'TCU-CORE-GLOBAL', 'GENED-GLOBAL', 'GLOBAL-AWARE-CORE', 'GLOBAL-CORE'],
+    'GENED-COMM':    ['TCU-CORE-ORAL', 'TCU-CORE-OCO', 'GENED-COMM', 'TCU-CORE-COMM', 'ORAL-CORE', 'ORAL-COMM-CORE', 'SPEECH-CORE', 'TCU-OCO', 'TCU-ORAL', 'TCU-COMM', 'TCU-SPEECH'],
+    'GENED-ENGLISH': ['TCU-CORE-WCO', 'TCU-CORE-WCO1', 'TCU-CORE-WCO2', 'TCU-CORE-WEM', 'TCU-CORE-ENGLISH', 'GENED-ENGLISH', 'TCU-CORE-WRIT', 'ENGLISH-CORE', 'WRITING-CORE', 'COMP-CORE', 'TCU-WCO', 'TCU-WCO1', 'TCU-WCO2', 'TCU-WEM', 'TCU-ENGLISH', 'TCU-WRIT'],
+    'GENED-MATH':    ['TCU-CORE-MATH', 'GENED-MATH', 'MATH-CORE', 'TCU-MATH', 'TCU-MTH'],
+    'GENED-SCI-NAT': ['TCU-CORE-NSC', 'TCU-CORE-SCI', 'GENED-SCI-NAT', 'TCU-CORE-NAT', 'SCIENCE-CORE', 'SCI-CORE', 'NAT-SCI-CORE', 'TCU-NSC', 'TCU-SCI', 'TCU-NAT'],
+    'GENED-HIST':    ['TCU-CORE-HIST', 'TCU-CORE-HT', 'GENED-HIST', 'HIST-CORE', 'HISTORY-CORE', 'HIST-TRAD-CORE', 'TCU-HT', 'TCU-HIST'],
+    'GENED-GOV':     ['TCU-CORE-GOV', 'TCU-CORE-CSV', 'GENED-GOV', 'GOV-CORE', 'GOVT-CORE', 'CITIZEN-CORE', 'CSV-CORE', 'TCU-CSV', 'TCU-GOV', 'TCU-GOVT'],
+    'GENED-SOCIAL':  ['TCU-CORE-SOSC', 'TCU-CORE-SSC', 'TCU-CORE-SOC', 'GENED-SOCIAL', 'SOCI-CORE', 'SOCIAL-CORE', 'SOCIAL-SCIENCE-CORE', 'TCU-SSC', 'TCU-SOSC', 'TCU-SOC'],
+    'GENED-HUM':     ['TCU-CORE-HUM', 'GENED-HUM', 'HUMANITIES-CORE', 'HUM-CORE', 'TCU-HUM'],
+    'GENED-RELIGION':['TCU-CORE-REL', 'TCU-CORE-RELI', 'TCU-CORE-RT', 'GENED-RELIGION', 'RELIG-CORE', 'RELIGION-CORE', 'RELIG-TRAD-CORE', 'TCU-RT', 'TCU-REL', 'TCU-RELI'],
+    'GENED-CULTURE': ['TCU-CORE-CULT', 'TCU-CORE-CA', 'GENED-CULTURE', 'CULT-AWARE-CORE', 'CULTURE-CORE', 'CULTURAL-CORE', 'TCU-CA', 'TCU-CULT'],
+    'GENED-FINE-ART':['TCU-CORE-FA', 'TCU-CORE-FAR', 'TCU-CORE-FINE', 'GENED-FINE-ART', 'FINE-ART-CORE', 'FINE-ARTS-CORE', 'ART-CORE', 'TCU-FAR', 'TCU-FA', 'TCU-FINE'],
+    'GENED-LIT':     ['TCU-CORE-LIT', 'TCU-CORE-LT', 'GENED-LIT', 'LITER-TRAD-CORE', 'LIT-CORE', 'LITERARY-CORE', 'TCU-LT', 'TCU-LIT'],
+    'GENED-GLOBAL':  ['TCU-CORE-GA', 'TCU-CORE-GLOBAL', 'GENED-GLOBAL', 'GLOBAL-AWARE-CORE', 'GLOBAL-CORE', 'TCU-GA', 'TCU-GLOBAL'],
   };
   // Fallback course codes for gen-ed areas when career defaults don't cover them
   const genedFallbacks = {
@@ -488,6 +488,43 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
     'TCU-CORE-WRIT': { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
     'TCU-CORE-GA':   { code: 'SPAN 10114', title: 'Beginning Spanish I', credits: 3, notes: 'TCU Core Global Awareness requirement' },
     'TCU-CORE-GLOBAL': { code: 'SPAN 10114', title: 'Beginning Spanish I', credits: 3, notes: 'TCU Core Global Awareness requirement' },
+    // TCU-XXX short forms (AI omits -CORE-)
+    'TCU-OCO':   { code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-ORAL':  { code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-COMM':  { code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-SPEECH':{ code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-WCO':   { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
+    'TCU-WCO1':  { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication I requirement' },
+    'TCU-WCO2':  { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Written Communication II requirement' },
+    'TCU-WEM':   { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Writing Emphasis requirement' },
+    'TCU-ENGLISH':{ code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
+    'TCU-WRIT':  { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
+    'TCU-MATH':  { code: 'MATH 10043', title: 'Elementary Statistics', credits: 3, notes: 'TCU Core Math requirement' },
+    'TCU-MTH':   { code: 'MATH 10043', title: 'Elementary Statistics', credits: 3, notes: 'TCU Core Math requirement' },
+    'TCU-NSC':   { code: 'BIOL 10504', title: 'General Biology', credits: 4, notes: 'TCU Core Natural Science requirement' },
+    'TCU-SCI':   { code: 'BIOL 10504', title: 'General Biology', credits: 4, notes: 'TCU Core Natural Science requirement' },
+    'TCU-NAT':   { code: 'BIOL 10504', title: 'General Biology', credits: 4, notes: 'TCU Core Natural Science requirement' },
+    'TCU-HT':    { code: 'HIST 10953', title: 'History of Civilization', credits: 3, notes: 'TCU Core Historical Traditions requirement' },
+    'TCU-HIST':  { code: 'HIST 10953', title: 'History of Civilization', credits: 3, notes: 'TCU Core Historical Traditions requirement' },
+    'TCU-CSV':   { code: 'POLS 10040', title: 'American Government', credits: 3, notes: 'TCU Core Citizenship requirement' },
+    'TCU-GOV':   { code: 'POLS 10040', title: 'American Government', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-GOVT':  { code: 'POLS 10040', title: 'American Government', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-SSC':   { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
+    'TCU-SOSC':  { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
+    'TCU-SOC':   { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
+    'TCU-HUM':   { code: 'PHIL 10003', title: 'Introduction to Philosophy', credits: 3, notes: 'TCU Core Humanities requirement' },
+    'TCU-RT':    { code: 'RELI 10003', title: 'Introduction to Religion', credits: 3, notes: 'TCU Core Religious Traditions requirement' },
+    'TCU-REL':   { code: 'RELI 10003', title: 'Introduction to Religion', credits: 3, notes: 'TCU Core Religious Traditions requirement' },
+    'TCU-RELI':  { code: 'RELI 10003', title: 'Introduction to Religion', credits: 3, notes: 'TCU Core Religious Traditions requirement' },
+    'TCU-CA':    { code: 'ANTH 10013', title: 'Introduction to Anthropology', credits: 3, notes: 'TCU Core Cultural Awareness requirement' },
+    'TCU-CULT':  { code: 'ANTH 10013', title: 'Introduction to Anthropology', credits: 3, notes: 'TCU Core Cultural Awareness requirement' },
+    'TCU-FAR':   { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
+    'TCU-FA':    { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
+    'TCU-FINE':  { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
+    'TCU-LT':    { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Literary Traditions requirement' },
+    'TCU-LIT':   { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Literary Traditions requirement' },
+    'TCU-GA':    { code: 'SPAN 10114', title: 'Beginning Spanish I', credits: 3, notes: 'TCU Core Global Awareness requirement' },
+    'TCU-GLOBAL':{ code: 'SPAN 10114', title: 'Beginning Spanish I', credits: 3, notes: 'TCU Core Global Awareness requirement' },
   };
 
   // Build reverse lookup: placeholder code → { code, title, credits, notes }
@@ -501,9 +538,9 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
     }
   }
 
-  // Detect any placeholder code — real TCU courses never contain CORE or ELECTIVE
+  // Detect any placeholder code — real TCU courses never start with TCU- or contain CORE/ELECTIVE
   function isPlaceholder(code) {
-    return code.startsWith('TCU-CORE') || code.startsWith('GENED-')
+    return code.startsWith('TCU-') || code.startsWith('GENED-')
       || code.startsWith('FREE') || /\bCORE\b/.test(code)
       || /\bELECTIVE\b/.test(code);
   }

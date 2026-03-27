@@ -58,7 +58,7 @@ function buildTermSequence(startTermRaw) {
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
+function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults, transferEquiv) {
   const major      = (kineRules.majors || {})[profile.majorProgram] || null;
   const minorData  = profile.minorProgram
     ? (kineRules.minors || {})[profile.minorProgram] || null
@@ -141,6 +141,14 @@ function buildSystemPrompt(profile, kineRules, genedRules, careerDefaults) {
     ? `CAREER ADVISING NOTE: ${career.advisingNote}`
     : '';
 
+  // AP & Transfer credit equivalencies
+  const transferCoreBlock = (transferEquiv?.core || []).map(area =>
+    `${area.coreCode} (${area.category}, ${area.requiredHours} hrs): ${area.courses.map(c => c.code).join(', ')}`
+  ).join('\n');
+  const transferNonCoreBlock = (transferEquiv?.nonCore || []).map(area =>
+    `${area.category}: ${area.courses.map(c => c.code).join(', ')}`
+  ).join('\n');
+
   // Key policies
   const policies = kineRules.policies || {};
   const policyText = typeof policies === 'object' && !Array.isArray(policies)
@@ -189,6 +197,15 @@ CAREER GOAL: ${profile.careerGoal || 'Not set — ask the student in the questio
 ${careerElectivesBlock}
 
 ${careerAdvisingNote}
+
+AP & TRANSFER CREDIT EQUIVALENCIES:
+If a student lists AP or transfer credits, use these mappings to determine which TCU course requirements are satisfied. Mark those requirements as "Met via AP or Transfer" in the requirement checklist.
+
+Core Requirements:
+${transferCoreBlock}
+
+Non-Core Prerequisites:
+${transferNonCoreBlock}
 
 SCHEDULING CONFLICT RULES (MUST follow when assigning courses to terms):
 - NEVER schedule Exercise Physiology (KINE 30634) + Biomechanics (KINE 30623) + Physics (PHYS 10154) in the SAME semester. Spread these across different terms — at most two of these three may share a semester.
@@ -710,7 +727,10 @@ module.exports = async function handler(req, res) {
   const coreCodeMap = loadJson(coreCodeMapFile) || { courses: {} };
 
   // Build prompt
-  const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules, careerDefaults);
+  const transferEquivFile = path.join(process.cwd(), 'data', 'transfer_equivalencies.json');
+  const transferEquiv = loadJson(transferEquivFile) || { core: [], nonCore: [] };
+
+  const systemPrompt = buildSystemPrompt(profile, kineRules, genedRules, careerDefaults, transferEquiv);
 
   // Build conversation context from recent history
   const historyBlock = conversationHistory.length > 0

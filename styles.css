@@ -200,14 +200,14 @@ body {
 }
 
 .mermaid-container {
-  margin-top: 0.75rem;
-  padding: 1rem;
-  background: var(--panel);
+  background: rgba(126, 77, 255, 0.06);
   border: 1px solid var(--border);
   border-radius: 12px;
+  padding: 1.25rem;
+  margin: 0.75rem 0;
   overflow-x: auto;
 }
-.mermaid-container .mermaid svg {
+.mermaid-container svg {
   max-width: 100%;
   height: auto;
 }

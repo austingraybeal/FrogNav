@@ -341,7 +341,7 @@ function renderAssistantPlan(container, planJson) {
     const table = document.createElement('table');
     table.className = 'plan-table';
     const thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>Term</th><th>Total Credits</th><th>Courses</th></tr>';
+    thead.innerHTML = '<tr><th>Term</th><th>Total Credits</th><th>Courses</th><th></th></tr>';
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
@@ -392,6 +392,73 @@ function renderAssistantPlan(container, planJson) {
       row.appendChild(tdTerm);
       row.appendChild(tdCredits);
       row.appendChild(tdCourses);
+
+      // "Check availability" button for all courses in this term
+      const tdAction = document.createElement('td');
+      tdAction.className = 'term-action-cell';
+      const courseCodes = (term.courses || [])
+        .map(c => (c.code || '').match(/^([A-Z]{2,5})\s+(\S+)$/))
+        .filter(Boolean);
+      if (courseCodes.length) {
+        const checkBtn = document.createElement('button');
+        checkBtn.className = 'check-avail-btn';
+        checkBtn.textContent = 'Check availability';
+        checkBtn.type = 'button';
+        const termName = term.term || 'this term';
+        checkBtn.addEventListener('click', async () => {
+          const modal   = document.getElementById('sectionsModal');
+          const subject = document.getElementById('sectionsSubject');
+          const course  = document.getElementById('sectionsCourse');
+          const status  = document.getElementById('sectionsStatus');
+          const results = document.getElementById('sectionsResults');
+          const termSel = document.getElementById('sectionsTerm');
+          modal.hidden = false;
+          results.innerHTML = '';
+          status.textContent = `Checking ${courseCodes.length} course(s) for ${termName}...`;
+          for (let idx = 0; idx < courseCodes.length; idx++) {
+            const [, subj, num] = courseCodes[idx];
+            status.textContent = `Searching ${subj} ${num} (${idx + 1}/${courseCodes.length}) for ${termName}...`;
+            subject.value = subj;
+            course.value = num;
+            try {
+              const params = new URLSearchParams({ subject: subj });
+              if (num) params.set('course', num);
+              const termCode = termSel?.value;
+              if (termCode) params.set('term', termCode);
+              const resp = await fetch(`/api/tcu-sections?${params}`);
+              const payload = await resp.json();
+              if (resp.ok) {
+                (payload.sections || []).forEach(sec => {
+                  const card = document.createElement('div');
+                  card.className = 'section-card';
+                  const seatsAvail = (sec.maximumEnrollment || 0) - (sec.enrollment || 0);
+                  const seatsClass = seatsAvail > 0 ? 'seats-open' : 'seats-full';
+                  card.innerHTML = `
+                    <div class="section-card-header">
+                      <strong>${safeText(sec.subject)} ${safeText(sec.courseNumber)}-${safeText(sec.sequenceNumber)} · ${safeText(sec.courseTitle)}</strong>
+                      <span class="section-crn">CRN ${safeText(sec.courseReferenceNumber)}</span>
+                    </div>
+                    <div class="section-card-meta">
+                      ${sec.faculty?.length ? safeText(sec.faculty.map(f => f.displayName).join(', ')) : 'TBA'}
+                      ${sec.meetingsFaculty?.length ? ' · ' + safeText(formatMeetingTimes(sec.meetingsFaculty)) : ''}
+                    </div>
+                    <div class="section-seats">
+                      <span class="${seatsClass}">${seatsAvail > 0 ? seatsAvail + ' seats open' : 'Full'}</span>
+                      · ${sec.enrollment || 0}/${sec.maximumEnrollment || 0} enrolled
+                      ${sec.waitCount > 0 ? ` · ${sec.waitCount} waitlisted` : ''}
+                    </div>
+                  `;
+                  results.appendChild(card);
+                });
+              }
+            } catch (_) { /* skip failed course, continue batch */ }
+          }
+          status.textContent = `Done — checked ${courseCodes.length} course(s) for ${termName}.`;
+        });
+        tdAction.appendChild(checkBtn);
+      }
+      row.appendChild(tdAction);
+
       tbody.appendChild(row);
     });
 

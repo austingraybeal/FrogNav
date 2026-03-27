@@ -1,0 +1,26 @@
+{
+  "description": "Maps course codes to their TCU Core Curriculum designations. A course may satisfy multiple core areas (e.g., 'GA,NSC'). Upload course data to populate this file.",
+  "coreAreas": {
+    "CSV": "Citizenship & Social Values",
+    "CA": "Cultural Awareness",
+    "FAR": "Fine Arts",
+    "GA": "Global Awareness",
+    "HUM": "Humanities",
+    "HT": "Historical Traditions",
+    "LT": "Literary Traditions",
+    "MTH": "Mathematics",
+    "NSC": "Natural Sciences",
+    "OCO": "Oral Communication",
+    "RT": "Religious Traditions",
+    "SSC": "Social Sciences",
+    "WCO": "Written Communication",
+    "WEM": "Writing Emphasis"
+  },
+  "courses": {
+    "MATH 10033": ["MTH"],
+    "MATH 10043": ["MTH"],
+    "MATH 10283": ["MTH"],
+    "MATH 10524": ["MTH"],
+    "MATH 20524": ["MTH"]
+  }
+}

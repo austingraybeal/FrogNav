@@ -54,7 +54,7 @@
       "totalHours": 9,
       "buckets": [
         {
-          "id": "MATH",
+          "id": "MTH",
           "name": "Mathematics",
           "hours": 3,
           "outcome": "Apply mathematical reasoning to solve problems.",
@@ -91,16 +91,10 @@
           "outcome": "Express messages in various situations using appropriate verbal and nonverbal communication skills."
         },
         {
-          "id": "WCO1",
-          "name": "Written Communication 1",
-          "hours": 3,
-          "outcome": "Express ideas in various situations using writing processes and strategies."
-        },
-        {
-          "id": "WCO2",
-          "name": "Written Communication 2",
-          "hours": 3,
-          "outcome": "Analyze and compose evidence-based arguments in various forms."
+          "id": "WCO",
+          "name": "Written Communication",
+          "hours": 6,
+          "outcome": "Express ideas and compose evidence-based arguments in various situations using writing processes and strategies."
         },
         {
           "id": "WEM",

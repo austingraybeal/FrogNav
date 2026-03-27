@@ -1,0 +1,307 @@
+{
+  "core": [
+    {
+      "category": "English Composition",
+      "coreCode": "WCO",
+      "requiredHours": 6,
+      "courses": [
+        { "code": "ENGL 1301", "name": "Composition I" },
+        { "code": "ENGL 1302", "name": "Composition II" }
+      ]
+    },
+    {
+      "category": "Mathematics",
+      "coreCode": "MTH",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "MATH 1325 or 2413", "name": "Business Calculus or Calculus I" },
+        { "code": "MATH 1332", "name": "Contem. Math I (Quant Reason)" },
+        { "code": "MATH 1342 or 1442", "name": "Elementary Statistics Methods" },
+        { "code": "MATH 2305", "name": "Discrete Math" },
+        { "code": "MATH 2414", "name": "Calculus II" }
+      ]
+    },
+    {
+      "category": "Fine Arts",
+      "coreCode": "FAR",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "ARCH 1301", "name": "Architectural History I" },
+        { "code": "ARCH 1302", "name": "Architectural History II" },
+        { "code": "ARCH 1311", "name": "Intro to Architecture" },
+        { "code": "ARTS 1301", "name": "Art Appreciation" },
+        { "code": "ARTS 1303", "name": "Art History I" },
+        { "code": "ARTS 1304", "name": "Art History II" },
+        { "code": "ARTS 1313", "name": "Foundations of Art" },
+        { "code": "COMM 2366", "name": "Film Appreciation" },
+        { "code": "DANC 1305", "name": "World Dance" },
+        { "code": "DANC 2303", "name": "Dance Appreciation" },
+        { "code": "DRAM 1310", "name": "Theatre Appreciation" },
+        { "code": "DRAM 1370", "name": "Contemporary Theatre" },
+        { "code": "DRAM 2363", "name": "History of Musical Theatre" },
+        { "code": "DRAM 2366", "name": "Film Appreciation" },
+        { "code": "DRAM 2367", "name": "Film Appreciation II" },
+        { "code": "DRAM 2372", "name": "Surv: Cont American Drama Lit" },
+        { "code": "ENGL 2307", "name": "Creative Writing" },
+        { "code": "HUMA 1315", "name": "Fine Arts Appreciation" },
+        { "code": "MUSI 1306", "name": "Music Appreciation" },
+        { "code": "MUSI 1310", "name": "American Music" }
+      ]
+    },
+    {
+      "category": "Cultural Awareness",
+      "coreCode": "CA",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "ANTH 2302", "name": "Intro To Archeology" },
+        { "code": "ANTH 2351", "name": "Cultural Anth" },
+        { "code": "ARTS 1303", "name": "Art History I" },
+        { "code": "COMM 1307", "name": "Mass Communication" },
+        { "code": "COMM 2302", "name": "Prin of Journalism" },
+        { "code": "DANC 1305", "name": "World Dance" },
+        { "code": "EDUC 2301", "name": "Intro to Special Populations" },
+        { "code": "GEOG 1302", "name": "Human Geography" },
+        { "code": "GERM 1411", "name": "Beg German I" },
+        { "code": "HIST 2328", "name": "Mexican-Amer Hist II" },
+        { "code": "PSYC 2301", "name": "Intro to Psychology" },
+        { "code": "SOCI 1301", "name": "Intro to Sociology" },
+        { "code": "SOCI 2301", "name": "Marriage & Family" }
+      ]
+    },
+    {
+      "category": "Citizenship & Social Values",
+      "coreCode": "CSV",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "CRIJ 1301", "name": "Intro to Crim Just" },
+        { "code": "GOVT 2305", "name": "Federal Govt" },
+        { "code": "GOVT 2306", "name": "Texas Government" },
+        { "code": "SOCI 1306", "name": "Social Problems" },
+        { "code": "SOCW 2361", "name": "Intro to Social Work" },
+        { "code": "SOCW 2362", "name": "Social Welfare" }
+      ]
+    },
+    {
+      "category": "Global Awareness",
+      "coreCode": "GA",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "BIOL 2420 or 2421", "name": "Microbiology" },
+        { "code": "ENVR 1401", "name": "Environmental Science" },
+        { "code": "GEOG 1301", "name": "Physical Geography" },
+        { "code": "GEOG 1303", "name": "World Regional Geog" },
+        { "code": "GEOL 1403", "name": "Physical Geology" },
+        { "code": "GEOL 1405", "name": "Environmental Geology" }
+      ]
+    },
+    {
+      "category": "Historical Traditions",
+      "coreCode": "HT",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "HIST 1301", "name": "US History I" },
+        { "code": "HIST 1302", "name": "US History II" },
+        { "code": "HIST 2311", "name": "Western Civilization" },
+        { "code": "HIST 2312", "name": "Western Civilization II" },
+        { "code": "HIST 2321", "name": "World Civilizations I" },
+        { "code": "HIST 2322", "name": "World Civilizations II" },
+        { "code": "HIST 2327", "name": "Mexican-Amer History I" },
+        { "code": "HIST 2381", "name": "African-Amer Hist" },
+        { "code": "HIST 2382", "name": "African-Amer Hist II" }
+      ]
+    },
+    {
+      "category": "Social Sciences",
+      "coreCode": "SSC",
+      "requiredHours": 9,
+      "courses": [
+        { "code": "ANTH 2302", "name": "Intro to Archeology" },
+        { "code": "ANTH 2346", "name": "Intro Anthropology" },
+        { "code": "ANTH 2351", "name": "Cultural Anth" },
+        { "code": "CRIJ 1301", "name": "Intro to Crim Just" },
+        { "code": "ECON 2301", "name": "Prin of Macroeconomics" },
+        { "code": "ECON 2302", "name": "Prin of Microeconomics" },
+        { "code": "GEOG 1301", "name": "Physical Geography" },
+        { "code": "GEOG 1302", "name": "Human Geography" },
+        { "code": "GEOG 1303", "name": "World Regional Geog" },
+        { "code": "GOVT 2304", "name": "Intro Posc" },
+        { "code": "GOVT 2305", "name": "Federal Govt" },
+        { "code": "GOVT 2306", "name": "Texas Government" },
+        { "code": "GOVT 2311", "name": "Mexican-Amer/Latinx Polit" },
+        { "code": "HIST 1301", "name": "US History I" },
+        { "code": "HIST 1302", "name": "US History II" },
+        { "code": "PSYC 2314", "name": "Lifespan Growth & Development" },
+        { "code": "SOCI 1301", "name": "Intro to Sociology" },
+        { "code": "SOCI 1306", "name": "Social Problems" },
+        { "code": "SOCI 2301", "name": "Marriage & Family" },
+        { "code": "SOCI 2319", "name": "Minority Studies" },
+        { "code": "SOCI 2336", "name": "Criminology" },
+        { "code": "SOCI 2340", "name": "Drug Use & Abuse" },
+        { "code": "SOCW 2361", "name": "Intro to Social Work" },
+        { "code": "SOCW 2362", "name": "Social Welfare" }
+      ]
+    },
+    {
+      "category": "Oral Communication",
+      "coreCode": "OCO",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "SPCH 1311", "name": "Intro to Speech" },
+        { "code": "SPCH 1315", "name": "Fund of Public Speak" },
+        { "code": "SPCH 1321", "name": "Business/Prof Comm" }
+      ]
+    },
+    {
+      "category": "Natural Sciences with Lab",
+      "coreCode": "NSC",
+      "requiredHours": 4,
+      "courses": [
+        { "code": "ANTH 2401", "name": "Physical Anthropology" },
+        { "code": "ASTR 1403", "name": "Stars and Galaxies (Lec/Lab)" },
+        { "code": "ASTR 1404", "name": "Solar System (Lec/Lab)" },
+        { "code": "BIOL 1406", "name": "Biology Sci Maj I" },
+        { "code": "BIOL 1407", "name": "Biology Sci Maj II" },
+        { "code": "BIOL 1408", "name": "Biological Science Non-Maj" },
+        { "code": "BIOL 1409", "name": "Biological Non-Science Maj II" },
+        { "code": "BIOL 1411", "name": "General Botany" },
+        { "code": "BIOL 1413", "name": "Zoology" },
+        { "code": "BIOL 1414", "name": "Intro to Biotechnology" },
+        { "code": "BIOL 2401", "name": "Anat & Phys I" },
+        { "code": "BIOL 2406", "name": "Environmental Biology with Lab" },
+        { "code": "BIOL 2420 or 2421", "name": "Microbiology" },
+        { "code": "CHEM 1406", "name": "Intro to Chemistry I - Allied" },
+        { "code": "CHEM 1407", "name": "Intro Chem II" },
+        { "code": "CHEM 1409", "name": "Chemistry for Engr Maj I with Lab" },
+        { "code": "CHEM 1411", "name": "General Chemistry I" },
+        { "code": "CHEM 1412", "name": "General Chemistry II" },
+        { "code": "ENGR 1304", "name": "Engr Design Graph I" },
+        { "code": "ENVR 1401", "name": "Environmental Science" },
+        { "code": "ENVR 1402", "name": "Environmental Scie II" },
+        { "code": "GEOL 1401", "name": "Earth Sci Non-Maj I" },
+        { "code": "GEOL 1402", "name": "Earth Sci Non-Maj II" },
+        { "code": "GEOL 1403", "name": "Physical Geology" },
+        { "code": "GEOL 1404", "name": "Historical Geology" },
+        { "code": "GEOL 1405", "name": "Environmental Geology" },
+        { "code": "GEOL 1445", "name": "Oceanography" },
+        { "code": "GEOL 1447", "name": "Intro Meteorology" },
+        { "code": "PHYS 1401", "name": "Intro General Physics" },
+        { "code": "PHYS 1403", "name": "Stars and Galaxies" },
+        { "code": "PHYS 1404", "name": "Solar System" },
+        { "code": "PHYS 1405", "name": "Elementary Physics I" },
+        { "code": "PHYS 1407", "name": "Elementary Physics II" },
+        { "code": "PHYS 1410", "name": "Elementary Physics" },
+        { "code": "PHYS 1415", "name": "Physical Science I" },
+        { "code": "PHYS 1417", "name": "Physical Science II" },
+        { "code": "PHYS 2425", "name": "University Physics I" }
+      ]
+    },
+    {
+      "category": "Humanities",
+      "coreCode": "HUM",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "ENGL 2321", "name": "British Literature" },
+        { "code": "ENGL 2322", "name": "British Literature I" },
+        { "code": "ENGL 2323", "name": "British Literature II" },
+        { "code": "ENGL 2326", "name": "American Literature" },
+        { "code": "ENGL 2327", "name": "American Literature I" },
+        { "code": "ENGL 2328", "name": "American Literature II" },
+        { "code": "ENGL 2331", "name": "World Literature" },
+        { "code": "ENGL 2332", "name": "World Literature I" },
+        { "code": "ENGL 2333", "name": "World Literature II" },
+        { "code": "ENGL 2341", "name": "Forms of Literature" },
+        { "code": "ENGL 2370", "name": "Studies in Lit" },
+        { "code": "ENGL 2371", "name": "Forms in Lit I" },
+        { "code": "ENGL 2372", "name": "Forms in Lit II" },
+        { "code": "HIST 2311", "name": "Western Civilization" },
+        { "code": "HIST 2312", "name": "Western Civilization II" },
+        { "code": "HIST 2321", "name": "World Civilizations I" },
+        { "code": "HIST 2322", "name": "World Civilizations II" },
+        { "code": "HIST 2327", "name": "Mexican-Amer History I" },
+        { "code": "HIST 2381", "name": "African-Amer Hist" },
+        { "code": "HIST 2382", "name": "African-Amer Hist II" },
+        { "code": "HUMA 1301", "name": "Intro to Humanities" },
+        { "code": "HUMA 1302", "name": "Humanities II" },
+        { "code": "HUMA 1305", "name": "Introduction to Mexican Americ" },
+        { "code": "HUMA 2319", "name": "American Minority Studies" },
+        { "code": "HUMA 2323", "name": "World Cultures" },
+        { "code": "PHIL 1301", "name": "Intro to Philosophy" },
+        { "code": "PHIL 1304", "name": "Intro to World Religions" }
+      ]
+    },
+    {
+      "category": "Literary Traditions",
+      "coreCode": "LT",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "ENGL 2321", "name": "British Literature" },
+        { "code": "ENGL 2322", "name": "British Literature I" },
+        { "code": "ENGL 2323", "name": "British Literature II" },
+        { "code": "ENGL 2326", "name": "American Literature" },
+        { "code": "ENGL 2327", "name": "American Literature I" },
+        { "code": "ENGL 2328", "name": "American Literature II" },
+        { "code": "ENGL 2331", "name": "World Literature" },
+        { "code": "ENGL 2332", "name": "World Literature I" },
+        { "code": "ENGL 2333", "name": "World Literature II" },
+        { "code": "ENGL 2341", "name": "Forms of Literature" },
+        { "code": "ENGL 2370", "name": "Studies in Lit" },
+        { "code": "ENGL 2371", "name": "Forms in Lit I" },
+        { "code": "ENGL 2372", "name": "Forms in Lit II" }
+      ]
+    },
+    {
+      "category": "Religious Traditions",
+      "coreCode": "RT",
+      "requiredHours": 3,
+      "courses": [
+        { "code": "PHIL 1304", "name": "Intro to World Religions" }
+      ]
+    }
+  ],
+  "nonCore": [
+    {
+      "category": "Nursing Prerequisites",
+      "courses": [
+        { "code": "BIOL 2402", "name": "Anatomy and Phys II" },
+        { "code": "HECO 1322", "name": "Nutrition and Diet Therapy" }
+      ]
+    },
+    {
+      "category": "Education Prerequisites",
+      "courses": [
+        { "code": "EDUC 1301 or EDUC 20003", "name": "Intro to the Teaching Profession" },
+        { "code": "EDUC 2301", "name": "Intro to Special Populations" },
+        { "code": "EDUC 1300/PSYC 1300", "name": "Learning Framework" },
+        { "code": "TECA 1354", "name": "Child Growth and Development" }
+      ]
+    },
+    {
+      "category": "Education Lower Division Req.",
+      "courses": [
+        { "code": "HIST 1301", "name": "US History I" },
+        { "code": "HIST 1302", "name": "US History II" },
+        { "code": "MATH 1325 or 2413", "name": "Business Calculus or Calculus I" },
+        { "code": "MATH 1332", "name": "Contem. Math I (Quant Reason)" },
+        { "code": "MATH 1342 or 1442", "name": "Elementary Statistics Methods" }
+      ]
+    },
+    {
+      "category": "Nursing Lower Division Req.",
+      "courses": [
+        { "code": "PSYC 2301", "name": "Intro to Psychology" },
+        { "code": "SOCI 1301", "name": "Intro to Sociology" }
+      ]
+    },
+    {
+      "category": "Business Lower Division Req.",
+      "courses": [
+        { "code": "ECON 2301", "name": "Prin of Macroeconomics" },
+        { "code": "ECON 2302", "name": "Prin of Microeconomics" },
+        { "code": "HIST 1301", "name": "US History I" },
+        { "code": "HIST 1302", "name": "US History II" },
+        { "code": "PSYC 2314", "name": "Lifespan Growth & Development" },
+        { "code": "SOCI 1301", "name": "Intro to Sociology" }
+      ]
+    }
+  ]
+}

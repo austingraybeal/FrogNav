@@ -361,9 +361,28 @@ function renderAssistantPlan(container, planJson) {
           // FIX #7: Build course text via textContent — never innerHTML with course data
           const courseSpan = document.createElement('span');
           const noteSuffix = course.notes ? ` — ${course.notes}` : '';
-          courseSpan.textContent =
-            `${course.code || 'TBD'} - ${course.title || 'Untitled'} ` +
-            `(${course.credits ?? 0})${noteSuffix}`;
+          const rawCode = course.code || 'TBD';
+          const codeParts = rawCode.match(/^([A-Z]{2,5})\s+(\S+)$/);
+          if (codeParts) {
+            const codeLink = document.createElement('a');
+            codeLink.className = 'course-link';
+            codeLink.textContent = rawCode;
+            codeLink.href = '#';
+            codeLink.addEventListener('click', (e) => {
+              e.preventDefault();
+              document.getElementById('sectionsSubject').value = codeParts[1];
+              document.getElementById('sectionsCourse').value = codeParts[2];
+              document.getElementById('sectionsModal').hidden = false;
+              document.getElementById('sectionsSearchBtn').click();
+            });
+            courseSpan.appendChild(codeLink);
+            courseSpan.appendChild(document.createTextNode(
+              ` - ${course.title || 'Untitled'} (${course.credits ?? 0})${noteSuffix}`));
+          } else {
+            courseSpan.textContent =
+              `${rawCode} - ${course.title || 'Untitled'} ` +
+              `(${course.credits ?? 0})${noteSuffix}`;
+          }
           tdCourses.appendChild(courseSpan);
         });
       } else {

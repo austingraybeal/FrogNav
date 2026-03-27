@@ -98,6 +98,7 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({
           model:      MODEL,
           max_tokens: 16384,
+          thinking:   { type: 'enabled', budget_tokens: 10000 },
           system:     SYSTEM_PROMPT,
           messages:   [{ role: 'user', content: userMessage }],
         }),
@@ -127,7 +128,9 @@ module.exports = async function handler(req, res) {
     return err(res, response.status, String(msg).slice(0, 240), 'FROGNAV_API_ERROR');
   }
 
-  const content = payload?.content?.[0]?.text;
+  // Extract only the final text block — skip thinking blocks
+  const textBlock = (payload?.content || []).find(b => b.type === 'text');
+  const content = textBlock?.text;
   if (!content || typeof content !== 'string') {
     return err(res, 502, 'AI response had no text content.', 'FROGNAV_BAD_PAYLOAD');
   }

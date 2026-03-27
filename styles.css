@@ -43,14 +43,6 @@ body {
 .hub-header { text-align: center; }
 .hub-header h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); }
 .hub-header p { margin: 0.5rem 0 0.75rem; color: var(--muted); }
-.hub-welcome {
-  font-size: clamp(1rem, 2.5vw, 1.6rem);
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.01em;
-  margin-top: 0.75rem;
-}
-.has-messages .hub-welcome { display: none; }
 
 .text-link {
   border: 1px solid var(--border);
@@ -263,6 +255,17 @@ body {
   grid-template-rows: auto auto;
   padding: 1.25rem 1.25rem 0.75rem;
   width: min(780px, 92vw);
+}
+
+.hub:not(.has-messages) .composer-wrap::before {
+  content: 'Where would you like to start?';
+  display: block;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
 }
 
 .hub:not(.has-messages) .composer > div {

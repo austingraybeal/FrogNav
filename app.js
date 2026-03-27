@@ -31,16 +31,16 @@ const DEFAULTS = {
 //         an accurate instruction from the very first token.
 const QUICK_ACTION_PROMPTS = {
   undergrad: {
-    build:     'Build my Movement Science plan',
-    add_minor: 'Add a minor to my plan',
-    honors:    'Show me the Honors College version of my plan',
-    compare:   'Compare Movement Science and Health & Fitness',
+    build:         'Build my degree plan',
+    next_semester: 'What courses should I take next semester?',
+    on_track:      'Am I on track to graduate on time?',
+    minors:        'What are my minor options?',
   },
   grad: {
-    build:     'Build my Kinesiology, MS plan',
-    add_minor: 'Add a concentration or graduate certificate to my plan',
-    honors:    'Explain graduate program options equivalent to Honors College for Kinesiology MS students',
-    compare:   'Compare the Movement Science and Exercise Physiology graduate concentrations',
+    build:         'Build my Kinesiology, MS plan',
+    next_semester: 'What courses should I take next semester in my graduate program?',
+    on_track:      'Am I on track to complete my graduate program on time?',
+    minors:        'What concentration or certificate options are available for my program?',
   },
 };
 

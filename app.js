@@ -381,31 +381,67 @@ function renderAssistantPlan(container, planJson) {
     container.appendChild(termsSection);
   }
 
-  // Requirement checklist
-  const checklistSection   = document.createElement('section');
-  checklistSection.className = 'plan-section';
-  const checklistHeading   = document.createElement('h4');
-  checklistHeading.textContent = 'Requirement Checklist';
-  checklistSection.appendChild(checklistHeading);
+  // Compact requirement summary + adjustments
+  const checklist = Array.isArray(planJson.requirementChecklist)
+    ? planJson.requirementChecklist : [];
+  const adjustments = Array.isArray(planJson.adjustmentOptions)
+    ? planJson.adjustmentOptions : [];
 
-  const checklistList = document.createElement('ul');
-  const checklist     = Array.isArray(planJson.requirementChecklist)
-    ? planJson.requirementChecklist
-    : [];
-  const checklistItems = checklist.length
-    ? checklist
-    : [{ item: 'No checklist items.', status: 'Needs Review', notes: '' }];
+  if (checklist.length || adjustments.length) {
+    const summarySection = document.createElement('section');
+    summarySection.className = 'plan-section plan-summary-compact';
 
-  checklistItems.forEach(item => {
-    const li = document.createElement('li');
-    li.textContent =
-      `${item.item} — ${item.status}${item.notes ? ` (${item.notes})` : ''}`;
-    checklistList.appendChild(li);
-  });
-  checklistSection.appendChild(checklistList);
-  container.appendChild(checklistSection);
+    // Status counts
+    const met   = checklist.filter(c => /met|complete|satisfied/i.test(c.status)).length;
+    const total = checklist.length;
+    const needs = total - met;
 
-  container.appendChild(listSection('Adjustment Options', planJson.adjustmentOptions));
+    // Conversational one-liner
+    const intro = document.createElement('p');
+    intro.className = 'summary-intro';
+    if (total === 0) {
+      intro.textContent = 'No requirement details available for this plan.';
+    } else if (needs === 0) {
+      intro.textContent = `All ${total} requirements look good — you're on track!`;
+    } else {
+      intro.textContent = `${met} of ${total} requirements met — ${needs} still need${needs === 1 ? 's' : ''} attention.`;
+    }
+    summarySection.appendChild(intro);
+
+    // Pill-style badges for items needing attention
+    if (needs > 0) {
+      const pills = document.createElement('div');
+      pills.className = 'summary-pills';
+      checklist
+        .filter(c => !/met|complete|satisfied/i.test(c.status))
+        .forEach(c => {
+          const pill = document.createElement('span');
+          pill.className = 'summary-pill';
+          pill.textContent = c.item + (c.notes ? ` — ${c.notes}` : '');
+          pills.appendChild(pill);
+        });
+      summarySection.appendChild(pills);
+    }
+
+    // Adjustment options as collapsible
+    if (adjustments.length) {
+      const adjDetails = document.createElement('details');
+      adjDetails.className = 'plan-details-toggle';
+      const adjSummary = document.createElement('summary');
+      adjSummary.textContent = `${adjustments.length} Adjustment Option${adjustments.length === 1 ? '' : 's'}`;
+      adjDetails.appendChild(adjSummary);
+      const adjList = document.createElement('ul');
+      adjustments.forEach(opt => {
+        const li = document.createElement('li');
+        li.textContent = String(opt || '');
+        adjList.appendChild(li);
+      });
+      adjDetails.appendChild(adjList);
+      summarySection.appendChild(adjDetails);
+    }
+
+    container.appendChild(summarySection);
+  }
   container.appendChild(listSection('Questions',          planJson.questions));
 
   // Policy Warnings + Assumptions collapsed into a details toggle

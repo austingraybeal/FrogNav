@@ -341,6 +341,44 @@ body {
   padding: 0.4rem 0;
   background: none;
 }
+/* Compact requirement summary */
+.plan-summary-compact {
+  border: 1px solid rgba(184, 157, 255, 0.18);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  background: rgba(126, 77, 255, 0.05);
+}
+.summary-intro {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+.summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+.summary-pill {
+  display: inline-block;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 170, 50, 0.15);
+  color: #d4890a;
+  border: 1px solid rgba(255, 170, 50, 0.25);
+}
+.plan-summary-compact .plan-details-toggle {
+  margin-top: 0.45rem;
+}
+.plan-summary-compact .plan-details-toggle ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
 .plan-section.has-table {
   border: 1px solid rgba(184, 157, 255, 0.2);
   border-radius: 10px;

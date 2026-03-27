@@ -240,12 +240,14 @@
   <div class="profile-section">
     <h3 class="profile-section-title">✅ Completed Work</h3>
     <div class="profile-field">
-      <label for="completedCourses">Completed courses</label>
+      <label>Completed courses</label>
+      <div class="completed-actions">
+        <button type="button" id="profileUploadBtn" class="profile-action-btn">📄 Upload Course History</button>
+        <button type="button" id="openChecklistBtn2" class="profile-action-btn">☑️ Select Completed Courses</button>
+        <button type="button" id="toggleTypeCoursesBtn" class="profile-action-btn">✏️ Type My Courses</button>
+      </div>
       <textarea id="completedCourses" name="completedCourses" rows="3"
-        placeholder="e.g. KINE 10101, BIOL 20204"></textarea>
-      <button type="button" id="profileUploadBtn" class="profile-upload-btn">
-        📄 Upload Course History
-      </button>
+        placeholder="e.g. KINE 10101, BIOL 20204" hidden></textarea>
       <p class="profile-section-hint">Upload a .txt or .csv file to auto-fill your courses — no need to type them all manually.</p>
       <input type="file" id="profileTranscriptInput" accept=".txt,.csv,.pdf" hidden />
     </div>

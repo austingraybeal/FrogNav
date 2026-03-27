@@ -1130,6 +1130,18 @@ if (profileUploadBtn && profileTranscriptInput) {
   });
 }
 
+// Select Completed Courses button — opens checklist modal
+document.getElementById('openChecklistBtn2')?.addEventListener('click', () => {
+  document.getElementById('checklistModal').hidden = false;
+});
+
+// Type My Courses button — toggles the textarea
+document.getElementById('toggleTypeCoursesBtn')?.addEventListener('click', () => {
+  const ta = document.getElementById('completedCourses');
+  ta.hidden = !ta.hidden;
+  if (!ta.hidden) ta.focus();
+});
+
 // ── Create Schedule PDF ──────────────────────────────────────────────────────
 function handleExportPDF() {
   if (!lastPlan) {

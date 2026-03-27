@@ -442,19 +442,19 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
   const genedRecs = rpTrack?.genedRecommendations || {};
   // Map various placeholder patterns the AI might use to the career defaults keys
   const genedAliases = {
-    'GENED-COMM':    ['TCU-CORE-ORAL', 'TCU-CORE-OCO', 'GENED-COMM', 'TCU-CORE-COMM'],
-    'GENED-ENGLISH': ['TCU-CORE-WCO', 'TCU-CORE-WCO1', 'TCU-CORE-WCO2', 'TCU-CORE-WEM', 'TCU-CORE-ENGLISH', 'GENED-ENGLISH', 'TCU-CORE-WRIT'],
-    'GENED-MATH':    ['TCU-CORE-MATH', 'GENED-MATH'],
-    'GENED-SCI-NAT': ['TCU-CORE-NSC', 'TCU-CORE-SCI', 'GENED-SCI-NAT', 'TCU-CORE-NAT'],
-    'GENED-HIST':    ['TCU-CORE-HIST', 'TCU-CORE-HT', 'GENED-HIST'],
-    'GENED-GOV':     ['TCU-CORE-GOV', 'TCU-CORE-CSV', 'GENED-GOV'],
-    'GENED-SOCIAL':  ['TCU-CORE-SOSC', 'TCU-CORE-SSC', 'TCU-CORE-SOC', 'GENED-SOCIAL'],
-    'GENED-HUM':     ['TCU-CORE-HUM', 'GENED-HUM'],
-    'GENED-RELIGION':['TCU-CORE-REL', 'TCU-CORE-RELI', 'TCU-CORE-RT', 'GENED-RELIGION'],
-    'GENED-CULTURE': ['TCU-CORE-CULT', 'TCU-CORE-CA', 'GENED-CULTURE'],
-    'GENED-FINE-ART':['TCU-CORE-FA', 'TCU-CORE-FAR', 'TCU-CORE-FINE', 'GENED-FINE-ART'],
-    'GENED-LIT':     ['TCU-CORE-LIT', 'TCU-CORE-LT', 'GENED-LIT'],
-    'GENED-GLOBAL':  ['TCU-CORE-GA', 'TCU-CORE-GLOBAL', 'GENED-GLOBAL'],
+    'GENED-COMM':    ['TCU-CORE-ORAL', 'TCU-CORE-OCO', 'GENED-COMM', 'TCU-CORE-COMM', 'ORAL-CORE', 'ORAL-COMM-CORE', 'SPEECH-CORE'],
+    'GENED-ENGLISH': ['TCU-CORE-WCO', 'TCU-CORE-WCO1', 'TCU-CORE-WCO2', 'TCU-CORE-WEM', 'TCU-CORE-ENGLISH', 'GENED-ENGLISH', 'TCU-CORE-WRIT', 'ENGLISH-CORE', 'WRITING-CORE', 'COMP-CORE'],
+    'GENED-MATH':    ['TCU-CORE-MATH', 'GENED-MATH', 'MATH-CORE'],
+    'GENED-SCI-NAT': ['TCU-CORE-NSC', 'TCU-CORE-SCI', 'GENED-SCI-NAT', 'TCU-CORE-NAT', 'SCIENCE-CORE', 'SCI-CORE', 'NAT-SCI-CORE'],
+    'GENED-HIST':    ['TCU-CORE-HIST', 'TCU-CORE-HT', 'GENED-HIST', 'HIST-CORE', 'HISTORY-CORE', 'HIST-TRAD-CORE'],
+    'GENED-GOV':     ['TCU-CORE-GOV', 'TCU-CORE-CSV', 'GENED-GOV', 'GOV-CORE', 'GOVT-CORE', 'CITIZEN-CORE', 'CSV-CORE'],
+    'GENED-SOCIAL':  ['TCU-CORE-SOSC', 'TCU-CORE-SSC', 'TCU-CORE-SOC', 'GENED-SOCIAL', 'SOCI-CORE', 'SOCIAL-CORE', 'SOCIAL-SCIENCE-CORE'],
+    'GENED-HUM':     ['TCU-CORE-HUM', 'GENED-HUM', 'HUMANITIES-CORE', 'HUM-CORE'],
+    'GENED-RELIGION':['TCU-CORE-REL', 'TCU-CORE-RELI', 'TCU-CORE-RT', 'GENED-RELIGION', 'RELIG-CORE', 'RELIGION-CORE', 'RELIG-TRAD-CORE'],
+    'GENED-CULTURE': ['TCU-CORE-CULT', 'TCU-CORE-CA', 'GENED-CULTURE', 'CULT-AWARE-CORE', 'CULTURE-CORE', 'CULTURAL-CORE'],
+    'GENED-FINE-ART':['TCU-CORE-FA', 'TCU-CORE-FAR', 'TCU-CORE-FINE', 'GENED-FINE-ART', 'FINE-ART-CORE', 'FINE-ARTS-CORE', 'ART-CORE'],
+    'GENED-LIT':     ['TCU-CORE-LIT', 'TCU-CORE-LT', 'GENED-LIT', 'LITER-TRAD-CORE', 'LIT-CORE', 'LITERARY-CORE'],
+    'GENED-GLOBAL':  ['TCU-CORE-GA', 'TCU-CORE-GLOBAL', 'GENED-GLOBAL', 'GLOBAL-AWARE-CORE', 'GLOBAL-CORE'],
   };
   // Fallback course codes for gen-ed areas when career defaults don't cover them
   const genedFallbacks = {
@@ -501,13 +501,20 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
     }
   }
 
+  // Detect any placeholder code — real TCU courses never contain CORE or ELECTIVE
+  function isPlaceholder(code) {
+    return code.startsWith('TCU-CORE') || code.startsWith('GENED-')
+      || code.startsWith('FREE') || /\bCORE\b/.test(code)
+      || /\bELECTIVE\b/.test(code);
+  }
+
   // Free elective pool from career defaults
   const elecPool = (rpTrack?.freeElectiveRecommendations || []).slice();
   // Track codes already in the plan (real courses only)
   const usedCodes = new Set();
   terms.forEach(t => (t.courses || []).forEach(c => {
     const code = String(c.code || '').toUpperCase().trim();
-    if (!code.startsWith('TCU-CORE') && !code.startsWith('GENED-') && !code.startsWith('FREE')) {
+    if (!isPlaceholder(code)) {
       usedCodes.add(code);
     }
   }));
@@ -516,23 +523,9 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
   function resolvePlaceholder(c) {
     const code = String(c.code || '').toUpperCase().trim();
 
-    // TCU-CORE-* or GENED-* → look up real course
-    if (code.startsWith('TCU-CORE') || code.startsWith('GENED-')) {
-      const mapped = genedMap[code];
-      if (mapped && !usedCodes.has(mapped.code.toUpperCase())) {
-        usedCodes.add(mapped.code.toUpperCase());
-        return { code: mapped.code, title: mapped.title || c.title, credits: mapped.credits || c.credits, notes: mapped.notes || c.notes };
-      }
-      const fb = genedFallbacks[code];
-      if (fb && !usedCodes.has(fb.code.toUpperCase())) {
-        usedCodes.add(fb.code.toUpperCase());
-        return { ...fb };
-      }
-      if (fb) return { ...fb };
-    }
-
     // FREE-ELECTIVE → career elective, then gen-ed fallback
-    if (code === 'FREE-ELECTIVE' || code.startsWith('FREE-ELECTIVE') || code.startsWith('FREE')) {
+    if (code === 'FREE-ELECTIVE' || code.startsWith('FREE-ELECTIVE') || code.startsWith('FREE')
+        || /\bELECTIVE\b/.test(code)) {
       const credits = c.credits || 3;
       const idx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()) && e.credits === credits);
       if (idx !== -1) {
@@ -553,6 +546,58 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
         }
       }
     }
+
+    // Any CORE placeholder → look up via alias map or fallback map
+    if (/\bCORE\b/.test(code) || code.startsWith('TCU-CORE') || code.startsWith('GENED-')) {
+      const mapped = genedMap[code];
+      if (mapped && !usedCodes.has(mapped.code.toUpperCase())) {
+        usedCodes.add(mapped.code.toUpperCase());
+        return { code: mapped.code, title: mapped.title || c.title, credits: mapped.credits || c.credits, notes: mapped.notes || c.notes };
+      }
+      const fb = genedFallbacks[code];
+      if (fb && !usedCodes.has(fb.code.toUpperCase())) {
+        usedCodes.add(fb.code.toUpperCase());
+        return { ...fb };
+      }
+      if (fb) return { ...fb };
+
+      // Keyword catch-all: match unknown CORE placeholders to fallbacks by keyword
+      const codeLC = code.toLowerCase();
+      const keywordMap = [
+        [/soci|social/,     'TCU-CORE-SOSC'],
+        [/human|hum/,       'TCU-CORE-HUM'],
+        [/liter|lit/,       'TCU-CORE-LIT'],
+        [/global|aware/,    'TCU-CORE-GA'],
+        [/cult/,            'TCU-CORE-CULT'],
+        [/relig/,           'TCU-CORE-REL'],
+        [/hist/,            'TCU-CORE-HIST'],
+        [/oral|speech|comm/,'TCU-CORE-OCO'],
+        [/engl|writ|comp/,  'TCU-CORE-WCO'],
+        [/math/,            'TCU-CORE-MATH'],
+        [/sci|nat|phys|bio|chem/, 'TCU-CORE-NSC'],
+        [/fine|art|music/,  'TCU-CORE-FA'],
+        [/gov|citizen|csv/, 'TCU-CORE-GOV'],
+      ];
+      for (const [pattern, fbKey] of keywordMap) {
+        if (pattern.test(codeLC)) {
+          const kwFb = genedFallbacks[fbKey];
+          if (kwFb && !usedCodes.has(kwFb.code.toUpperCase())) {
+            usedCodes.add(kwFb.code.toUpperCase());
+            return { ...kwFb };
+          }
+          if (kwFb) return { ...kwFb };
+        }
+      }
+
+      // Last resort: return any unused fallback rather than showing a placeholder
+      for (const fb of Object.values(genedFallbacks)) {
+        if (!usedCodes.has(fb.code.toUpperCase())) {
+          usedCodes.add(fb.code.toUpperCase());
+          return { ...fb };
+        }
+      }
+    }
+
     return null;
   }
 
@@ -563,7 +608,7 @@ function normalizePlan(raw, profile, careerDefaults, coreCodeMap) {
     const keep = [];
     (t.courses || []).forEach(c => {
       const code = String(c.code || '').toUpperCase().trim();
-      if (code.startsWith('TCU-CORE') || code.startsWith('GENED-') || code.startsWith('FREE')) {
+      if (isPlaceholder(code)) {
         const actual = resolvePlaceholder(c);
         if (actual) resolved.push(actual);
       } else {

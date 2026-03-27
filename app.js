@@ -18,7 +18,7 @@ const DEFAULTS = {
   targetGraduation:  '',
   creditsPerTerm:    '15',
   summerOptional:    true,
-  apTransfer:        'None',
+  apTransfer:        '',
   completedCourses:  '',
   constraints:       '',
   careerGoal:        '',

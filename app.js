@@ -808,6 +808,62 @@ async function callAssistant(userContent, action = 'chat') {
   }
 }
 
+// ── Deep Research endpoint ────────────────────────────────────────────────────
+async function callResearch(userContent) {
+  messages.push({ role: 'user', content: userContent });
+  renderThread();
+  persistConversation();
+
+  setLoading(true);
+  setStatus('Researching — this may take a moment...');
+
+  try {
+    const response = await fetch('/api/research', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: userContent,
+        profile: readProfile(),
+        conversationHistory: messages.slice(-10).map(m => ({
+          role: m.role,
+          content: m.content || m.planJson?.planSummary || '',
+        })),
+      }),
+    });
+
+    const raw = await response.text();
+    let payload = null;
+    try   { payload = raw ? JSON.parse(raw) : null; }
+    catch { payload = null; }
+
+    if (!response.ok) {
+      const detail = payload?.detail || `Research request failed (${response.status}).`;
+      throw new Error(detail);
+    }
+
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('Backend returned non-JSON response.');
+    }
+
+    messages.push({
+      role:    'assistant',
+      content: payload.message || 'No research results returned.',
+      chatNextSteps: payload.nextSteps || [],
+    });
+
+    setStatus('Ready.');
+  } catch (error) {
+    messages.push({
+      role:    'assistant',
+      content: error.message || 'Research request failed.',
+    });
+    setStatus(error.message || 'Research request failed.', true);
+  } finally {
+    setLoading(false);
+    renderThread();
+  }
+}
+
 // ── API: catalog search (for replace dropdowns) ───────────────────────────────
 // FIX #6: Now clears catalogOptions on every call — including errors and short queries
 async function searchCatalogOptions(query) {
@@ -1568,6 +1624,11 @@ chatComposer.addEventListener('submit', event => {
   // If a tool chip is active, wrap the prompt with the tool context
   let prompt = content;
   if (activeToolChip) {
+    if (activeToolChip.tool === 'research') {
+      removeToolChip();
+      callResearch(content);
+      return;
+    }
     prompt = activeToolChip.promptPrefix + content;
     removeToolChip();
   }

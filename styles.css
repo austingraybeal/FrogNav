@@ -199,7 +199,7 @@ body {
   border: 1px solid rgba(126, 77, 255, 0.3);
   border-radius: 12px;
   padding: 0.5rem 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
   font-size: 0.85rem;
 }
 .profile-banner[hidden] { display: none; }
@@ -377,7 +377,11 @@ body {
     font-size: 0.75rem;
     padding: 0.35rem 0.5rem;
     border-radius: 10px;
-    margin-bottom: 0.35rem;
+    margin-top: 0.35rem;
+  }
+  .hub:not(.has-messages) .composer-wrap::before {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
   }
 }
 

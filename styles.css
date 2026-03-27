@@ -171,19 +171,20 @@ body {
 
 .term-action-cell { vertical-align: middle; text-align: center; }
 .check-avail-btn {
-  background: rgba(124, 58, 237, 0.15);
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
   color: var(--purple-soft);
-  border: 1px solid rgba(124, 58, 237, 0.3);
-  border-radius: 6px;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 0.3rem 0.75rem;
   cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  margin-top: 0.4rem;
+  transition: background 0.15s, border-color 0.15s;
 }
 .check-avail-btn:hover {
-  background: rgba(124, 58, 237, 0.3);
-  color: #fff;
+  background: rgba(126, 77, 255, 0.2);
+  border-color: var(--purple);
 }
 
 .course-link {

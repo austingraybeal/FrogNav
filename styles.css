@@ -170,13 +170,12 @@ body {
 }
 
 .status {
-  min-height: 1.25rem;
+  min-height: 1.1rem;
   text-align: center;
   color: var(--purple-soft);
   margin: 0;
-  max-width: min(768px, 100%);
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 0.78rem;
+  padding: 0.15rem 0 0.1rem;
 }
 
 .status.error { color: var(--danger); }

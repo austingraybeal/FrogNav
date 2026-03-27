@@ -513,26 +513,31 @@ function renderAssistantPlan(container, planJson) {
     const btnRow = document.createElement('div');
     btnRow.className = 'next-steps-btns';
 
-    // Always-present default buttons
-    const defaults = [
-      { label: 'Make changes to my schedule', prompt: 'I\'d like to make some changes to my current schedule. What are my options?' },
-      { label: 'Download my course schedule', prompt: 'Please generate a downloadable version of my current degree plan.' },
-    ];
-
-    // AI-generated steps (deduplicate against defaults)
+    // AI-generated steps (filter out download/make-changes dupes)
     const aiSteps = Array.isArray(planJson.nextSteps) ? planJson.nextSteps : [];
-    const allSteps = [...aiSteps.filter(s => {
+    aiSteps.filter(s => {
       const lbl = (s.label || '').toLowerCase();
       return !lbl.includes('download') && !lbl.includes('make changes');
-    }), ...defaults];
-
-    allSteps.forEach(step => {
+    }).forEach(step => {
       const btn = document.createElement('button');
       btn.className = 'next-step-btn';
       btn.textContent = step.label;
       btn.addEventListener('click', () => callAssistant(step.prompt, 'chat'));
       btnRow.appendChild(btn);
     });
+
+    // Always-present default buttons
+    const makeChangesBtn = document.createElement('button');
+    makeChangesBtn.className = 'next-step-btn';
+    makeChangesBtn.textContent = 'Make changes to my schedule';
+    makeChangesBtn.addEventListener('click', () => callAssistant('I\'d like to make some changes to my current schedule. What are my options?', 'chat'));
+    btnRow.appendChild(makeChangesBtn);
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'next-step-btn';
+    downloadBtn.textContent = 'Download my course schedule';
+    downloadBtn.addEventListener('click', () => handleExportPDF());
+    btnRow.appendChild(downloadBtn);
     nextSection.appendChild(btnRow);
     container.appendChild(nextSection);
   }

@@ -327,35 +327,135 @@ function normalizePlan(raw, profile, careerDefaults) {
    'Prerequisite sequencing assumed based on standard progression.']
     .forEach(line => { if (!assumptions.includes(line)) assumptions.push(line); });
 
-  // ── Replace FREE-ELECTIVE placeholders with career-track courses ──────────
-  const career = careerDefaults?.careerTracks?.[profile.careerGoal] || null;
-  const defaultTrack = careerDefaults?.careerTracks?.['Pre-PT/OT/DPT'] || null;
-  const effectiveTrack = career || defaultTrack;
-  const elecPool = (effectiveTrack?.freeElectiveRecommendations || []).slice();
-  // Track which replacements have already been used (by course code)
+  // ── Replace TCU-CORE and FREE-ELECTIVE placeholders with actual courses ───
+  const rpCareer = careerDefaults?.careerTracks?.[profile.careerGoal] || null;
+  const rpDefault = careerDefaults?.careerTracks?.['Pre-PT/OT/DPT'] || null;
+  const rpTrack = rpCareer || rpDefault;
+
+  // Build gen-ed replacement map from career defaults
+  // Maps placeholder patterns → actual course codes
+  const genedMap = {};
+  const genedRecs = rpTrack?.genedRecommendations || {};
+  // Map various placeholder patterns the AI might use to the career defaults keys
+  const genedAliases = {
+    'GENED-COMM':    ['TCU-CORE-ORAL', 'TCU-CORE-OCO', 'GENED-COMM', 'TCU-CORE-COMM'],
+    'GENED-ENGLISH': ['TCU-CORE-WCO', 'TCU-CORE-WCO1', 'TCU-CORE-WCO2', 'TCU-CORE-WEM', 'TCU-CORE-ENGLISH', 'GENED-ENGLISH', 'TCU-CORE-WRIT'],
+    'GENED-MATH':    ['TCU-CORE-MATH', 'GENED-MATH'],
+    'GENED-SCI-NAT': ['TCU-CORE-NSC', 'TCU-CORE-SCI', 'GENED-SCI-NAT', 'TCU-CORE-NAT'],
+    'GENED-HIST':    ['TCU-CORE-HIST', 'TCU-CORE-HT', 'GENED-HIST'],
+    'GENED-GOV':     ['TCU-CORE-GOV', 'TCU-CORE-CSV', 'GENED-GOV'],
+    'GENED-SOCIAL':  ['TCU-CORE-SOSC', 'TCU-CORE-SSC', 'TCU-CORE-SOC', 'GENED-SOCIAL'],
+    'GENED-HUM':     ['TCU-CORE-HUM', 'GENED-HUM'],
+    'GENED-RELIGION':['TCU-CORE-REL', 'TCU-CORE-RELI', 'TCU-CORE-RT', 'GENED-RELIGION'],
+    'GENED-CULTURE': ['TCU-CORE-CULT', 'TCU-CORE-CA', 'GENED-CULTURE'],
+    'GENED-FINE-ART':['TCU-CORE-FA', 'TCU-CORE-FAR', 'TCU-CORE-FINE', 'GENED-FINE-ART'],
+    'GENED-LIT':     ['TCU-CORE-LIT', 'TCU-CORE-LT', 'GENED-LIT'],
+    'GENED-GLOBAL':  ['TCU-CORE-GA', 'TCU-CORE-GLOBAL', 'GENED-GLOBAL'],
+  };
+  // Fallback course codes for gen-ed areas when career defaults don't cover them
+  const genedFallbacks = {
+    'TCU-CORE-ORAL': { code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-CORE-OCO':  { code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-CORE-COMM': { code: 'COMM 10003', title: 'Oral Communication', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-CORE-HUM':  { code: 'PHIL 10003', title: 'Introduction to Philosophy', credits: 3, notes: 'TCU Core Humanities requirement' },
+    'TCU-CORE-CULT': { code: 'ANTH 10013', title: 'Introduction to Anthropology', credits: 3, notes: 'TCU Core Cultural Awareness requirement' },
+    'TCU-CORE-CA':   { code: 'ANTH 10013', title: 'Introduction to Anthropology', credits: 3, notes: 'TCU Core Cultural Awareness requirement' },
+    'TCU-CORE-REL':  { code: 'RELI 10003', title: 'Introduction to Religion', credits: 3, notes: 'TCU Core Religious Traditions requirement' },
+    'TCU-CORE-RELI': { code: 'RELI 10003', title: 'Introduction to Religion', credits: 3, notes: 'TCU Core Religious Traditions requirement' },
+    'TCU-CORE-RT':   { code: 'RELI 10003', title: 'Introduction to Religion', credits: 3, notes: 'TCU Core Religious Traditions requirement' },
+    'TCU-CORE-HIST': { code: 'HIST 10953', title: 'History of Civilization', credits: 3, notes: 'TCU Core Historical Traditions requirement' },
+    'TCU-CORE-HT':   { code: 'HIST 10953', title: 'History of Civilization', credits: 3, notes: 'TCU Core Historical Traditions requirement' },
+    'TCU-CORE-GOV':  { code: 'POLS 10040', title: 'American Government', credits: 3, notes: 'TCU Core requirement' },
+    'TCU-CORE-CSV':  { code: 'POLS 10040', title: 'American Government', credits: 3, notes: 'TCU Core Citizenship requirement' },
+    'TCU-CORE-SOSC': { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
+    'TCU-CORE-SSC':  { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
+    'TCU-CORE-SOC':  { code: 'PSYC 10213', title: 'Introduction to Psychology', credits: 3, notes: 'TCU Core Social Sciences requirement' },
+    'TCU-CORE-MATH': { code: 'MATH 10043', title: 'Elementary Statistics', credits: 3, notes: 'TCU Core Math requirement' },
+    'TCU-CORE-FA':   { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
+    'TCU-CORE-FAR':  { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
+    'TCU-CORE-FINE': { code: 'MUSC 10003', title: 'Introduction to Music', credits: 3, notes: 'TCU Core Fine Arts requirement' },
+    'TCU-CORE-LIT':  { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Literary Traditions requirement' },
+    'TCU-CORE-LT':   { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Literary Traditions requirement' },
+    'TCU-CORE-WCO':  { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
+    'TCU-CORE-WCO1': { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication I requirement' },
+    'TCU-CORE-WCO2': { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Written Communication II requirement' },
+    'TCU-CORE-WEM':  { code: 'ENGL 20803', title: 'British Literature', credits: 3, notes: 'TCU Core Writing Emphasis requirement' },
+    'TCU-CORE-ENGLISH': { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
+    'TCU-CORE-WRIT': { code: 'ENGL 10803', title: 'Composition', credits: 3, notes: 'TCU Core Written Communication requirement' },
+    'TCU-CORE-GA':   { code: 'SPAN 10114', title: 'Beginning Spanish I', credits: 3, notes: 'TCU Core Global Awareness requirement' },
+    'TCU-CORE-GLOBAL': { code: 'SPAN 10114', title: 'Beginning Spanish I', credits: 3, notes: 'TCU Core Global Awareness requirement' },
+  };
+
+  // Build reverse lookup: placeholder code → { code, title, credits, notes }
+  for (const [genedKey, aliases] of Object.entries(genedAliases)) {
+    const recCodes = genedRecs[genedKey];
+    if (recCodes && recCodes.length) {
+      const code = recCodes[0]; // Use first recommended course
+      aliases.forEach(alias => {
+        genedMap[alias.toUpperCase()] = { code, title: '', credits: 3, notes: 'TCU Core requirement' };
+      });
+    }
+  }
+
+  // Free elective pool from career defaults
+  const elecPool = (rpTrack?.freeElectiveRecommendations || []).slice();
+  // Track codes already in the plan
   const usedCodes = new Set();
   terms.forEach(t => (t.courses || []).forEach(c => usedCodes.add(String(c.code || '').toUpperCase().trim())));
 
   terms.forEach(t => {
     t.courses = (t.courses || []).map(c => {
       const code = String(c.code || '').toUpperCase().trim();
-      if (code !== 'FREE-ELECTIVE' && !code.startsWith('FREE-ELECTIVE')) return c;
-      // Find next unused career elective that matches credit count
-      const credits = c.credits || 3;
-      const idx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()) && e.credits === credits);
-      if (idx === -1) {
-        // Try any unused career elective regardless of credits
-        const anyIdx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()));
-        if (anyIdx === -1) return c; // no replacements left
-        const repl = elecPool[anyIdx];
-        usedCodes.add(repl.code.toUpperCase());
-        return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+
+      // Replace TCU-CORE-* placeholders
+      if (code.startsWith('TCU-CORE') || code.startsWith('GENED-')) {
+        // Check career-based gen-ed map first
+        const mapped = genedMap[code];
+        if (mapped && !usedCodes.has(mapped.code.toUpperCase())) {
+          usedCodes.add(mapped.code.toUpperCase());
+          return { code: mapped.code, title: mapped.title || c.title, credits: mapped.credits || c.credits, notes: mapped.notes || c.notes };
+        }
+        // Fall back to hardcoded defaults
+        const fb = genedFallbacks[code];
+        if (fb && !usedCodes.has(fb.code.toUpperCase())) {
+          usedCodes.add(fb.code.toUpperCase());
+          return { ...fb };
+        }
+        // If the specific code already used, still try to return any matching fallback
+        if (fb) {
+          return { ...fb, notes: fb.notes + ' (verify — may share slot with another course)' };
+        }
       }
-      const repl = elecPool[idx];
-      usedCodes.add(repl.code.toUpperCase());
-      return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+
+      // Replace FREE-ELECTIVE placeholders
+      if (code === 'FREE-ELECTIVE' || code.startsWith('FREE-ELECTIVE') || code.startsWith('FREE')) {
+        const credits = c.credits || 3;
+        // Try matching credit count first
+        const idx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()) && e.credits === credits);
+        if (idx !== -1) {
+          const repl = elecPool[idx];
+          usedCodes.add(repl.code.toUpperCase());
+          return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+        }
+        // Try any unused career elective
+        const anyIdx = elecPool.findIndex(e => !usedCodes.has(e.code.toUpperCase()));
+        if (anyIdx !== -1) {
+          const repl = elecPool[anyIdx];
+          usedCodes.add(repl.code.toUpperCase());
+          return { code: repl.code, title: repl.title, credits: repl.credits, notes: repl.notes };
+        }
+        // Last resort: use a gen-ed course that hasn't been placed yet
+        for (const fb of Object.values(genedFallbacks)) {
+          if (!usedCodes.has(fb.code.toUpperCase())) {
+            usedCodes.add(fb.code.toUpperCase());
+            return { ...fb };
+          }
+        }
+      }
+
+      return c;
     });
-    t.totalCredits = t.courses.reduce((s, c) => s + (c.credits || 0), 0);
+    t.totalCredits = t.courses.reduce((s, cc) => s + (cc.credits || 0), 0);
   });
 
   // ── Scheduling conflict detection ──────────────────────────────────────────

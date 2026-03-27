@@ -198,6 +198,28 @@ ${careerElectivesBlock}
 
 ${careerAdvisingNote}
 
+ELECTIVE AND CORE COURSE DEFAULTING — STRICT HIERARCHY:
+When filling TCU CORE elective slots, free electives, or any open course slots, follow this priority order. Use the HIGHEST applicable tier and never skip to a lower tier if a higher one applies:
+
+1. MAJOR REQUIREMENTS — If the student's major has unfulfilled required or recommended courses, fill open slots with those first.
+2. MINOR / EMPHASIS REQUIREMENTS — If the student has a declared minor or emphasis with unfulfilled courses, fill open slots with those next.
+3. CAREER GOAL ALIGNMENT — If the student has a career goal set, choose electives that directly support that path. Examples:
+   - Pre-PT/OT/PA: prioritize BIOL, CHEM, PHYS, HLTH, and anatomy/physiology-adjacent courses
+   - Coaching/S&C: prioritize KINE 30343, KINE 40513, KINE 40543, sport psychology courses
+   - Teaching/PE: prioritize education-track and pedagogy courses
+   - Sport & Exercise Psychology: prioritize psychology electives and research methods
+4. CHAT CONTEXT — If the student has mentioned interests, preferences, or constraints during the conversation that suggest specific courses, use those to inform elective choices.
+5. DEFAULT FALLBACK — If none of the above apply (no major set, no minor, no career goal, no chat context), default to courses that best serve a Movement Science major pursuing pre-professional programs (PT, OT, PA). This means prioritizing:
+   - BIOL 20204 (Human Anatomy & Physiology I)
+   - BIOL 20214 (Human Anatomy & Physiology II)
+   - CHEM 10114 (General Chemistry I)
+   - PHYS 10154 (General Physics I)
+   - HLTH 30423 (Nutrition & Physical Activity)
+   - KINE 30523 (Exercise Assessment & Prescription)
+   - Psychology, statistics, and research methods courses
+
+NEVER use generic "FREE ELECTIVE" or "TCU CORE — Elective" placeholders when a real course from the above hierarchy would apply. Only use placeholders as an absolute last resort when ALL tiers above are exhausted and no specific course can be reasonably recommended.
+
 AP & TRANSFER CREDIT EQUIVALENCIES:
 If a student lists AP or transfer credits, use these mappings to determine which TCU course requirements are satisfied. Mark those requirements as "Met via AP or Transfer" in the requirement checklist.
 

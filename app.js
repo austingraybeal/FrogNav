@@ -1550,13 +1550,14 @@ function updateSidebarProfile() {
   }
 }
 
-// Profile banner
+// Profile banner — whole pill opens modal, dismiss stops propagation
 const profileBanner = document.getElementById('profileBanner');
 if (profileBanner) {
-  profileBanner.querySelector('.profile-banner-text')?.addEventListener('click', () => {
+  profileBanner.addEventListener('click', () => {
     profileModal.hidden = false;
   });
-  profileBanner.querySelector('.profile-banner-dismiss')?.addEventListener('click', () => {
+  profileBanner.querySelector('.profile-banner-dismiss')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     profileBanner.hidden = true;
   });
 }

@@ -1550,6 +1550,17 @@ function updateSidebarProfile() {
   }
 }
 
+// Profile banner
+const profileBanner = document.getElementById('profileBanner');
+if (profileBanner) {
+  profileBanner.querySelector('.profile-banner-text')?.addEventListener('click', () => {
+    profileModal.hidden = false;
+  });
+  profileBanner.querySelector('.profile-banner-dismiss')?.addEventListener('click', () => {
+    profileBanner.hidden = true;
+  });
+}
+
 // Save profile button
 const saveProfileBtn = document.getElementById('saveProfileBtn');
 const profileSaveStatus = document.getElementById('profileSaveStatus');
@@ -1561,6 +1572,7 @@ if (saveProfileBtn) {
     profileSaveStatus.classList.add('visible');
     setTimeout(() => profileSaveStatus.classList.remove('visible'), 2000);
     profileModal.hidden = true;
+    if (profileBanner) profileBanner.hidden = true;
   });
 }
 
@@ -1624,6 +1636,14 @@ if (replaceFromInput && replaceToInput && replaceBtn) {
   updateSidebarProfile();
   renderThread();
 
-  // Auto-open profile modal so students know to fill it out
-  profileModal.hidden = false;
+  // Show profile banner + sidebar glow if no saved profile
+  if (!localStorage.getItem(PROFILE_KEY)) {
+    const banner = document.getElementById('profileBanner');
+    if (banner) banner.hidden = false;
+    const card = document.getElementById('openProfileBtn');
+    if (card) {
+      card.classList.add('profile-glow');
+      card.addEventListener('animationend', () => card.classList.remove('profile-glow'));
+    }
+  }
 })();

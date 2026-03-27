@@ -861,6 +861,27 @@ body::-webkit-scrollbar-button,
   z-index: 1;
 }
 
+/* ── Social media links ─────────────────────────────────────────────────── */
+.social-links {
+  position: fixed;
+  bottom: 0.3rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.6rem;
+  z-index: 2;
+}
+.social-links a {
+  color: var(--muted);
+  opacity: 0.45;
+  transition: opacity 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.social-links a:hover {
+  opacity: 1;
+  color: var(--purple);
+}
+
 /* ── Plan details toggle ─────────────────────────────────────────────────── */
 .plan-details-toggle {
   margin-top: 0.75rem;
